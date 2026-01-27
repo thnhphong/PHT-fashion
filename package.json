@@ -1,0 +1,22 @@
+{
+  "name": "PHP-Fashion",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently \"pnpm --filter backend run dev\" \"pnpm --filter frontend run dev\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.28.1",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
