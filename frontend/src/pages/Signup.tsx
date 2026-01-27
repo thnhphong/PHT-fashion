@@ -2,8 +2,8 @@ import axios from 'axios';
 import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 
-// Assuming VITE_API_URL might point to "http://localhost:5000"
-const API_BASE_URL = (import.meta.env.VITE_API_URL ?? '/api').replace(/\/$/, '');
+
+const API_BASE_URL = 'http://localhost:5001';
 
 type SignUpForm = {
   name: string;
@@ -39,8 +39,8 @@ const Signup = () => {
     setLoading(true);
 
     try {
-      // Updated link to match the backend setup
-      await axios.post(`${API_BASE_URL}/users/register`, {
+      // Updated to use /auth/register endpoint
+        const response = await axios.post(`${API_BASE_URL}/api/users/register`, {
         name: form.name,
         email: form.email,
         phone: form.phone,
@@ -48,7 +48,7 @@ const Signup = () => {
         password: form.password,
       });
 
-      setSuccessMessage('Account created successfully. You can now log in.');
+      setSuccessMessage(response.data.message || 'Account created successfully. You can now log in.');
       setForm(INITIAL_FORM);
     } catch (err) {
       if (axios.isAxiosError(err)) {
@@ -102,6 +102,10 @@ const Signup = () => {
         {error && <p className="auth-error">{error}</p>}
         {successMessage && <p className="auth-success">{successMessage}</p>}
       </form>
+
+      <p className="auth-link">
+        Already have an account? <a href="/login">Login</a>
+      </p>
     </div>
   );
 };
