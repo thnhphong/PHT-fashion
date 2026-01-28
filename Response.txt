@@ -1,0 +1,131 @@
+PHT-FASHION API – RESPONSE SUMMARY
+
+AUTH
+POST /api/register
+201 (success) → account created successfully
+400 (error) → email already exists
+
+POST /api/login
+200 (success) → login successful, token returned
+401 (error) → invalid email or password
+
+POST /api/logout
+200 (success) → you have logged out
+
+PRODUCTS
+GET /api/products
+200 (success) → products retrieved successfully
+
+GET /api/products/{id}
+200 (success) → product detail retrieved
+404 (error) → product not found
+
+CATEGORIES
+GET /api/categories
+200 (success) → categories retrieved successfully
+
+CART (AUTH)
+GET /api/cart
+200 (success) → cart retrieved successfully
+401 (error) → you are unauthorized
+
+POST /api/cart/add
+200 (success) → product added to cart
+401 (error) → you are unauthorized
+
+DELETE /api/cart/remove/{itemId}
+200 (success) → item removed from cart
+401 (error) → you are unauthorized
+
+CHECKOUT (AUTH)
+POST /api/checkout
+201 (success) → order created successfully
+400 (error) → cart is empty
+401 (error) → you are unauthorized
+
+ORDERS (AUTH)
+GET /api/orders
+200 (success) → orders retrieved successfully
+401 (error) → you are unauthorized
+
+GET /api/orders/{id}
+200 (success) → order detail retrieved
+401 (error) → you are unauthorized
+404 (error) → order not found
+
+COUPONS
+POST /api/coupons/validate
+200 (success) → coupon valid, discount applied
+400 (error) → invalid or expired coupon
+
+PROFILE (AUTH)
+GET /api/profile
+200 (success) → profile retrieved successfully
+401 (error) → you are unauthorized
+
+PUT /api/profile
+200 (success) → profile updated successfully
+401 (error) → you are unauthorized
+
+ADMIN AUTH
+POST /api/admin/login
+200 (success) → admin login successful
+401 (error) → invalid admin credentials
+
+POST /api/admin/logout
+200 (success) → admin logged out successfully
+
+ADMIN DASHBOARD (ADMIN)
+GET /api/admin/dashboard
+200 (success) → dashboard data retrieved
+403 (error) → admin access only
+
+ADMIN USERS (ADMIN)
+GET /api/admin/users
+200 (success) → users retrieved successfully
+403 (error) → admin access only
+
+PUT /api/admin/users/{id}/role
+200 (success) → user role updated successfully
+403 (error) → admin access only
+
+DELETE /api/admin/users/{id}
+200 (success) → user deleted successfully
+403 (error) → admin access only
+
+ADMIN PRODUCTS (ADMIN)
+POST /api/admin/products
+201 (success) → product created successfully
+403 (error) → admin access only
+
+PUT /api/admin/products/{id}
+200 (success) → product updated successfully
+403 (error) → admin access only
+
+DELETE /api/admin/products/{id}
+200 (success) → product deleted successfully
+403 (error) → admin access only
+
+ADMIN ORDERS (ADMIN)
+GET /api/admin/orders
+200 (success) → orders retrieved successfully
+403 (error) → admin access only
+
+PUT /api/admin/orders/{id}/status
+200 (success) → order status updated
+403 (error) → admin access only
+
+ADMIN COUPONS (ADMIN)
+POST /api/admin/coupons
+201 (success) → coupon created successfully
+403 (error) → admin access only
+
+DELETE /api/admin/coupons/{id}
+200 (success) → coupon deleted successfully
+403 (error) → admin access only
+
+STANDARD ERROR RESPONSES
+401 → you are unauthorized
+403 → forbidden access
+404 → resource not found
+500 → internal server error

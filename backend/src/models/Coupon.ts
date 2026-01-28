@@ -3,6 +3,8 @@ import { Schema, model, Document } from 'mongoose';
 export interface ICoupon extends Document {
   name: string;
   code: string;
+  discount: number;
+  expiration_date: Date;
   created_at: Date;
 }
 
@@ -19,6 +21,16 @@ const CouponSchema = new Schema<ICoupon>(
       trim: true,
       uppercase: true,
       unique: true,
+    },
+    discount: {
+      type: Number,
+      required: true,
+      min: 0,
+      max: 100,
+    },
+    expiration_date: {
+      type: Date,
+      required: true,
     },
     created_at: {
       type: Date,

@@ -19,9 +19,6 @@ const SupplierSchema = new Schema<ISupplier>(
       required: true,
       trim: true,
     },
-    supplier_img: {
-      type: String,
-    },
     created_at: {
       type: Date,
       default: Date.now,
