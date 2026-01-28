@@ -1,5 +1,4 @@
 import { JwtPayload, Secret, sign, verify, SignOptions } from 'jsonwebtoken';
-
 import { env } from './env';
 
 export interface AuthTokenPayload extends JwtPayload {
@@ -8,15 +7,31 @@ export interface AuthTokenPayload extends JwtPayload {
 }
 
 const jwtSecret: Secret = env.jwtSecret;
-const jwtOptions: SignOptions = {
-  expiresIn: env.jwtExpires as SignOptions['expiresIn'],
+
+// Access Token: 15 minutes
+const accessTokenOptions: SignOptions = {
+  expiresIn: '15m',
 };
 
-export const signAuthToken = (payload: AuthTokenPayload): string => {
-  return sign(payload, jwtSecret, jwtOptions);
+// Refresh Token: 7 days
+const refreshTokenOptions: SignOptions = {
+  expiresIn: '7d',
 };
 
-export const verifyAuthToken = (token: string): AuthTokenPayload => {
+export const signAccessToken = (payload: AuthTokenPayload): string => {
+  return sign(payload, jwtSecret, accessTokenOptions);
+};
+
+export const signRefreshToken = (payload: AuthTokenPayload): string => {
+  return sign(payload, jwtSecret, refreshTokenOptions);
+};
+
+export const verifyToken = (token: string): AuthTokenPayload => {
   return verify(token, jwtSecret) as AuthTokenPayload;
 };
+
+// Kept for backward compatibility if needed, but aliased to signAccessToken
+export const signAuthToken = signAccessToken;
+export const verifyAuthToken = verifyToken;
+
 

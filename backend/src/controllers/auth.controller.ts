@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { loginUser } from '../services/auth.service';
+import { loginUser, refreshUserToken } from '../services/auth.service';
 import { createUser, findUserByEmail } from '../services/user.service';
 import bcrypt from 'bcryptjs';
 
@@ -68,8 +68,8 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // Generate JWT token
-    const token = loginUser(user);
+    // Generate JWT tokens
+    const { accessToken, refreshToken } = loginUser(user);
 
     // Remove password from response
     const userResponse = {
@@ -85,11 +85,35 @@ export const login = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       message: 'Login successful',
-      token,
+      accessToken,
+      refreshToken,
       user: userResponse,
     });
   } catch (error) {
     console.error('Login error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const refreshToken = async (req: Request, res: Response) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({ message: 'Refresh token is required' });
+    }
+
+    const newAccessToken = refreshUserToken(refreshToken);
+
+    return res.status(200).json({
+      message: 'Token refreshed successfully',
+      accessToken: newAccessToken,
+    });
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    if (error instanceof Error && error.message === 'Invalid or expired refresh token') {
+      return res.status(401).json({ message: 'Invalid or expired refresh token' });
+    }
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
