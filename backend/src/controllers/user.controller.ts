@@ -46,7 +46,7 @@ export const registerUser = async (req: Request, res: Response) => {
 
 export const getUser = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const user = await findUserById(id);
 
     if (!user) {
@@ -72,7 +72,7 @@ export const getUsers = async (req: Request, res: Response) => {
 
 export const updateUserById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userData = req.body;
 
     // If password is being updated, hash it
@@ -98,7 +98,7 @@ export const updateUserById = async (req: Request, res: Response) => {
 
 export const deleteUserById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const deletedUser = await deleteUser(id);
 
     if (!deletedUser) {
