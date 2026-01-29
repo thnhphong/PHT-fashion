@@ -21,8 +21,8 @@ const imageFields = [
   { name: 'thumbnail_img_4', maxCount: 1 },
 ];
 
-router.post('/', upload.fields(imageFields), createProduct);
 router.get('/', getProducts);
+router.post('/', upload.fields(imageFields), createProduct);
 router.get('/:id', getProductById);
 router.put('/:id', upload.fields(imageFields), updateProduct);
 router.delete('/:id', deleteProduct);

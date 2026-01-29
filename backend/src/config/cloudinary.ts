@@ -1,4 +1,4 @@
-import cloudinary from 'cloudinary';
+import cloudinary, { UploadApiOptions } from 'cloudinary';
 
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -7,6 +7,9 @@ cloudinary.v2.config({
 });
 
 // Upload function
-export const uploadImage = async (filePath: string) => {
-  return cloudinary.v2.uploader.upload(filePath);
+export const uploadImage = async (filePath: string, options?: UploadApiOptions) => {
+  return cloudinary.v2.uploader.upload(filePath, {
+    folder: 'pht_products_img',
+    ...options,
+  });
 };

@@ -22,6 +22,7 @@ POST /api/coupons/validate (validate coupon code and calculate discount)
 PROFILE (AUTH)
 GET /api/profile (get authenticated user profile)
 PUT /api/profile (update authenticated user profile)
+
 ADMIN AUTH
 POST /api/admin/login (authenticate admin and return JWT)
 POST /api/admin/logout (logout admin)
