@@ -77,6 +77,7 @@ const Signup = () => {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 bg-white">
         <div className="w-full max-w-md mx-auto">
           {/* Logo */}
+          <div className="flex justify-between">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 rounded-full flex items-center justify-center">
               <img src={PHTLogo} alt="PHT" className="w-full h-full object-cover border-2 border-gray-300 rounded-full" />
@@ -84,6 +85,10 @@ const Signup = () => {
             <span className="text-xl font-bold text-gray-800">PHT</span>
           </div>
 
+           <a href="/" className="pt-4 text-black rounded-full inline-block text-center">
+           <p className="font-bold">Home</p>
+           </a>
+          </div>
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">

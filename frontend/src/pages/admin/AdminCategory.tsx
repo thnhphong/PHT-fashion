@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import { apiUrl } from '../../../utils/api';
+import { apiUrl } from '../../utils/api';
 
 type Category = {
   _id: string;

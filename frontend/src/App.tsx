@@ -1,13 +1,15 @@
 import './App.css';
 import './index.css';
 import Home from './pages/Home';
+import About from './pages/About';
+import Contact from './pages/Contact';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
 import Admin from './pages/admin/Admin';
-import AdminCategory from './pages/admin/category/AdminCategory';
-import AdminSupplier from './pages/admin/supplier/AdminSupplier';
-import AdminProduct from './pages/admin/product/AdminProduct';
-import AdminProductForm from './pages/admin/product/AdminProductForm';
+import AdminCategory from './pages/admin/AdminCategory';
+import AdminSupplier from './pages/admin/AdminSupplier';
+import AdminProduct from './pages/admin/AdminProduct';
+import AdminProductForm from './pages/admin/AdminProductForm';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 function App() {
@@ -15,6 +17,8 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
         <Route path="/admin/*" element={<Admin />}>

@@ -2,8 +2,8 @@ import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { apiUrl } from '../../../utils/api';
-import type { Category, Product } from '../../../types/types';
+import { apiUrl } from '../../utils/api';
+import type { Category, Product } from '../../types/types';
 
 const imageFields = ['img_url', 'thumbnail_img_1', 'thumbnail_img_2', 'thumbnail_img_3', 'thumbnail_img_4'];
 const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const;

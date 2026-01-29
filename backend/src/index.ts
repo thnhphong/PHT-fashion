@@ -38,8 +38,11 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin/products', productRoutes); 
+app.use('/api/products', productRoutes);
 app.use('/api/admin/categories', categoryRoutes);
+app.use('/api/categories', categoryRoutes);
 app.use('/api/admin/suppliers', supplierRoutes);
+app.use('/api/suppliers', supplierRoutes);
 
 // Start server
 app.listen(PORT, () => {

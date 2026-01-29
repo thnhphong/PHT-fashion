@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { apiUrl } from '../../../utils/api';
-import type { Product } from '../../../types/types';
+import { apiUrl } from '../../utils/api';
+import type { Product } from '../../types/types';
 
 const AdminProduct = () => {
   const [products, setProducts] = useState<Product[]>([]);

@@ -1,6 +1,7 @@
+import { Link } from 'react-router-dom';
 const SignupBtn = () => {
   return (
-    <button className="bg-white text-black border border-black px-4 py-2 rounded-full">Signup</button>
+    <Link to="/signup" className="bg-white text-black border border-black px-4 py-2 rounded-full">Signup</Link>
   )
 }
 

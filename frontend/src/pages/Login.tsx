@@ -107,6 +107,9 @@ const Login = () => {
             </div>
           </div>
 
+           <a href="/" className="pt-4 text-black rounded-full inline-block text-center">
+           <p className="font-bold">Home</p>
+           </a>
 
           {/* Header */}
           <div className="mb-8">
