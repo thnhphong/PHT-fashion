@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { apiUrl } from '../../../utils/api';
-import type { Product } from './types';
+import type { Category, Product } from '../../../types/types';
 
 const imageFields = ['img_url', 'thumbnail_img_1', 'thumbnail_img_2', 'thumbnail_img_3', 'thumbnail_img_4'];
 const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const;
@@ -80,7 +80,7 @@ const AdminProductForm = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get<{ _id: string; name: string }[]>(apiUrl('/admin/categories'));
+      const response = await axios.get<Category[]>(apiUrl('/admin/categories'));
       setCategories(response.data);
     } catch (err) {
       console.error(err);

@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { apiUrl } from '../../../utils/api';
-import type { Product } from './types';
+import type { Product } from '../../../types/types';
 
 const AdminProduct = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -117,7 +117,9 @@ const AdminProduct = () => {
                       {product.categoryId || 'Uncategorized'}
                     </p>
                     <h3 className="text-lg font-semibold">{product.name}</h3>
-                    <p className="text-sm text-slate-400">${product.price?.toFixed(2)}</p>
+                    <p className="text-sm text-slate-400">{product.price?.toFixed(2)}
+                      VND
+                    </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button

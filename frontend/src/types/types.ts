@@ -14,3 +14,12 @@ export type Product = {
   sizes?: { size: string; stock: number }[];
 };
 
+export type Category = {
+  _id: string;
+  name: string;
+};
+
+export type Supplier = {
+  _id: string;
+  name: string;
+};
