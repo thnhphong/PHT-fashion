@@ -60,7 +60,14 @@ const Signup = () => {
       setAgreeToTerms(false);
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message ?? err.message ?? 'Unable to create account');
+        const data = err.response?.data;
+        if (data?.errors && Array.isArray(data.errors)) {
+           // If backend returns validation errors array, join them or show first one
+           const errorMessages = data.errors.map((e: any) => e.message).join(', ');
+           setError(errorMessages);
+        } else {
+           setError(data?.message ?? err.message ?? 'Unable to create account');
+        }
       } else if (err instanceof Error) {
         setError(err.message);
       } else {

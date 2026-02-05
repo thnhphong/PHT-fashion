@@ -26,15 +26,6 @@ export const signRefreshToken = (payload: AuthTokenPayload): string => {
   return sign(payload, jwtSecret, refreshTokenOptions);
 };
 
-// Reset Password Token: 10 minutes
-const resetPasswordOptions: SignOptions = {
-  expiresIn: '10m',
-};
-
-export const signResetPasswordToken = (payload: AuthTokenPayload): string => {
-  return sign(payload, jwtSecret, resetPasswordOptions);
-};
-
 export const verifyToken = (token: string): AuthTokenPayload => {
   return verify(token, jwtSecret) as AuthTokenPayload;
 };
