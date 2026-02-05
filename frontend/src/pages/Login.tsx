@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = 'http://localhost:5001/api';
 
@@ -21,7 +22,7 @@ const Login = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-
+  const navigate = useNavigate();
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -45,6 +46,8 @@ const Login = () => {
       localStorage.setItem('user', JSON.stringify(response.data.user));
 
       setSuccessMessage('Login successful! Redirecting...');
+      //redirect to home page
+      navigate('/');
       setForm(INITIAL_FORM);
 
       // Redirect to dashboard or home after 1 second

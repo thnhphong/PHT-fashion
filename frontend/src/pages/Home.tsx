@@ -1,13 +1,17 @@
 import Navbar from '../components/layout/Navbar'
-import OurProducts from './OurProducts';
+import FeaturedProducts from '../components/sections/FeaturedProducts';
+import HeroSection from '../components/sections/HeroSection';
+import Footer from '../components/layout/Footer';
 
 const Home = () => {
   return (
     <div className="
 }">
       <Navbar />
-      <OurProducts />
-        <h1 className="text-4xl font-bold">Welcome to PHT Fashion!</h1> 
+      <HeroSection />
+      <FeaturedProducts />
+      <Footer />
+        
     </div>
   )
 }
