@@ -34,4 +34,3 @@ export const verifyToken = (token: string): AuthTokenPayload => {
 export const signAuthToken = signAccessToken;
 export const verifyAuthToken = verifyToken;
 
-

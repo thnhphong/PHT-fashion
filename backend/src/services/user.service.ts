@@ -14,6 +14,10 @@ export const findUserById = async (id: string) => {
   return User.findById(id).select('-password');
 };
 
+export const findUserByIdWithPassword = async (id: string) => {
+  return User.findById(id);
+};
+
 export const getAllUsers = async () => {
   return User.find().select('-password');
 };

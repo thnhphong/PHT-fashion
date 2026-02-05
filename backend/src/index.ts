@@ -3,6 +3,9 @@ import dotenv from 'dotenv';
 import connectDB from './config/mongo.config';
 import userRoutes from './routes/user.route';
 import authRoutes from './routes/auth.route';
+import productRoutes from './routes/product.route';
+import categoryRoutes from './routes/category.route';
+import supplierRoutes from './routes/supplier.route';
 import { env } from './config/env';
 import cors from 'cors';
 
@@ -34,6 +37,12 @@ app.get('/', (req, res) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/admin/products', productRoutes); 
+app.use('/api/products', productRoutes);
+app.use('/api/admin/categories', categoryRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/admin/suppliers', supplierRoutes);
+app.use('/api/suppliers', supplierRoutes);
 
 // Start server
 app.listen(PORT, () => {
