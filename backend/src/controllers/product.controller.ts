@@ -1,8 +1,10 @@
+// backend/src/controllers/product.controller.ts
 import type { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import { IProduct } from '../models/Product';
 import productService from '../services/product.service';
 import { uploadImage } from '../config/cloudinary';
+import { parsePaginationParams } from '../utils/pagination';
 
 type UploadedFile = { path: string };
 type UploadedFileRecord = Record<string, UploadedFile[]>;
@@ -52,7 +54,7 @@ const createProduct = async (req: Request, res: Response) => {
     const supplierId = normalizeField(req.body.supplierId);
     const stock = normalizeField(req.body.stock);
     const sizes = normalizeField(req.body.sizes);
-    const files = req.files as UploadedFileRecord | undefined;
+    const files = (req as any).files as UploadedFileRecord | undefined;
     const productImages = await buildImagePayload(files);
     const product = await productService.createProduct({
       name,
@@ -72,13 +74,25 @@ const createProduct = async (req: Request, res: Response) => {
   }
 };
 
-const getProducts = async (_req: Request, res: Response) => {
+const getProducts = async (req: Request, res: Response) => {
   try {
-    const products = await productService.getProducts();
-    return res.json(products);
+    const paginationParams = parsePaginationParams(req.query);
+    const result = await productService.getProducts(paginationParams);
+    return res.json(result);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Unable to fetch products', error });
+  }
+};
+
+const getFeaturedProducts = async (req: Request, res: Response) => {
+  try {
+    const paginationParams = parsePaginationParams(req.query);
+    const result = await productService.getFeaturedProducts(paginationParams);
+    return res.json(result);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Unable to fetch featured products', error });
   }
 };
 
@@ -119,7 +133,7 @@ const updateProduct = async (req: Request, res: Response) => {
     if (updatePayload.price) updatePayload.price = Number(updatePayload.price);
     if (updatePayload.stock) updatePayload.stock = Number(updatePayload.stock);
 
-    const files = req.files as UploadedFileRecord | undefined;
+    const files = (req as any).files as UploadedFileRecord | undefined;
     const imageUpdates = await buildImagePayload(files);
     const payloadToUpdate = { ...updatePayload, ...imageUpdates } as Partial<IProduct>;
     const product = await productService.updateProductById(String(req.params.id), payloadToUpdate);
@@ -148,5 +162,4 @@ const deleteProduct = async (req: Request, res: Response) => {
   }
 };
 
-export { createProduct, getProducts, getProductById, updateProduct, deleteProduct };
-
+export { createProduct, getProducts, getFeaturedProducts, getProductById, updateProduct, deleteProduct };

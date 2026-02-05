@@ -1,130 +1,91 @@
-import { motion } from "framer-motion";
-import { Heart, ShoppingBag, Star, Eye } from "lucide-react";
-import { Button } from "../ui/button";
-import { useState } from "react";
+// frontend/src/components/products/ProductCard.tsx
+import { Link } from 'react-router-dom';
+import type { Product } from '../../types/types';
 
 interface ProductCardProps {
-  id: number;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  image: string;
-  rating: number;
-  reviews: number;
-  isNew?: boolean;
-  isSale?: boolean;
-  isExclusive?: boolean;
+  product: Product;
 }
 
-const ProductCard = ({
-  name,
-  price,
-  originalPrice,
-  image,
-  rating,
-  reviews,
-  isNew,
-  isSale,
-  isExclusive,
-}: ProductCardProps) => {
-  const [isLiked, setIsLiked] = useState(false);
+const ProductCard = ({ product }: ProductCardProps) => {
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(price);
+  };
 
-  const discount = originalPrice
-    ? Math.round(((originalPrice - price) / originalPrice) * 100)
-    : 0;
+  const getCategoryName = () => {
+    if (typeof product.categoryId === 'string') {
+      return 'Category';
+    }
+    return product.categoryId.name;
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      className="product-card group"
+    <Link
+      to={`/products/${product._id}`}
+      className="group block bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
     >
       {/* Image Container */}
-      <div className="relative aspect-[1/1] overflow-hidden bg-muted">
+      <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
         <img
-          src={image}
-          alt={name}
-          className="product-image w-full h-full object-cover"
+          src={product.img_url}
+          alt={product.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
 
-        {/* Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
-          {isNew && (
-            <span className="px-3 py-1 bg-secondary text-secondary-foreground text-xs font-bold rounded-full">
-              NEW
-            </span>
-          )}
-          {isSale && discount > 0 && (
-            <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full">
-              -{discount}%
-            </span>
-          )}
-          {isExclusive && (
-            <span className="px-3 py-1 bg-gradient-to-r from-gold to-amber-400 text-background text-xs font-bold rounded-full">
-              EXCLUSIVE
-            </span>
-          )}
-        </div>
-
-        {/* Wishlist Button */}
-        <button
-          onClick={() => setIsLiked(!isLiked)}
-          className={`absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${isLiked
-              ? "bg-primary text-primary-foreground"
-              : "bg-background/80 backdrop-blur-sm text-foreground hover:bg-primary hover:text-primary-foreground"
-            }`}
-        >
-          <Heart className={`h-5 w-5 ${isLiked ? "fill-current" : ""}`} />
-        </button>
-
-        {/* Hover Overlay */}
-        <div className="product-overlay">
-          <div className="flex gap-3">
-            <Button variant="default" size="lg" className="gap-2">
-              <ShoppingBag className="h-5 w-5" />
-              Add to Cart
-            </Button>
-            <Button variant="outline" size="icon" className="h-12 w-12">
-              <Eye className="h-5 w-5" />
-            </Button>
+        {/* Badge */}
+        {product.stock === 0 && (
+          <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 text-xs font-medium rounded">
+            Sold Out
           </div>
-        </div>
+        )}
+        {product.stock > 0 && product.stock < 10 && (
+          <div className="absolute top-2 left-2 bg-orange-500 text-white px-2 py-1 text-xs font-medium rounded">
+            Low Stock
+          </div>
+        )}
       </div>
 
-      {/* Content */}
-      <div className="p-4 space-y-2">
-        <h3 className="font-semibold text-base truncate group-hover:text-primary transition-colors">
-          {name}
+      {/* Product Info */}
+      <div className="p-4">
+        {/* Category */}
+        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+          {getCategoryName()}
+        </p>
+
+        {/* Product Name */}
+        <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-2 h-10">
+          {product.name}
         </h3>
 
-        {/* Rating */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`h-3.5 w-3.5 ${i < Math.floor(rating)
-                    ? "fill-primary text-primary"
-                    : "fill-muted text-muted"
-                  }`}
-              />
-            ))}
-          </div>
-          <span className="text-xs text-muted-foreground">({reviews})</span>
+        {/* Price */}
+        <div className="flex items-center justify-between">
+          <p className="text-lg font-bold text-purple-600">
+            {formatPrice(product.price)}
+          </p>
+
+          {/* Stock Status */}
+          <p className="text-xs text-gray-500">
+            Stock: {product.stock}
+          </p>
         </div>
 
-        {/* Price */}
-        <div className="flex items-center gap-2">
-          <span className="font-display text-xl text-foreground">${price}</span>
-          {originalPrice && (
-            <span className="text-sm text-muted-foreground line-through">
-              ${originalPrice}
-            </span>
-          )}
-        </div>
+        {/* Sizes */}
+        {product.sizes && product.sizes.length > 0 && (
+          <div className="mt-2 flex gap-1 flex-wrap">
+            {product.sizes.slice(0, 5).map((size, index) => (
+              <span
+                key={index}
+                className="px-2 py-1 text-xs border border-gray-300 rounded"
+              >
+                {size.size}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
-    </motion.div>
+    </Link>
   );
 };
 

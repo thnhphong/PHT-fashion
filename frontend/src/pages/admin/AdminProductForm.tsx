@@ -123,21 +123,40 @@ const AdminProductForm = () => {
     setSizeDraft((prev) => ({ ...prev, [field]: value }));
   };
 
+  const getTotalSizeStock = (entries: SizeEntry[]) =>
+    entries.reduce((sum, e) => sum + (Number(e.stock) || 0), 0);
+
+
   const addSizeEntry = () => {
-    const size = sizeDraft.size.trim();
-    const stock = sizeDraft.stock.trim();
-    if (!size || stock === '') return;
-    setSizeEntries((prev) => {
-      const existingIndex = prev.findIndex((entry) => entry.size === size);
-      if (existingIndex >= 0) {
-        const updated = [...prev];
-        updated[existingIndex] = { size, stock };
-        return updated;
-      }
-      return [...prev, { size, stock }];
-    });
-    setSizeDraft({ size: '', stock: '' });
-  };
+  const size = sizeDraft.size.trim();
+  const stock = Number(sizeDraft.stock);
+
+  if (!size || isNaN(stock)) return;
+
+  const totalStock = Number(form.stock || 0);
+  const usedStock = getTotalSizeStock(sizeEntries);
+
+  // ❌ block if exceeded
+  if (usedStock + stock > totalStock) {
+    setError('Total size stock exceeds product stock');
+    return;
+  }
+
+  setError('');
+
+  setSizeEntries((prev) => {
+    const existingIndex = prev.findIndex((e) => e.size === size);
+    if (existingIndex >= 0) {
+      const updated = [...prev];
+      updated[existingIndex] = { size, stock: String(stock) };
+      return updated;
+    }
+    return [...prev, { size, stock: String(stock) }];
+  });
+
+  setSizeDraft({ size: '', stock: '' });
+};
+
 
   const updateSizeStock = (size: string, value: string) => {
     setSizeEntries((prev) =>

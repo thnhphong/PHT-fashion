@@ -164,7 +164,7 @@ const Footer = () => {
             variant="ghost"
             size="icon"
             onClick={scrollToTop}
-            className="rounded-full"
+            className="rounded-full border-orange-500 text-orange-500 border-2 hover:bg-orange-500 hover:text-white"
           >
             <ArrowUp className="h-5 w-5" />
           </Button>

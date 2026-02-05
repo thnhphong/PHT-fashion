@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { loginUser, refreshUserToken } from '../services/auth.service';
+import { loginUser, refreshUserToken, forgotPassword as forgotPasswordService, resetPassword as resetPasswordService, changePassword as changePasswordService } from '../services/auth.service';
 import { createUser, findUserByEmail } from '../services/user.service';
 import bcrypt from 'bcryptjs';
 
@@ -114,6 +114,70 @@ export const refreshToken = async (req: Request, res: Response) => {
     if (error instanceof Error && error.message === 'Invalid or expired refresh token') {
       return res.status(401).json({ message: 'Invalid or expired refresh token' });
     }
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    // In a real app we would send this via email.
+    // Since email service is mocked, we return it in the response for testing.
+    const resetToken = await forgotPasswordService(email);
+
+    return res.status(200).json({
+      message: 'Reset password link generated',
+      resetToken,
+      resetLink: `http://localhost:5173/reset-password/${resetToken}`
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'User not found') {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    console.error('Forgot password error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+
+
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { token, password } = req.body;
+
+    await resetPasswordService(token, password);
+
+    return res.status(200).json({ message: 'Password has been reset successfully' });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Invalid or expired reset token') {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+    console.error('Reset password error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const changePassword = async (req: Request, res: Response) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const userId = req.user?.sub;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    await changePasswordService(userId, oldPassword, newPassword);
+
+    return res.status(200).json({ message: 'Password changed successfully' });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Incorrect old password') {
+      return res.status(400).json({ message: 'Incorrect old password' });
+    }
+    if (error instanceof Error && error.message === 'User not found') {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    console.error('Change password error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
