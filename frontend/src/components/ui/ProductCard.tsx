@@ -1,6 +1,8 @@
 // frontend/src/components/products/ProductCard.tsx
 import { Link } from 'react-router-dom';
 import type { Product } from '../../types/types';
+import { Button } from './button';
+import { Plus, ShoppingBag } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -23,7 +25,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
   return (
     <Link
-      to={`/products/${product._id}`}
+      to={`/product/${product._id}`}
       className="group block bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
     >
       {/* Image Container */}
@@ -60,19 +62,23 @@ const ProductCard = ({ product }: ProductCardProps) => {
         </h3>
 
         {/* Price */}
-        <div className="flex items-center justify-between">
-          <p className="text-lg font-bold text-purple-600">
-            {formatPrice(product.price)}
-          </p>
-
-          {/* Stock Status */}
-          <p className="text-xs text-gray-500">
-            Stock: {product.stock}
-          </p>
+        <div className="flex gap-4 items-center justify-between">
+          <div className="flex flex-col text-left">
+            <p className="text-xs text-gray-600">
+              Stock: {product.stock}
+            </p>
+            <p className="text-lg font-bold text-orange-500">
+              {formatPrice(product.price)}
+            </p>
+          </div>
+          {/* add to cart, */}
+          <Button className="rounded-full" variant="outline" size="icon">
+            <Plus className="h-5 w-5 text-orange-500 hover:text-orange-600" />
+          </Button>
         </div>
 
         {/* Sizes */}
-        {product.sizes && product.sizes.length > 0 && (
+        {/* {product.sizes && product.sizes.length > 0 && (
           <div className="mt-2 flex gap-1 flex-wrap">
             {product.sizes.slice(0, 5).map((size, index) => (
               <span
@@ -83,7 +89,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
               </span>
             ))}
           </div>
-        )}
+        )} */}
+
+        
       </div>
     </Link>
   );

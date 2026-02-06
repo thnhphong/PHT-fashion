@@ -10,6 +10,7 @@ import AdminCategory from './pages/admin/AdminCategory';
 import AdminSupplier from './pages/admin/AdminSupplier';
 import AdminProduct from './pages/admin/AdminProduct';
 import AdminProductForm from './pages/admin/AdminProductForm';
+import ProductDetail from './pages/ProductDetail';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/admin/*" element={<Admin />}>
           <Route index element={<Navigate to="products" replace />} />
           <Route path="products" element={<AdminProduct />} />

@@ -101,9 +101,6 @@ const FeaturedProducts = () => {
         <div className="flex justify-between items-center mb-12">
           <div>
             <h2 className="text-3xl font-bold">Featured Products</h2>
-            <p className="text-gray-600 mt-2">
-              Showing {products.length} of {pagination.totalItems} products
-            </p>
           </div>
           <button
             onClick={() => {/* Navigate to all products */ }}

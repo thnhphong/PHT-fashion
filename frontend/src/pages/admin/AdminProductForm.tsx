@@ -44,7 +44,26 @@ const AdminProductForm = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const isEditing = Boolean(id || selectedProduct);
+  const imageInputRefs = imageFields.reduce((acc, field) => {
+    acc[field] = acc[field] || (null as HTMLInputElement | null);
+    return acc;
+  }, {} as Record<string, HTMLInputElement | null>);
 
+  const NO_SIZE_CATEGORIES = ['bags', 'hats', 'socks'];
+  const selectedCategory = categories.find(
+    (c) => c._id === form.categoryId
+  );
+
+  const showSizes =
+    !!selectedCategory &&
+    !NO_SIZE_CATEGORIES.includes(selectedCategory.name.toLowerCase());
+  useEffect(() => {
+    if (!showSizes) {
+      setSizeEntries([]);
+      setSizeDraft({ size: '', stock: '' });
+    }
+  }, [showSizes]);
+  
   const applyProduct = (product: Product) => {
     setSelectedProduct(product);
     setForm({
@@ -115,8 +134,26 @@ const AdminProductForm = () => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleFileChange = (field: string, file: File | null) => {
-    setFiles((prev) => ({ ...prev, [field]: file }));
+  const handleFileChange = (field: string, fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+
+    const startIndex = imageFields.indexOf(field);
+    const updatedFiles = { ...files };
+
+    Array.from(fileList).forEach((file, idx) => {
+      const targetField = imageFields[startIndex + idx];
+      if (targetField) {
+        updatedFiles[targetField] = file;
+      }
+    });
+
+    setFiles(updatedFiles);
+
+    // 🔥 focus next empty input
+    const nextField = imageFields[startIndex + fileList.length];
+    if (nextField && imageInputRefs[nextField]) {
+      imageInputRefs[nextField]?.focus();
+    }
   };
 
   const handleSizeDraftChange = (field: keyof SizeEntry, value: string) => {
@@ -126,41 +163,63 @@ const AdminProductForm = () => {
   const getTotalSizeStock = (entries: SizeEntry[]) =>
     entries.reduce((sum, e) => sum + (Number(e.stock) || 0), 0);
 
+  const getRemainingStock = (entries: SizeEntry[], total: string) =>
+    Math.max(0, Number(total || 0) - getTotalSizeStock(entries));
+
+
 
   const addSizeEntry = () => {
-  const size = sizeDraft.size.trim();
-  const stock = Number(sizeDraft.stock);
+    const size = sizeDraft.size.trim();
+    const stock = Number(sizeDraft.stock);
 
-  if (!size || isNaN(stock)) return;
+    if (!size || isNaN(stock)) return;
 
-  const totalStock = Number(form.stock || 0);
-  const usedStock = getTotalSizeStock(sizeEntries);
+    const totalStock = Number(form.stock || 0);
+    const usedStock = getTotalSizeStock(sizeEntries);
 
-  // ❌ block if exceeded
-  if (usedStock + stock > totalStock) {
-    setError('Total size stock exceeds product stock');
-    return;
-  }
-
-  setError('');
-
-  setSizeEntries((prev) => {
-    const existingIndex = prev.findIndex((e) => e.size === size);
-    if (existingIndex >= 0) {
-      const updated = [...prev];
-      updated[existingIndex] = { size, stock: String(stock) };
-      return updated;
+    if (usedStock + stock > totalStock) {
+      setError('Total size stock exceeds product stock');
+      return;
     }
-    return [...prev, { size, stock: String(stock) }];
-  });
 
-  setSizeDraft({ size: '', stock: '' });
-};
+    setError('');
+
+    setSizeEntries((prev) => {
+      const existingIndex = prev.findIndex((e) => e.size === size);
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex] = { size, stock: String(stock) };
+        return updated;
+      }
+      return [...prev, { size, stock: String(stock) }];
+    });
+
+    setSizeDraft({ size: '', stock: '' });
+  };
 
 
   const updateSizeStock = (size: string, value: string) => {
+    const newStock = Number(value);
+    if (isNaN(newStock)) return;
+
+    const totalStock = Number(form.stock || 0);
+
+    const newTotal = sizeEntries.reduce((sum, entry) => {
+      if (entry.size === size) return sum + newStock;
+      return sum + (Number(entry.stock) || 0);
+    }, 0);
+
+    if (newTotal > totalStock) {
+      setError('Total size stock exceeds product stock');
+      return;
+    }
+
+    setError('');
+
     setSizeEntries((prev) =>
-      prev.map((entry) => (entry.size === size ? { ...entry, stock: value } : entry))
+      prev.map((entry) =>
+        entry.size === size ? { ...entry, stock: value } : entry
+      )
     );
   };
 
@@ -316,66 +375,69 @@ const AdminProductForm = () => {
                 className="w-full rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-3 text-sm text-white focus:border-rose-500 focus:outline-none"
               />
             </div>
-            <div className="col-span-full space-y-3">
-              <label className="text-xs uppercase text-slate-400">Sizes &amp; stock</label>
-              <div className="flex flex-wrap gap-3">
-                <select
-                  value={sizeDraft.size}
-                  onChange={(event) => handleSizeDraftChange('size', event.target.value)}
-                  className="rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-2 text-xs uppercase tracking-[0.3em] text-white"
-                >
-                  <option value="">Choose size</option>
-                  {sizeOptions.map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
+
+           {showSizes && (
+              <div className="col-span-full space-y-3">
+                <label className="text-xs uppercase text-slate-400">Sizes &amp; stock</label>
+                <div className="flex flex-wrap gap-3">
+                  <select
+                    value={sizeDraft.size}
+                    onChange={(event) => handleSizeDraftChange('size', event.target.value)}
+                    className="rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-2 text-xs uppercase tracking-[0.3em] text-white"
+                  >
+                    <option value="">Choose size</option>
+                    {sizeOptions.map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
+
+                  <input
+                    value={sizeDraft.stock}
+                    onChange={(event) => handleSizeDraftChange('stock', event.target.value)}
+                    type="number"
+                    min="0"
+                    placeholder="Stock per size"
+                    className="rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={addSizeEntry}
+                    disabled={!sizeDraft.size || sizeDraft.stock === ''}
+                    className="rounded-full border border-emerald-400 px-4 py-2 text-xs uppercase tracking-[0.3em] text-emerald-300 transition hover:border-emerald-300 disabled:border-slate-700 disabled:text-slate-500"
+                  >
+                    Add size
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {sizeEntries.length === 0 && (
+                    <p className="text-xs uppercase text-slate-500">No sizes added yet.</p>
+                  )}
+                  {sizeEntries.map((entry) => (
+                    <div key={entry.size} className="flex flex-wrap items-center gap-3">
+                      <span className="text-xs uppercase tracking-[0.4em] text-slate-400">{entry.size}</span>
+                      <input
+                        value={entry.stock}
+                        onChange={(event) => updateSizeStock(entry.size, event.target.value)}
+                        type="number"
+                        min="0"
+                        placeholder="Stock"
+                        className="w-24 rounded-2xl border border-slate-700 bg-slate-900/60 px-3 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeSizeEntry(entry.size)}
+                        className="text-xs uppercase tracking-[0.3em] text-rose-400 underline-offset-4 hover:text-rose-200"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   ))}
-                </select>
-
-                <input
-                  value={sizeDraft.stock}
-                  onChange={(event) => handleSizeDraftChange('stock', event.target.value)}
-                  type="number"
-                  min="0"
-                  placeholder="Stock per size"
-                  className="rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
-                />
-
-                <button
-                  type="button"
-                  onClick={addSizeEntry}
-                  disabled={!sizeDraft.size || sizeDraft.stock === ''}
-                  className="rounded-full border border-emerald-400 px-4 py-2 text-xs uppercase tracking-[0.3em] text-emerald-300 transition hover:border-emerald-300 disabled:border-slate-700 disabled:text-slate-500"
-                >
-                  Add size
-                </button>
+                </div>
               </div>
-              <div className="space-y-2">
-                {sizeEntries.length === 0 && (
-                  <p className="text-xs uppercase text-slate-500">No sizes added yet.</p>
-                )}
-                {sizeEntries.map((entry) => (
-                  <div key={entry.size} className="flex flex-wrap items-center gap-3">
-                    <span className="text-xs uppercase tracking-[0.4em] text-slate-400">{entry.size}</span>
-                    <input
-                      value={entry.stock}
-                      onChange={(event) => updateSizeStock(entry.size, event.target.value)}
-                      type="number"
-                      min="0"
-                      placeholder="Stock"
-                      className="w-24 rounded-2xl border border-slate-700 bg-slate-900/60 px-3 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeSizeEntry(entry.size)}
-                      className="text-xs uppercase tracking-[0.3em] text-rose-400 underline-offset-4 hover:text-rose-200"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
+           )}
             <div className="col-span-full space-y-2">
               <label className="text-xs uppercase text-slate-400">Description</label>
               <textarea
@@ -392,9 +454,10 @@ const AdminProductForm = () => {
               <div key={field} className="space-y-2">
                 <label className="text-xs uppercase text-slate-400">{field}</label>
                 <input
+                  ref={(el) => (imageInputRefs[field] = el)} 
                   type="file"
                   accept="image/*"
-                  onChange={(event) => handleFileChange(field, event.target.files?.[0] ?? null)}
+                  onChange={(event) => handleFileChange(field, event.target.files ?? null)}
                   className="w-full rounded-2xl border border-slate-700 bg-slate-900/60 px-3 py-2 text-sm text-white focus:outline-none"
                 />
               </div>

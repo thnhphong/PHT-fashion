@@ -43,7 +43,7 @@ const Login = () => {
       // Store tokens in localStorage
       localStorage.setItem('accessToken', response.data.accessToken);
       localStorage.setItem('refreshToken', response.data.refreshToken);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      //show navbar when logged in 
 
       setSuccessMessage('Login successful! Redirecting...');
       //redirect to home page

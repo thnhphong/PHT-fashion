@@ -3,7 +3,6 @@ import axios from "axios";
 import { apiUrl } from "../../utils/api";
 import { useEffect, useState } from "react";
 import type { Category } from "../../types/types";
-import { ArrowRight, ArrowLeft } from "lucide-react";
 const CategorySection = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [hoveredIndex, setHoveredIndex] = useState(0);
@@ -16,7 +15,7 @@ const CategorySection = () => {
   }, []);
   return (
     <div className="w-100% mx-20 py-20">
-      <h1 className="text-2xl font-bold text-center">Shop by category</h1>
+      <h1 className="text-2xl font-bold text-center text-left pt-10 pb-2">Shop by category</h1>
       <div className="flex gap-2 w-full h-[400px]">
         {categories.map((category, index) => (
           <div
@@ -37,13 +36,6 @@ const CategorySection = () => {
             </div>
           </div>
         ))}
-      </div>
-
-      <div className="absolute bottom-10 right-10">
-        <ArrowRight className="w-10 h-10 text-orange-500" />
-      </div>
-      <div className="absolute bottom-10 left-10">
-        <ArrowLeft className="w-10 h-10 text-orange-500" />
       </div>
     </div>
   );
