@@ -1,9 +1,13 @@
 import axios from 'axios';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const API_BASE_URL = 'http://localhost:5001/api';
+import { apiUrl } from '../utils/api';
+import carousel1 from '../assets/images/carousel_login_1.jpeg';
+import carousel2 from '../assets/images/carousel_login_2.jpeg';
+import carousel3 from '../assets/images/carousel_login_3.jpeg';
+import { AnimatePresence, motion } from 'framer-motion';
+import {Link} from 'react-router-dom';
 
 type LoginForm = {
   email: string;
@@ -15,7 +19,26 @@ const INITIAL_FORM: LoginForm = {
   password: '',
 };
 
+const carouselSlides = [
+  {
+    image: carousel1,
+    title: "Welcome Back to PHT Fashion",
+    tagline: "Where street culture meets high fashion",
+  },
+  {
+    image: carousel2,
+    title: "Express Your True Self",
+    tagline: "Bold styles for the fearless generation",
+  },
+  {
+    image: carousel3,
+    title: "Redefine Your Wardrobe",
+    tagline: "Confidence starts with what you wear",
+  },
+];
+
 const Login = () => {
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [form, setForm] = useState<LoginForm>(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -27,6 +50,13 @@ const Login = () => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -35,7 +65,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/login`, {
+      const response = await axios.post(apiUrl('/auth/login'), {
         email: form.email,
         password: form.password,
       });
@@ -56,7 +86,14 @@ const Login = () => {
       }, 1000);
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message ?? err.message ?? 'Unable to login');
+        const data = err.response?.data;
+        if (data?.errors && Array.isArray(data.errors)) {
+          // If backend returns validation errors array, join them or show first one
+          const errorMessages = data.errors.map((e: { message: string }) => e.message).join(', ');
+          setError(errorMessages);
+        } else {
+          setError(data?.message ?? err.message ?? 'Unable to login');
+        }
       } else if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -69,40 +106,75 @@ const Login = () => {
 
   return (
     <div className="min-h-screen w-full flex">
-      {/* Left Side - Image/Hero Section */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-200 via-blue-100 to-blue-50 relative overflow-hidden">
-        {/* Logo */}
-        <div className="absolute top-8 left-8 flex items-center gap-3 z-10">
-          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md">
-            <img src="/src/assets/images/PHT-Fashion-Logo.png" alt="PHT" className="w-full h-full object-cover border-2 border-gray-300 rounded-full" />
+      {/* LEFT SIDE - Carousel */}
+      <div className="relative w-full lg:w-1/2 h:screen overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentSlide}
+            initial={{ opacity: 0, scale: 1.1 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8 }}
+            className="absolute inset-0"
+          >
+            <img
+              src={carouselSlides[currentSlide].image}
+              alt="Fashion"
+              className="w-full h-full object-contain"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+          </motion.div>
+        </AnimatePresence>
+
+        <div className="absolute bottom-8 left-8 right-8 z-10">
+          <motion.h2
+            key={`title-${currentSlide}`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="font-display text-2xl md:text-4xl text-white mb-2"
+          >
+            {carouselSlides[currentSlide].title}
+          </motion.h2>
+          <motion.p
+            key={`tag-${currentSlide}`}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-white/70 text-sm md:text-base"
+          >
+            {carouselSlides[currentSlide].tagline}
+          </motion.p>
+
+          {/* Navigation dots */}
+          <div className="flex gap-2 mt-4">
+            {carouselSlides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentSlide(i)}
+                className={`h-2 rounded-full transition-all duration-300 ${i === currentSlide ? "w-8 bg-primary" : "w-2 bg-white/40"
+                  }`}
+              />
+            ))}
           </div>
         </div>
 
-        {/* Hero Content */}
-        <div className="flex flex-col justify-end p-12 pb-24 relative z-10 w-full">
-          <h2 className="text-4xl font-bold text-gray-800 mb-4">
-            Welcome Back to PHT
-          </h2>
-          <p className="text-gray-700 text-lg mb-2">
-            Sign in to your account
-          </p>
-
-          {/* Carousel Dots */}
-          <div className="flex gap-2 mt-8">
-            <div className="w-12 h-1 bg-white rounded-full"></div>
-            <div className="w-1 h-1 bg-white/50 rounded-full"></div>
-            <div className="w-1 h-1 bg-white/50 rounded-full"></div>
-          </div>
-        </div>
-
-        {/* Decorative Image Placeholder */}
-        <div className="absolute inset-0 flex items-end justify-center pb-32">
-          <div className="w-4/5 h-96 bg-gradient-to-t from-amber-600/20 to-transparent rounded-t-3xl"></div>
+        {/* Logo on carousel */}
+        <div className="absolute top-6 left-8 z-10">
+          <Link to="/" className="font-display text-2xl text-white tracking-wider">
+            PHT<span className="text-primary">.</span>
+          </Link>
         </div>
       </div>
 
       {/* Right Side - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 bg-white min-h-screen ">
+      <motion.div
+      initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-full"
+      >
+
         <div className="w-full max-w-md mx-auto">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center gap-3 mb-8">
@@ -111,9 +183,9 @@ const Login = () => {
             </div>
           </div>
 
-           <a href="/" className="pt-4 text-black rounded-full inline-block text-center">
-           <p className="font-bold">Home</p>
-           </a>
+          <a href="/" className="pt-4 text-black rounded-full inline-block text-center">
+            <p className="font-bold">Home</p>
+          </a>
 
           {/* Header */}
           <div className="mb-8">
@@ -260,6 +332,7 @@ const Login = () => {
             </a>
           </p>
         </div>
+        </motion.div>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingBag, Search, Menu, X, Heart, User } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import LoginBtn from "../buttons/LoginBtn";
 import SignupBtn from "../buttons/SignupBtn";
@@ -23,6 +24,17 @@ const Navbar = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+ const[searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {  
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+    }
+  };
 
   return (
     <motion.nav
@@ -53,11 +65,13 @@ const Navbar = () => {
             </a>
           ))}
         </div>
-
+        
         {/* Right Actions */}
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="hidden md:flex">
-            <Search className="h-5 w-5" />
+            <Link to="/search">
+              <Search className="h-5 w-5" />
+            </Link>
           </Button>
           <Button variant="ghost" size="icon" className="hidden md:flex">
             <User className="h-5 w-5" />
@@ -106,6 +120,29 @@ const Navbar = () => {
                   {link.name}
                 </a>
               ))}
+              {/* Search Form */}
+              <form onSubmit={handleSearchSubmit} className="relative">
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-pink-500"
+              />
+              <button type="submit" className="absolute left-3 top-1/2 -translate-y-1/2">
+                <Search className="h-5 w-5 text-gray-400" />
+              </button>
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                >
+                  <X className="h-4 w-4 text-gray-400" />
+                </button>
+              )}
+            </form>
+            
               <div className="flex gap-4 pt-4 border-t border-border">
                 <Button variant="ghost" size="icon">
                   <Search className="h-5 w-5" />

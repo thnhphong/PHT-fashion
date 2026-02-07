@@ -108,5 +108,7 @@ const ProductSchema = new Schema<IProduct>(
   }
 );
 
+ProductSchema.index({ name: 'text', description: 'text' });
+
 export default model<IProduct>('Product', ProductSchema);
 
