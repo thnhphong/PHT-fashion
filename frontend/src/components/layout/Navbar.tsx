@@ -6,6 +6,7 @@ import { Button } from "../ui/button";
 import LoginBtn from "../buttons/LoginBtn";
 import SignupBtn from "../buttons/SignupBtn";
 
+//put login and signup buttons in the hamburger menu
 const navLinks = [
   { name: "All Products", href: "#products" },
   { name: "New In", href: "#new" },
@@ -85,6 +86,10 @@ const Navbar = () => {
               0
             </span>
           </Button>
+          <LoginBtn />
+          <SignupBtn />
+         
+
 
           {/* Mobile Menu Toggle */}
           <Button
@@ -95,8 +100,7 @@ const Navbar = () => {
           >
             {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
-          <LoginBtn />
-          <SignupBtn />
+         
         </div>
       </div>
 
@@ -130,7 +134,9 @@ const Navbar = () => {
                 className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-pink-500"
               />
               <button type="submit" className="absolute left-3 top-1/2 -translate-y-1/2">
-                <Search className="h-5 w-5 text-gray-400" />
+                <Link to="/search">
+                <Search className="h-5 w-5 text-gray-400" />  
+                </Link>
               </button>
               {searchQuery && (
                 <button
@@ -143,7 +149,7 @@ const Navbar = () => {
               )}
             </form>
             
-              <div className="flex gap-4 pt-4 border-t border-border">
+              <div className="flex justify-center gap-4 pt-4 border-t border-border items-center">
                 <Button variant="ghost" size="icon">
                   <Search className="h-5 w-5" />
                 </Button>

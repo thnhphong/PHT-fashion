@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { apiUrl } from '../utils/api';
+import { useDebounce } from '../hooks/useDebounce';
 import type { Product } from '../types/types';
+
 const Search = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -18,6 +20,14 @@ const Search = () => {
   const sort = searchParams.get('sort') || 'relevance';
   const page = searchParams.get('page') || '1';
 
+  // Local state for inputs that need debouncing
+  const [localMinPrice, setLocalMinPrice] = useState(minPrice);
+  const [localMaxPrice, setLocalMaxPrice] = useState(maxPrice);
+
+  // Debounced values (500ms delay)
+  const debouncedMinPrice = useDebounce(localMinPrice, 500);
+  const debouncedMaxPrice = useDebounce(localMaxPrice, 500);
+
   // State
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,16 +42,33 @@ const Search = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Local filter state
-  const [localFilters, setLocalFilters] = useState({
-    category: category,
-    minPrice: minPrice,
-    maxPrice: maxPrice,
-    supplier: supplier,
-    color: color,
-    size: size,
-    sort: sort
-  });
+  // Sync local price state with URL params
+  useEffect(() => {
+    setLocalMinPrice(minPrice);
+    setLocalMaxPrice(maxPrice);
+  }, [minPrice, maxPrice]);
+
+  // Update URL when debounced prices change
+  useEffect(() => {
+    if (debouncedMinPrice !== minPrice || debouncedMaxPrice !== maxPrice) {
+      const params = new URLSearchParams(searchParams);
+
+      if (debouncedMinPrice) {
+        params.set('minPrice', debouncedMinPrice);
+      } else {
+        params.delete('minPrice');
+      }
+
+      if (debouncedMaxPrice) {
+        params.set('maxPrice', debouncedMaxPrice);
+      } else {
+        params.delete('maxPrice');
+      }
+
+      params.set('page', '1');
+      setSearchParams(params);
+    }
+  }, [debouncedMinPrice, debouncedMaxPrice]);
 
   // Fetch products
   useEffect(() => {
@@ -84,6 +111,9 @@ const Search = () => {
         const params = new URLSearchParams();
         if (query) params.append('q', query);
         if (category) params.append('category', category);
+        if (supplier) params.append('supplier', supplier);
+        if (color) params.append('color', color);
+        if (size) params.append('size', size);
 
         const response = await axios.get(`${apiUrl('/search/filters')}?${params.toString()}`);
 
@@ -96,48 +126,34 @@ const Search = () => {
     };
 
     fetchFilterOptions();
-  }, [query, category]);
+  }, [query, category, supplier, color, size]);
 
-  // Update URL with filters
-  const updateFilters = (newFilters: {
-    category?: string;
-    minPrice?: string;
-    maxPrice?: string;
-    supplier?: string;
-    color?: string;
-    size?: string;
-    sort?: string;
-  }) => {
+  // Auto-update URL when filters change (instant for non-text inputs)
+  const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
-    if (newFilters.category) params.set('category', newFilters.category);
-    if (newFilters.minPrice) params.set('minPrice', newFilters.minPrice);
-    if (newFilters.maxPrice) params.set('maxPrice', newFilters.maxPrice);
-    if (newFilters.supplier) params.set('supplier', newFilters.supplier);
-    if (newFilters.color) params.set('color', newFilters.color);
-    if (newFilters.size) params.set('size', newFilters.size);
-    if (newFilters.sort) params.set('sort', newFilters.sort);
-    params.set('page', '1'); // Reset to page 1 when filters change
+
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+
+    // Reset to page 1 when filters change
+    params.set('page', '1');
+
     setSearchParams(params);
   };
-  // Apply filters
-  const applyFilters = () => {
-    updateFilters(localFilters);
-    setShowFilters(false);
-  };
 
-  // Clear filters
+  // Clear all filters
   const clearFilters = () => {
-    const resetFilters = {
-      category: '',
-      minPrice: '',
-      maxPrice: '',
-      supplier: '',
-      color: '',
-      size: '',
-      sort: 'relevance'
-    };
-    setLocalFilters(resetFilters);
-    updateFilters(resetFilters);
+    const params = new URLSearchParams();
+    if (query) params.set('q', query); // Keep search query
+    params.set('sort', 'relevance');
+    params.set('page', '1');
+    setSearchParams(params);
+    // Clear local price state
+    setLocalMinPrice('');
+    setLocalMaxPrice('');
   };
 
   // Handle pagination
@@ -185,135 +201,52 @@ const Search = () => {
             <label className="text-sm text-gray-700">Sort by:</label>
             <select
               value={sort}
-              onChange={(e) => {
-                const newFilters = { ...localFilters, sort: e.target.value };
-                setLocalFilters(newFilters);
-                updateFilters(newFilters);
-              }}
+              onChange={(e) => updateFilter('sort', e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
             >
               <option value="relevance">Relevance</option>
               <option value="price-asc">Price: Low to High</option>
               <option value="price-desc">Price: High to Low</option>
-              <option value="newest">Newest</option>
-              <option value="name-asc">Name: A to Z</option>
-              <option value="name-desc">Name: Z to A</option>
+              <option value="newest">Newest First</option>
+              <option value="popular">Most Popular</option>
             </select>
           </div>
         </div>
 
-        {/* Active Filters Pills */}
-        {activeFiltersCount > 0 && (
-          <div className="flex flex-wrap gap-2 mb-6">
-            {category && (
-              <span className="inline-flex items-center space-x-1 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm">
-                <span>Category: {category}</span>
-                <button
-                  onClick={() => {
-                    const newFilters = { ...localFilters, category: '' };
-                    setLocalFilters(newFilters);
-                    updateFilters(newFilters);
-                  }}
-                  className="hover:text-orange-900"
-                >
-                  ×
-                </button>
-              </span>
-            )}
-            {supplier && (
-              <span className="inline-flex items-center space-x-1 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm">
-                <span>Supplier: {supplier}</span>
-                <button
-                  onClick={() => {
-                    const newFilters = { ...localFilters, supplier: '' };
-                    setLocalFilters(newFilters);
-                    updateFilters(newFilters);
-                  }}
-                  className="hover:text-orange-900"
-                >
-                  ×
-                </button>
-              </span>
-            )}
-            {color && (
-              <span className="inline-flex items-center space-x-1 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm">
-                <span>Color: {color}</span>
-                <button
-                  onClick={() => {
-                    const newFilters = { ...localFilters, color: '' };
-                    setLocalFilters(newFilters);
-                    updateFilters(newFilters);
-                  }}
-                  className="hover:text-orange-900"
-                >
-                  ×
-                </button>
-              </span>
-            )}
-            {size && (
-              <span className="inline-flex items-center space-x-1 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm">
-                <span>Size: {size}</span>
-                <button
-                  onClick={() => {
-                    const newFilters = { ...localFilters, size: '' };
-                    setLocalFilters(newFilters);
-                    updateFilters(newFilters);
-                  }}
-                  className="hover:text-orange-900"
-                >
-                  ×
-                </button>
-              </span>
-            )}
-            {(minPrice || maxPrice) && (
-              <span className="inline-flex items-center space-x-1 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm">
-                <span>
-                  Price: ${minPrice || '0'} - ${maxPrice || '∞'}
-                </span>
-                <button
-                  onClick={() => {
-                    const newFilters = { ...localFilters, minPrice: '', maxPrice: '' };
-                    setLocalFilters(newFilters);
-                    updateFilters(newFilters);
-                  }}
-                  className="hover:text-orange-900"
-                >
-                  ×
-                </button>
-              </span>
-            )}
-            <button
-              onClick={clearFilters}
-              className="text-sm text-orange-600 hover:text-orange-700 font-medium"
-            >
-              Clear all
-            </button>
-          </div>
-        )}
-
         <div className="flex gap-6">
           {/* Filters Sidebar */}
-          {showFilters && filterOptions && (
-            <div className="w-64 flex-shrink-0">
+          {showFilters && (
+            <div className="w-full lg:w-64 flex-shrink-0">
               <div className="bg-white rounded-lg shadow-sm p-6 sticky top-24">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Filters</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+                  {activeFiltersCount > 0 && (
+                    <button
+                      onClick={clearFilters}
+                      className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                </div>
 
                 {/* Category Filter */}
-                {filterOptions.categories && Array.isArray(filterOptions.categories) && filterOptions.categories.length > 0 && (
+                {filterOptions?.categories && filterOptions.categories.length > 0 && (
                   <div className="mb-6">
                     <h4 className="font-medium text-gray-900 mb-2">Category</h4>
                     <div className="space-y-2">
-                      {filterOptions.categories.map((cat: string) => (
-                        <label key={cat} className="flex items-center cursor-pointer">
+                      {filterOptions.categories.map((cat) => (
+                        <label key={cat} className="flex items-center cursor-pointer group">
                           <input
                             type="radio"
                             name="category"
-                            value={cat}
-                            checked={localFilters.category === cat}
-                            onChange={() => setLocalFilters({ ...localFilters, category: cat })}
-                            className="w-4 h-4 text-orange-600 focus:ring-orange-500"
+                            checked={category === cat}
+                            onChange={() => updateFilter('category', category === cat ? '' : cat)}
+                            className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
                           />
-                          <span className="ml-2 text-sm text-gray-700 capitalize">{cat}</span>
+                          <span className="ml-2 text-sm text-gray-700 group-hover:text-gray-900">
+                            {cat}
+                          </span>
                         </label>
                       ))}
                     </div>
@@ -321,66 +254,92 @@ const Search = () => {
                 )}
 
                 {/* Supplier Filter */}
-                {filterOptions.suppliers && Array.isArray(filterOptions.suppliers) && filterOptions.suppliers.length > 0 && (
+                {filterOptions?.suppliers && filterOptions.suppliers.length > 0 && (
                   <div className="mb-6">
                     <h4 className="font-medium text-gray-900 mb-2">Supplier</h4>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {filterOptions.suppliers.map((sup: string) => (
-                        <label key={sup} className="flex items-center cursor-pointer">
+                    <div className="space-y-2">
+                      {filterOptions.suppliers.map((sup) => (
+                        <label key={sup} className="flex items-center cursor-pointer group">
                           <input
                             type="radio"
                             name="supplier"
-                            value={sup}
-                            checked={localFilters.supplier === sup}
-                            onChange={() => setLocalFilters({ ...localFilters, supplier: sup })}  
-                            className="w-4 h-4 text-orange-600 focus:ring-orange-500"
+                            checked={supplier === sup}
+                            onChange={() => updateFilter('supplier', supplier === sup ? '' : sup)}
+                            className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
                           />
-                            <span className="ml-2 text-sm text-gray-700">{sup}</span>
+                          <span className="ml-2 text-sm text-gray-700 group-hover:text-gray-900">
+                            {sup}
+                          </span>
                         </label>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Price Range Filter */}
-                {filterOptions.priceRange && (
+                {/* Price Range Filter - WITH DEBOUNCE */}
+                {filterOptions?.priceRange && (
                   <div className="mb-6">
                     <h4 className="font-medium text-gray-900 mb-2">Price Range</h4>
-                    <div className="space-y-2">
-                      <input
-                        type="number"
-                        placeholder="Min"
-                        value={localFilters.minPrice}
-                        onChange={(e) => setLocalFilters({ ...localFilters, minPrice: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Max"
-                        value={localFilters.maxPrice}
-                        onChange={(e) => setLocalFilters({ ...localFilters, maxPrice: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      />
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs text-gray-600">Min Price</label>
+                        <input
+                          type="number"
+                          value={localMinPrice}
+                          onChange={(e) => setLocalMinPrice(e.target.value)}
+                          min={filterOptions.priceRange.min}
+                          max={filterOptions.priceRange.max}
+                          placeholder={`Min ${filterOptions.priceRange.min}`}
+                          className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-sm"
+                        />
+                        {localMinPrice !== debouncedMinPrice && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            <svg className="inline w-3 h-3 animate-spin" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            {' '}Filtering...
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-600">Max Price</label>
+                        <input
+                          type="number"
+                          value={localMaxPrice}
+                          onChange={(e) => setLocalMaxPrice(e.target.value)}
+                          min={filterOptions.priceRange.min}
+                          max={filterOptions.priceRange.max}
+                          placeholder={`Max ${filterOptions.priceRange.max}`}
+                          className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-sm"
+                        />
+                        {localMaxPrice !== debouncedMaxPrice && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            <svg className="inline w-3 h-3 animate-spin" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            {' '}Filtering...
+                          </p>
+                        )}
+                      </div>
                       <p className="text-xs text-gray-500">
-                        Range: ${filterOptions.priceRange.min} - ${filterOptions.priceRange.max}
+                        Range: {filterOptions.priceRange.min} - {filterOptions.priceRange.max} VND
                       </p>
                     </div>
                   </div>
                 )}
 
                 {/* Color Filter */}
-                {filterOptions.colors && filterOptions.colors.length > 0 && (
+                {filterOptions?.colors && filterOptions.colors.length > 0 && (
                   <div className="mb-6">
                     <h4 className="font-medium text-gray-900 mb-2">Color</h4>
                     <div className="flex flex-wrap gap-2">
                       {filterOptions.colors.map((c) => (
                         <button
                           key={c}
-                          onClick={() => setLocalFilters({
-                            ...localFilters,
-                            color: localFilters.color === c ? '' : c
-                          })}
-                          className={`px-3 py-1 rounded-full text-sm border transition-colors ${localFilters.color === c
+                          onClick={() => updateFilter('color', color === c ? '' : c)}
+                          className={`px-3 py-1 rounded-full text-sm border transition-colors ${color === c
                               ? 'bg-orange-500 text-white border-orange-500'
                               : 'bg-white text-gray-700 border-gray-300 hover:border-orange-500'
                             }`}
@@ -393,18 +352,15 @@ const Search = () => {
                 )}
 
                 {/* Size Filter */}
-                {filterOptions.sizes && filterOptions.sizes.length > 0 && (
+                {filterOptions?.sizes && filterOptions.sizes.length > 0 && (
                   <div className="mb-6">
                     <h4 className="font-medium text-gray-900 mb-2">Size</h4>
                     <div className="flex flex-wrap gap-2">
                       {filterOptions.sizes.map((s) => (
                         <button
                           key={s}
-                          onClick={() => setLocalFilters({
-                            ...localFilters,
-                            size: localFilters.size === s ? '' : s
-                          })}
-                          className={`w-12 h-12 rounded-lg text-sm font-medium border transition-colors ${localFilters.size === s
+                          onClick={() => updateFilter('size', size === s ? '' : s)}
+                          className={`w-12 h-12 rounded-lg text-sm font-medium border transition-colors ${size === s
                               ? 'bg-orange-500 text-white border-orange-500'
                               : 'bg-white text-gray-700 border-gray-300 hover:border-orange-500'
                             }`}
@@ -415,22 +371,6 @@ const Search = () => {
                     </div>
                   </div>
                 )}
-
-                {/* Apply Filters Button */}
-                <div className="space-y-2">
-                  <button
-                    onClick={applyFilters}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 rounded-lg transition-colors"
-                  >
-                    Apply Filters
-                  </button>
-                  <button
-                    onClick={clearFilters}
-                    className="w-full border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 rounded-lg transition-colors"
-                  >
-                    Clear All
-                  </button>
-                </div>
               </div>
             </div>
           )}
@@ -464,7 +404,7 @@ const Search = () => {
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
-                        {product.stock < 10 && (
+                        {product.stock !== undefined && product.stock < 10 && (
                           <span className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
                             Low Stock
                           </span>
