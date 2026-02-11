@@ -66,14 +66,14 @@ export const searchProducts = async (filters: SearchFilters): Promise<SearchResu
     }
   }
 
-  // Brand/Supplier filter
+  // Supplier filter
   if (supplier) {
     try {
-      const supplier = await Supplier.findOne({
+      const supplierDoc = await Supplier.findOne({
         name: { $regex: new RegExp(`^${supplier}$`, 'i') }
       });
-      if (supplier) {
-        query.supplierId = supplier._id;
+      if (supplierDoc) {
+        query.supplierId = supplierDoc._id;
       }
     } catch (error) {
       console.error('Supplier filter error:', error);
@@ -162,6 +162,9 @@ export const searchProducts = async (filters: SearchFilters): Promise<SearchResu
 export const getFilterOptions = async (context?: {
   searchQuery?: string;
   category?: string;
+  supplier?: string;
+  color?: string;
+  size?: string;
 }) => {
   try {
     const query: any = {}

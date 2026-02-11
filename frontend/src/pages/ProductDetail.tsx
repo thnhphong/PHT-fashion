@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { apiUrl } from '../utils/api';
 import Navbar from '../components/layout/Navbar';
+import { useCart } from '../context/CartContext';
+import CartPopup from './CartPopup';
 
 interface IProductSize {
   size: string;
@@ -46,7 +48,8 @@ const ProductDetail = () => {
   const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState('');
-
+  const { addToCart, setShowCartPopup } = useCart();
+  const [isCartPopupOpen, setIsCartPopupOpen] = useState(false);
   useEffect(() => {
     if (id) {
       fetchProduct(id);
@@ -91,6 +94,8 @@ const ProductDetail = () => {
     }
     // TODO: Implement add to cart functionality
     console.log('Add to cart:', { product, selectedSize, quantity });
+    addToCart(product, selectedSize, quantity);
+    setIsCartPopupOpen(true);
   };
 
   const handleBuyNow = () => {
@@ -98,8 +103,9 @@ const ProductDetail = () => {
       alert('Please select a size');
       return;
     }
-    // TODO: Implement buy now functionality
-    console.log('Buy now:', { product, selectedSize, quantity });
+    navigate('/cart');
+    addToCart(product, selectedSize, quantity);
+    navigate('/cart');
   };
 
   if (loading) {
@@ -395,6 +401,7 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
+      {isCartPopupOpen && <CartPopup />}
     </div>
   );
 };

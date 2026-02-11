@@ -10,7 +10,7 @@ export const searchProductsController = async (req: Request, res: Response) => {
       category,
       minPrice, 
       maxPrice, 
-      brand,  //brand/supplier filter
+      supplier,  //supplier filter
       color, 
       size, 
       sort, 
@@ -29,7 +29,7 @@ export const searchProductsController = async (req: Request, res: Response) => {
       category: category as string,
       minPrice: minPrice ? parseFloat(minPrice as string) : undefined,
       maxPrice: maxPrice ? parseFloat(maxPrice as string) : undefined,
-      brand: brand as string,
+      supplier: supplier as string,
       color: color as string,
       size: size as string,
       sort: sort as string || 'relevance',
@@ -70,11 +70,14 @@ export const searchProductsController = async (req: Request, res: Response) => {
 
 export const getFiltersController = async (req: Request, res: Response) => {
   try {
-    const { q, category } = req.query;
+    const { q, category, supplier, color, size } = req.query;
 
     const filterOptions = await getFilterOptions({
       searchQuery: q as string,
-      category: category as string
+      category: category as string,
+      supplier: supplier as string, 
+      color: color as string,
+      size: size as string
     });
 
     return res.status(200).json({

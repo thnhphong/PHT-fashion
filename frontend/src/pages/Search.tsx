@@ -215,7 +215,6 @@ const Search = () => {
 
         <div className="flex gap-6">
           {/* Filters Sidebar */}
-          {showFilters && (
             <div className="w-full lg:w-64 flex-shrink-0">
               <div className="bg-white rounded-lg shadow-sm p-6 sticky top-24">
                 <div className="flex items-center justify-between mb-4">
@@ -373,7 +372,6 @@ const Search = () => {
                 )}
               </div>
             </div>
-          )}
 
           {/* Products Grid */}
           <div className="flex-1">

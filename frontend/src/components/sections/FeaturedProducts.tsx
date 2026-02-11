@@ -5,6 +5,7 @@ import ProductCard from '../ui/ProductCard';
 import Pagination from '../common/Pagination';
 import type { Product, PaginatedResponse } from '../../types/types';
 import { apiUrl } from "../../utils/api";
+import handleAddToCart from '../../utils/handleAddToCart';
 
 const FeaturedProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -18,7 +19,6 @@ const FeaturedProducts = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
   const fetchProducts = async (page: number = 1) => {
     setLoading(true);
     setError('');
@@ -55,6 +55,7 @@ const FeaturedProducts = () => {
     // Scroll to top of products section
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
 
   if (loading && products.length === 0) {
     return (

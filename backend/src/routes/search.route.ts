@@ -23,6 +23,7 @@ router.get('/', searchProductsController);
  */
 router.get('/filters', getFiltersController);
 
+
 /**
  * @route   GET /api/search/suggestions
  * @desc    Get search suggestions for autocomplete

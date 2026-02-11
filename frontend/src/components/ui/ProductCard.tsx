@@ -2,13 +2,18 @@
 import { Link } from 'react-router-dom';
 import type { Product } from '../../types/types';
 import { Button } from './button';
-import { Plus, ShoppingBag } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { useCart } from '../../context/CartContext';
+import { useState } from 'react';
+import CartPopup from '../../pages/CartPopup';
 
 interface ProductCardProps {
   product: Product;
 }
 
 const ProductCard = ({ product }: ProductCardProps) => {
+  const { addToCart } = useCart();
+  const [isCartPopupOpen, setIsCartPopupOpen] = useState(false);
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -21,6 +26,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
       return 'Category';
     }
     return product.categoryId.name;
+  };
+
+  const handleAddToCart = (product: Product) => {
+    addToCart(product, product.sizes[0].size, 1);
+    setIsCartPopupOpen(true);
   };
 
   return (
@@ -72,9 +82,12 @@ const ProductCard = ({ product }: ProductCardProps) => {
             </p>
           </div>
           {/* add to cart, */}
-          <Button className="rounded-full" variant="outline" size="icon">
-            <Plus className="h-5 w-5 text-orange-500 hover:text-orange-600" />
-          </Button>
+          {/* disable click to the whole card when the button is clicked*/} 
+          <div onClick={(e) => e.preventDefault()}> 
+              <Button onClick={() => handleAddToCart(product)} className="rounded-full" variant="outline" size="icon">
+                <Plus className="h-5 w-5 text-orange-500 hover:text-orange-600" />
+              </Button>
+          </div>
         </div>
 
         {/* Sizes */}
@@ -93,6 +106,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
         
       </div>
+      {isCartPopupOpen && <CartPopup />}
     </Link>
   );
 };
