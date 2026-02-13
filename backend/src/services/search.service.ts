@@ -1,7 +1,7 @@
 import Product, { IProduct } from '../models/Product';
 import Category, { ICategory } from '../models/Category';
 import Supplier, { ISupplier } from '../models/Supplier';
-
+import categoryService from './category.service';
 interface SearchFilters {
   searchQuery?: string;
   category?: string;
@@ -40,7 +40,14 @@ export const searchProducts = async (filters: SearchFilters): Promise<SearchResu
   const hasTextSearch = Boolean(trimmedSearchTerm);
 
   if (hasTextSearch) {
-    query.$text = { $search: trimmedSearchTerm };
+    const categoryIds = await Category.find({
+      name: { $regex: trimmedSearchTerm, $options: 'i' }
+    }).distinct('_id');
+
+    query.$or = [
+      { $text: { $search: trimmedSearchTerm } },
+      { categoryId: { $in: categoryIds } }
+    ];
   }
   //category filter 
   if (category) {
@@ -189,18 +196,32 @@ export const getFilterOptions = async (context?: {
       .populate('supplierId', 'name')
       .lean();
 
+    // Get all categories for filter options
+    const allCategories = await categoryService.getCategories();
+    const categoriesFn = allCategories.map((cat: any) => {
+      let isSelected = false;
+      if (context?.category) {
+        isSelected = cat.name.toLowerCase() === context.category.toLowerCase();
+      } else if (context?.searchQuery) {
+        isSelected = cat.name.toLowerCase() === context.searchQuery.toLowerCase();
+      }
+
+      return {
+        _id: cat._id,
+        name: cat.name,
+        isSelected
+      };
+    });
+
     //extract unique values for filters
-    const categories = new Set<string>();
+    // const categories = new Set<string>(); // Removed in favor of categoriesFn
     const suppliers = new Set<string>();
     const sizes = new Set<string>();
     const colors = new Set<string>();
     let minPrice = Infinity;
     let maxPrice = -Infinity;
     products.forEach(product => {
-      // Categories
-      if (product.categoryId && typeof product.categoryId === 'object') {
-        categories.add((product.categoryId as any).name);
-      }
+      // Categories - processed above
 
       // Suppliers
       if (product.supplierId && typeof product.supplierId === 'object') {
@@ -228,7 +249,7 @@ export const getFilterOptions = async (context?: {
       });
     });
     return {
-      categories: Array.from(categories).sort(),
+      categories: categoriesFn,
       suppliers: Array.from(suppliers).sort(),
       sizes: Array.from(sizes).sort((a, b) => {
         const order = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];

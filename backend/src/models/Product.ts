@@ -108,7 +108,10 @@ const ProductSchema = new Schema<IProduct>(
   }
 );
 
+// Index for text search
 ProductSchema.index({ name: 'text', description: 'text' });
+// Index for category search combined with text search
+ProductSchema.index({ categoryId: 1 });
 
 export default model<IProduct>('Product', ProductSchema);
 

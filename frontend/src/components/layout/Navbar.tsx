@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingBag, Search, Menu, X, Heart, User } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import LoginBtn from "../buttons/LoginBtn";
 import SignupBtn from "../buttons/SignupBtn";
@@ -26,10 +26,10 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
- const[searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
-  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {  
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
@@ -42,8 +42,8 @@ const Navbar = () => {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       className={`fixed px-4 top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
-          ? "bg-background/95 backdrop-blur-lg py-3 shadow-lg"
-          : "bg-transparent py-5"
+        ? "bg-background/95 backdrop-blur-lg py-3 shadow-lg"
+        : "bg-transparent py-5"
         }`}
     >
       <div className="container-custom flex items-center justify-between">
@@ -66,14 +66,30 @@ const Navbar = () => {
             </a>
           ))}
         </div>
-        
+
         {/* Right Actions */}
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="hidden md:flex">
-            <Link to="/search">
-              <Search className="h-5 w-5" />
-            </Link>
-          </Button>
+
+          {/* Desktop Search */}
+          <div className="hidden md:flex items-center relative">
+
+            <form onSubmit={handleSearchSubmit} className={`flex items-center transition-all duration-300 ${searchQuery ? 'w-64' : 'w-64'}`}>
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-3 pr-10 py-1.5 text-sm border border-gray-300 rounded-full focus:outline-none focus:border-primary bg-background/50 backdrop-blur-sm"
+                />
+                <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary">
+                  <Search className="h-4 w-4" />
+                </button>
+              </div>
+            </form>
+
+          </div>
+
           <Button variant="ghost" size="icon" className="hidden md:flex">
             <User className="h-5 w-5" />
           </Button>
@@ -88,7 +104,7 @@ const Navbar = () => {
           </Button>
           <LoginBtn />
           <SignupBtn />
-         
+
 
 
           {/* Mobile Menu Toggle */}
@@ -100,7 +116,7 @@ const Navbar = () => {
           >
             {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
-         
+
         </div>
       </div>
 
@@ -126,29 +142,27 @@ const Navbar = () => {
               ))}
               {/* Search Form */}
               <form onSubmit={handleSearchSubmit} className="relative">
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-pink-500"
-              />
-              <button type="submit" className="absolute left-3 top-1/2 -translate-y-1/2">
-                <Link to="/search">
-                <Search className="h-5 w-5 text-gray-400" />  
-                </Link>
-              </button>
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
-                >
-                  <X className="h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-pink-500"
+                />
+                <button type="submit" className="absolute left-3 top-1/2 -translate-y-1/2">
+                  <Search className="h-5 w-5 text-gray-400" />
                 </button>
-              )}
-            </form>
-            
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                  >
+                    <X className="h-4 w-4 text-gray-400" />
+                  </button>
+                )}
+              </form>
+
               <div className="flex justify-center gap-4 pt-4 border-t border-border items-center">
                 <Button variant="ghost" size="icon">
                   <Search className="h-5 w-5" />
