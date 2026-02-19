@@ -4,6 +4,7 @@ import { validateRequest } from '../middlewares/validateRequest';
 import { authenticate } from '../middlewares/auth.middleware';
 import { registerSchema, loginSchema, forgotPasswordSchema, changePasswordSchema, resetPasswordSchema } from '../validations/auth.validation';
 
+
 const router = Router();
 
 // POST /api/auth/register
@@ -23,5 +24,6 @@ router.post('/reset-password', validateRequest(resetPasswordSchema), resetPasswo
 
 // POST /api/auth/change-password
 router.post('/change-password', authenticate, validateRequest(changePasswordSchema), changePassword);
+
 
 export default router;

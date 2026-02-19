@@ -5,6 +5,7 @@ import {
   deleteProduct,
   getProductById,
   getProducts,
+  getFeaturedProducts,
   updateProduct,
 } from '../controllers/product.controller';
 
@@ -21,11 +22,14 @@ const imageFields = [
   { name: 'thumbnail_img_4', maxCount: 1 },
 ];
 
+// Public routes
 router.get('/', getProducts);
-router.post('/', upload.fields(imageFields), createProduct);
+router.get('/featured', getFeaturedProducts);
 router.get('/:id', getProductById);
+
+// Admin routes (should be protected with auth middleware later)
+router.post('/', upload.fields(imageFields), createProduct);
 router.put('/:id', upload.fields(imageFields), updateProduct);
 router.delete('/:id', deleteProduct);
 
 export default router;
-

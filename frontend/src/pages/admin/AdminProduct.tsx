@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { apiUrl } from '../../utils/api';
 import type { Product } from '../../types/types';
 
+
 const AdminProduct = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
@@ -15,7 +16,7 @@ const AdminProduct = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const response = await axios.get<Product[]>(apiUrl('/admin/products'));
+      const response = await axios.get(`${apiUrl('/admin/products')}`);
       setProducts(response.data);
     } catch (err) {
       console.error(err);
@@ -74,7 +75,7 @@ const AdminProduct = () => {
             </button>
             <button
               type="button"
-              onClick={() => navigate('/admin/categories')}
+              onClick={() => navigate(`${apiUrl('/admin/categories')}`)}
               className="rounded-full border border-white/30 px-5 py-2 text-xs uppercase tracking-[0.3em] text-white transition hover:border-white"
             >
               Categories
@@ -107,7 +108,7 @@ const AdminProduct = () => {
             <p className="text-sm text-slate-400">Loading products...</p>
           ) : (
             <div className="space-y-4">
-              {products.map((product) => (
+                {Array.isArray(products) && products.map((product) => (
                 <article
                   key={product._id}
                   className="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/50 p-4 md:flex-row md:items-center md:justify-between"
@@ -148,4 +149,3 @@ const AdminProduct = () => {
 };
 
 export default AdminProduct;
-

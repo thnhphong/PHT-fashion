@@ -2,8 +2,11 @@ import axios from 'axios';
 import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import PHTLogo from '../assets/images/PHT-Fashion-Logo.png';
-
-const API_BASE_URL = 'http://localhost:5001/api';
+import { apiUrl } from '../utils/api';
+import { motion } from 'framer-motion';
+import {Link} from 'react-router-dom';
+import image from '../assets/images/img_signup.png';
+import { Truck, Sparkles, Gift, Award } from 'lucide-react';
 
 type SignUpForm = {
   name: string;
@@ -20,6 +23,13 @@ const INITIAL_FORM: SignUpForm = {
   address: '',
   password: '',
 };
+
+const benefits = [
+  { icon: Truck, title: "Free Shipping on First Order", desc: "No minimum spend required" },
+  { icon: Sparkles, title: "Early Access to New Drops", desc: "Be first to shop new collections" },
+  { icon: Gift, title: "Birthday Surprises", desc: "Special gifts on your special day" },
+  { icon: Award, title: "Style Rewards Program", desc: "Earn points on every purchase" },
+];
 
 const Signup = () => {
   const [form, setForm] = useState<SignUpForm>(INITIAL_FORM);
@@ -47,7 +57,7 @@ const Signup = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/users/register`, {
+      const response = await axios.post(apiUrl('/users/register'), {
         name: form.name,
         email: form.email,
         phone: form.phone,
@@ -63,7 +73,7 @@ const Signup = () => {
         const data = err.response?.data;
         if (data?.errors && Array.isArray(data.errors)) {
            // If backend returns validation errors array, join them or show first one
-           const errorMessages = data.errors.map((e: any) => e.message).join(', ');
+           const errorMessages = data.errors.map((e: { message: string }) => e.message).join(', ');
            setError(errorMessages);
         } else {
            setError(data?.message ?? err.message ?? 'Unable to create account');
@@ -81,7 +91,13 @@ const Signup = () => {
   return (
     <div className=" w-full flex">
       {/* Left Side - Sign Up Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 bg-white">
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 bg-white">
+        <motion.div
+      initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-full"
+      >
         <div className="w-full max-w-md mx-auto">
           {/* Logo */}
           <div className="flex justify-between">
@@ -281,52 +297,37 @@ const Signup = () => {
             </a>
           </p>
         </div>
+        </motion.div>
       </div>
 
       {/* Right Side - Hero Section */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center p-12 blue-pattern-bg">
-        <div className="relative z-10 max-w-lg">
-          {/* Hero Image Placeholder */}
-          <div className="relative mb-8">
-            <div className="w-full h-96 bg-gradient-to-br from-teal-200/30 to-gray-200/30 rounded-3xl flex items-center justify-center">
-              {/* Furniture illustration placeholder */}
-              <div className="text-center">
-                <div className="w-48 h-48 mx-auto bg-gradient-to-br from-amber-100 to-amber-200 rounded-2xl mb-4"></div>
-              </div>
-            </div>
+      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
+        <img src={image} alt="PHT Fashion" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-l from-black/70 via-black/50 to-transparent" />
 
-            {/* Badge */}
-            <div className="absolute bottom-6 left-6 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
-              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span className="text-sm font-medium text-gray-800">100% Guarantee</span>
-            </div>
-
-            {/* Delivery Badge */}
-            <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
-              <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              <span className="text-sm font-medium text-gray-800">Free delivery London area</span>
-            </div>
-          </div>
-
-          {/* Hero Content */}
-          <div className="text-right">
-            <h2 className="text-4xl font-bold text-gray-800 mb-4">
-              Discovering the Best
-              <br />
-              Furniture for Your Home
-            </h2>
-            <p className="text-gray-700 leading-relaxed">
-              Our practice is Designing Complete Environments exceptional
-              <br />
-              buildings communities and place in special situations
-            </p>
+        <div className="absolute inset-0 flex flex-col justify-center px-12">
+          <h2 className="font-display text-4xl text-white mb-8">Why Join PHT?</h2>
+          <div className="space-y-6">
+            {benefits.map((b) => (
+              <motion.div
+                key={b.title}
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: benefits.indexOf(b) * 0.15 }}
+                className="flex items-start gap-4"
+              >
+                <div className="h-10 w-10 rounded-xl bg-orange-500/50 backdrop-blur-lg flex items-center justify-center shrink-0">
+                  <b.icon className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold text-sm">{b.title}</h3>
+                  <p className="text-white/60 text-xs">{b.desc}</p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
-      </div>
+        </div>
     </div>
   );
 };
