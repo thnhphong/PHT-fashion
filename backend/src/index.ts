@@ -1,4 +1,5 @@
 import express, { Application } from 'express';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import connectDB from './config/mongo.config';
 import userRoutes from './routes/user.route';
@@ -16,6 +17,9 @@ const PORT = env.port;
 
 // Middleware to parse JSON bodies
 app.use(express.json());
+
+// Middleware to parse cookies
+app.use(cookieParser());
 
 // CORS configuration
 app.use(cors({
@@ -37,7 +41,7 @@ app.get('/', (req, res) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/admin/products', productRoutes); 
+app.use('/api/admin/products', productRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/admin/categories', categoryRoutes);
 app.use('/api/categories', categoryRoutes);

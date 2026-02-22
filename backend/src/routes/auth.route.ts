@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, refreshToken, forgotPassword, changePassword, resetPassword } from '../controllers/auth.controller';
+import { register, login, refreshToken, logout, forgotPassword, changePassword, resetPassword } from '../controllers/auth.controller';
 import { validateRequest } from '../middlewares/validateRequest';
 import { authenticate } from '../middlewares/auth.middleware';
 import { registerSchema, loginSchema, forgotPasswordSchema, changePasswordSchema, resetPasswordSchema } from '../validations/auth.validation';
@@ -15,6 +15,9 @@ router.post('/login', validateRequest(loginSchema), login);
 
 // POST /api/auth/refresh-token
 router.post('/refresh-token', refreshToken);
+
+// POST /api/auth/logout
+router.post('/logout', logout);
 
 // POST /api/auth/forgot-password
 router.post('/forgot-password', validateRequest(forgotPasswordSchema), forgotPassword);
