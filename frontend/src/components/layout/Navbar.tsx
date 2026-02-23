@@ -100,7 +100,6 @@ const Navbar = () => {
               {getTotalItems()}
             </span>
           </Button>
-          {/* if user is authenticated, show the logout button, else show the login and signup button if not authenticated */}
           {isAuthenticated() ? <LogOut handleLogout={logOut} /> : <LoginBtn />}
           {!isAuthenticated() ? <SignupBtn /> : null}
           <Button

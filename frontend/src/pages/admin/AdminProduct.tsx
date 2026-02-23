@@ -1,23 +1,32 @@
-import axios from 'axios';
 import { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import type { Category, Product } from '../../types/types';
 import { apiUrl } from '../../utils/api';
-import type { Product } from '../../types/types';
+import { Button } from '../../components/ui/button';
 
+
+const formatPrice = (value?: number) =>
+  value
+    ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
+    : '—';
 
 const AdminProduct = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
-  const location = useLocation();
 
   const fetchProducts = async () => {
     setLoading(true);
+    setError('');
     try {
-      const response = await axios.get(`${apiUrl('/admin/products')}`);
-      setProducts(response.data);
+      const token = localStorage.getItem('accessToken');
+      const response = await axios.get(apiUrl('/admin/products'), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      setProducts(response.data.data ?? response.data);
     } catch (err) {
       console.error(err);
       setError('Unable to load products');
@@ -30,18 +39,13 @@ const AdminProduct = () => {
     fetchProducts();
   }, []);
 
-  useEffect(() => {
-    const message = (location.state as { message?: string } | null)?.message;
-    if (message) {
-      setSuccess(message);
-      navigate(location.pathname, { replace: true, state: undefined });
-    }
-  }, [location, navigate]);
-
   const handleDelete = async (productId: string) => {
-    if (!confirm('Delete this product?')) return;
+    if (!confirm('Delete product?')) return;
     try {
-      await axios.delete(apiUrl(`/admin/products/${productId}`));
+      const token = localStorage.getItem('accessToken');
+      await axios.delete(apiUrl(`/admin/products/${productId}`), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       setSuccess('Product deleted');
       fetchProducts();
     } catch (err) {
@@ -50,100 +54,74 @@ const AdminProduct = () => {
     }
   };
 
-  const handleEdit = (product: Product) => {
-    navigate('/admin/products/create', { state: { product } });
-  };
-
   const totalProducts = useMemo(() => products.length, [products]);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white px-4 py-10">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <header className="flex flex-col gap-3">
-          <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase text-slate-400 tracking-[0.4em]">Admin dashboard</p>
-            <h1 className="text-3xl font-bold">Product catalog ({totalProducts})</h1>
-            <p className="text-slate-400 text-sm">Review and manage the product catalog.</p>
+    <div className="space-y-8">
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-2">
+          <p className="text-xs uppercase tracking-[0.6em] text-orange-500">Products</p>
+          <div className="flex flex-col gap-1">
+            <h1 className="text-3xl font-semibold text-gray-900">Product catalog</h1>
+            <p className="text-sm text-gray-500">{totalProducts} active products</p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => navigate('/admin/products/create')}
-              className="rounded-full border border-rose-500/60 px-5 py-2 text-xs uppercase tracking-[0.3em] text-rose-300 transition hover:border-rose-400"
-            >
-              Create product
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(`${apiUrl('/admin/categories')}`)}
-              className="rounded-full border border-white/30 px-5 py-2 text-xs uppercase tracking-[0.3em] text-white transition hover:border-white"
-            >
-              Categories
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/admin/suppliers')}
-              className="rounded-full border border-slate-500 px-5 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 transition hover:border-slate-300"
-            >
-              Suppliers
-            </button>
-            <button
-              type="button"
-              onClick={fetchProducts}
-              className="rounded-full border border-slate-700 px-5 py-2 text-xs uppercase tracking-[0.3em] text-slate-200 transition hover:border-slate-500"
-            >
-              Refresh
-            </button>
-          </div>
-          {(error || success) && (
-            <p className={`text-xs uppercase ${error ? 'text-red-400' : 'text-emerald-300'}`}>
-              {error || success}
-            </p>
-          )}
-        </header>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Button onClick={() => navigate('/admin/products/create')} variant="outline">
+            Add product
+          </Button>
+          <Button onClick={fetchProducts} variant="ghost">
+            Refresh
+          </Button>
+        </div>
+        {(error || success) && (
+          <p className={`mt-3 text-xs uppercase ${error ? 'text-red-500' : 'text-emerald-500'}`}>
+            {error || success}
+          </p>
+        )}
+      </section>
 
-        <section className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6 shadow-[0_30px_80px_rgba(2,6,23,0.5)]">
-          <h2 className="text-xl font-semibold mb-4">Products</h2>
-          {loading ? (
-            <p className="text-sm text-slate-400">Loading products...</p>
-          ) : (
-            <div className="space-y-4">
-                {Array.isArray(products) && products.map((product) => (
-                <article
-                  key={product._id}
-                  className="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/50 p-4 md:flex-row md:items-center md:justify-between"
-                >
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Inventory</h2>
+        {loading ? (
+          <p className="text-sm text-gray-500">Loading products...</p>
+        ) : (
+          <div className="space-y-4">
+            {products.map((product) => (
+              //add img in product item
+              <article
+                key={product._id}
+                className="flex flex-col gap-4 rounded-2xl border border-gray-100 p-4 shadow-sm md:flex-row md:items-center"
+              >
+                <div className="flex flex-row gap-2 text-left">
+                  <img src={product.img_url} alt={product.name} className="w-16 h-16 object-cover" />
                   <div className="flex flex-col gap-1">
-                    <p className="text-sm uppercase tracking-[0.4em] text-slate-500">
-                      {product.categoryId || 'Uncategorized'}
+                    <p className="text-xs uppercase tracking-[0.4em] text-gray-400">
+                      {(product.categoryId as Category)?.name || 'Uncategorized'}
                     </p>
-                    <h3 className="text-lg font-semibold">{product.name}</h3>
-                    <p className="text-sm text-slate-400">{product.price?.toFixed(2)}
-                      VND
-                    </p>
+                    <h3 className="text-md font-semibold text-gray-900 line-clamp-2 max-w-[18rem] break-words sm:max-w-full">
+                      {product.name}
+                    </h3>
+                    <p className="text-sm text-gray-500">{formatPrice(product.price)}</p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleEdit(product)}
-                      className="rounded-full border border-white/30 px-4 py-2 text-xs uppercase tracking-[0.3em] text-white transition hover:border-white"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(product._id)}
-                      className="rounded-full border border-red-500/80 px-4 py-2 text-xs uppercase tracking-[0.3em] text-red-400 transition hover:bg-red-500/10"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
+                </div>
+                {/* action buttons on the right of the product item */}
+                <div className="flex justify-end gap-2 md:ml-auto">
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate(`/admin/products/${product._id}/edit`, { state: { product } })}
+                  >
+                    Edit
+                  </Button>
+                  <Button className="bg-orange-500 text-white" onClick={() => handleDelete(product._id)}>
+                    Delete
+                  </Button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 };

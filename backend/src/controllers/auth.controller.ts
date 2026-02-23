@@ -106,6 +106,10 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
+    if (ADMIN_EMAILS.has(normalizedEmail) && user.role !== "admin") {
+      await updateUser(user._id.toString(), { role: "admin" });
+      user.role = "admin";
+    }
 
     // Generate JWT tokens (refresh token is saved to DB inside loginUser)
     const { accessToken, refreshToken } = await loginUser(user);

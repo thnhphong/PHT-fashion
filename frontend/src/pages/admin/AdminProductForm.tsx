@@ -284,13 +284,13 @@ const AdminProductForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white px-4 py-10">
+    <div className="min-h-screen bg-white text-gray-900 px-4 py-10">
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex flex-col gap-3">
           <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase text-slate-400 tracking-[0.4em]">Admin dashboard</p>
+            <p className="text-sm uppercase text-gray-400 tracking-[0.4em]">Admin dashboard</p>
             <h1 className="text-3xl font-bold">{isEditing ? 'Update product' : 'Create new product'}</h1>
-            <p className="text-slate-400 text-sm">
+            <p className="text-gray-400 text-sm">
               {isEditing
                 ? 'Edit the details of an existing product.'
                 : 'Add a new product with images, sizes, and associations.'}
@@ -300,32 +300,32 @@ const AdminProductForm = () => {
             <button
               type="button"
               onClick={() => navigate('/admin/products')}
-              className="rounded-full border border-white/30 px-5 py-2 text-xs uppercase tracking-[0.3em] text-white transition hover:border-white"
+              className="rounded-full border border-gray-200 px-5 py-2 text-xs uppercase tracking-[0.3em] text-gray-900 transition hover:border-gray-200"
             >
               Back to catalog
             </button>
           </div>
-          {error && <p className="text-xs uppercase text-red-400">{error}</p>}
+          {error && <p className="text-xs uppercase text-red-500">{error}</p>}
         </header>
 
-        <section className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6 shadow-[0_30px_80px_rgba(2,6,23,0.5)]">
+        <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
           <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-xs uppercase text-slate-400">Name</label>
+              <label className="text-xs uppercase text-gray-400">Name</label>
               <input
                 value={form.name}
                 onChange={(event) => handleChange('name', event.target.value)}
-                className="w-full rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-3 text-sm text-white shadow-sm focus:border-rose-500 focus:outline-none"
+                className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-500 focus:outline-none"
                 placeholder="Product name"
                 required
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs uppercase text-slate-400">Category</label>
+              <label className="text-xs uppercase text-gray-400">Category</label>
               <select
                 value={form.categoryId}
                 onChange={(event) => handleChange('categoryId', event.target.value)}
-                className="w-full rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-3 text-sm text-white"
+                className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900"
                 required
               >
                 <option value="">Select category</option>
@@ -337,24 +337,24 @@ const AdminProductForm = () => {
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-xs uppercase text-slate-400">Price</label>
+              <label className="text-xs uppercase text-gray-400">Price</label>
               <input
                 value={form.price}
                 onChange={(event) => handleChange('price', event.target.value)}
                 type="number"
                 min="0"
                 step="0.01"
-                className="w-full rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-3 text-sm text-white focus:border-rose-500 focus:outline-none"
+                className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:border-orange-500 focus:outline-none"
                 placeholder="Price in USD"
                 required
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs uppercase text-slate-400">Supplier</label>
+              <label className="text-xs uppercase text-gray-400">Supplier</label>
               <select
                 value={form.supplierId}
                 onChange={(event) => handleChange('supplierId', event.target.value)}
-                className="w-full rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-3 text-sm text-white"
+                className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900"
                 required
               >
                 <option value="">Select supplier</option>
@@ -366,24 +366,24 @@ const AdminProductForm = () => {
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-xs uppercase text-slate-400">Stock count</label>
+              <label className="text-xs uppercase text-gray-400">Stock count</label>
               <input
                 value={form.stock}
                 onChange={(event) => handleChange('stock', event.target.value)}
                 type="number"
                 min="0"
-                className="w-full rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-3 text-sm text-white focus:border-rose-500 focus:outline-none"
+                className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:border-orange-500 focus:outline-none"
               />
             </div>
 
            {showSizes && (
               <div className="col-span-full space-y-3">
-                <label className="text-xs uppercase text-slate-400">Sizes &amp; stock</label>
+                <label className="text-xs uppercase text-gray-400">Sizes &amp; stock</label>
                 <div className="flex flex-wrap gap-3">
                   <select
                     value={sizeDraft.size}
                     onChange={(event) => handleSizeDraftChange('size', event.target.value)}
-                    className="rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-2 text-xs uppercase tracking-[0.3em] text-white"
+                    className="rounded-2xl border border-gray-200 bg-white px-4 py-2 text-xs uppercase tracking-[0.3em] text-gray-900"
                   >
                     <option value="">Choose size</option>
                     {sizeOptions.map((size) => (
@@ -399,37 +399,37 @@ const AdminProductForm = () => {
                     type="number"
                     min="0"
                     placeholder="Stock per size"
-                    className="rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
+                    className="rounded-2xl border border-gray-200 bg-white px-4 py-2 text-xs text-gray-900 focus:border-orange-500 focus:outline-none"
                   />
 
                   <button
                     type="button"
                     onClick={addSizeEntry}
                     disabled={!sizeDraft.size || sizeDraft.stock === ''}
-                    className="rounded-full border border-emerald-400 px-4 py-2 text-xs uppercase tracking-[0.3em] text-emerald-300 transition hover:border-emerald-300 disabled:border-slate-700 disabled:text-slate-500"
+                    className="rounded-full border border-emerald-400 px-4 py-2 text-xs uppercase tracking-[0.3em] text-emerald-300 transition hover:border-emerald-300 disabled:border-gray-200 disabled:text-gray-500"
                   >
                     Add size
                   </button>
                 </div>
                 <div className="space-y-2">
                   {sizeEntries.length === 0 && (
-                    <p className="text-xs uppercase text-slate-500">No sizes added yet.</p>
+                    <p className="text-xs uppercase text-gray-500">No sizes added yet.</p>
                   )}
                   {sizeEntries.map((entry) => (
                     <div key={entry.size} className="flex flex-wrap items-center gap-3">
-                      <span className="text-xs uppercase tracking-[0.4em] text-slate-400">{entry.size}</span>
+                      <span className="text-xs uppercase tracking-[0.4em] text-gray-400">{entry.size}</span>
                       <input
                         value={entry.stock}
                         onChange={(event) => updateSizeStock(entry.size, event.target.value)}
                         type="number"
                         min="0"
                         placeholder="Stock"
-                        className="w-24 rounded-2xl border border-slate-700 bg-slate-900/60 px-3 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
+                        className="w-24 rounded-2xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:border-orange-500 focus:outline-none"
                       />
                       <button
                         type="button"
                         onClick={() => removeSizeEntry(entry.size)}
-                        className="text-xs uppercase tracking-[0.3em] text-rose-400 underline-offset-4 hover:text-rose-200"
+                        className="text-xs uppercase tracking-[0.3em] text-red-500 underline-offset-4 hover:text-red-200"
                       >
                         Remove
                       </button>
@@ -439,11 +439,11 @@ const AdminProductForm = () => {
               </div>
            )}
             <div className="col-span-full space-y-2">
-              <label className="text-xs uppercase text-slate-400">Description</label>
+              <label className="text-xs uppercase text-gray-400">Description</label>
               <textarea
                 value={form.description}
                 onChange={(event) => handleChange('description', event.target.value)}
-                className="w-full rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-3 text-sm text-white focus:border-rose-500 focus:outline-none"
+                className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:border-orange-500 focus:outline-none"
                 placeholder="Product description"
                 rows={3}
                 required
@@ -452,13 +452,13 @@ const AdminProductForm = () => {
 
             {imageFields.map((field) => (
               <div key={field} className="space-y-2">
-                <label className="text-xs uppercase text-slate-400">{field}</label>
+                <label className="text-xs uppercase text-gray-400">{field}</label>
                 <input
                   ref={(el) => (imageInputRefs[field] = el)} 
                   type="file"
                   accept="image/*"
                   onChange={(event) => handleFileChange(field, event.target.files ?? null)}
-                  className="w-full rounded-2xl border border-slate-700 bg-slate-900/60 px-3 py-2 text-sm text-white focus:outline-none"
+                  className="w-full rounded-2xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none"
                 />
               </div>
             ))}
@@ -467,7 +467,7 @@ const AdminProductForm = () => {
               <button
                 type="submit"
                 disabled={submitting || fetchingProduct}
-                className="w-full rounded-2xl bg-gradient-to-r from-rose-500 via-orange-500 to-amber-500 px-4 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-lg shadow-rose-500/40 transition hover:opacity-95 disabled:opacity-60"
+                className="w-full rounded-2xl bg-gradient-to-r from-orange-500 via-orange-500 to-orange-500 px-4 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-lg shadow-orange-500/40 transition hover:opacity-95 disabled:opacity-60"
               >
                 {submitting ? 'Saving...' : 'Save product'}
               </button>

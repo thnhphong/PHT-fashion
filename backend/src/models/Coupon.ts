@@ -4,43 +4,21 @@ export interface ICoupon extends Document {
   name: string;
   code: string;
   discount: number;
+  count: number;
   expiration_date: Date;
-  created_at: Date;
+  created_at?: Date;
 }
 
 const CouponSchema = new Schema<ICoupon>(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    code: {
-      type: String,
-      required: true,
-      trim: true,
-      uppercase: true,
-      unique: true,
-    },
-    discount: {
-      type: Number,
-      required: true,
-      min: 0,
-      max: 100,
-    },
-    expiration_date: {
-      type: Date,
-      required: true,
-    },
-    created_at: {
-      type: Date,
-      default: Date.now,
-    },
+    name: { type: String, required: true, trim: true },
+    code: { type: String, required: true, unique: true, uppercase: true, trim: true },
+    count: { type: Number, required: true, min: 0, max: 100},
+    discount: { type: Number, required: true, min: 0 },
+    expiration_date: { type: Date, required: true },
+    created_at: { type: Date, default: Date.now },
   },
-  {
-    versionKey: false,
-  }
+  { versionKey: false }
 );
 
 export default model<ICoupon>('Coupon', CouponSchema);
-

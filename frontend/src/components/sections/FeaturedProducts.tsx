@@ -5,8 +5,9 @@ import ProductCard from '../ui/ProductCard';
 import Pagination from '../common/Pagination';
 import type { Product, PaginatedResponse } from '../../types/types';
 import { apiUrl } from "../../utils/api";
-
+import { useNavigate } from 'react-router-dom';
 const FeaturedProducts = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -103,7 +104,7 @@ const FeaturedProducts = () => {
             <h2 className="text-3xl font-bold">Featured Products</h2>
           </div>
           <button
-            onClick={() => {/* Navigate to all products */ }}
+            onClick={() => { navigate('/products'); }}
             className="text-purple-600 hover:text-purple-700 font-medium"
           >
             View All →

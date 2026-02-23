@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { apiUrl } from '../../utils/api';
+import { Button } from '../../components/ui/button';
 
 type Category = {
   _id: string;
@@ -15,20 +16,24 @@ const AdminCategory = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-
   const [form, setForm] = useState({ name: '' });
 
   const formTitle = selectedCategory ? 'Update category' : 'Create new category';
   const submitLabel = selectedCategory ? 'Update category' : 'Create category';
 
-  // ---------------- FETCH ----------------
   const fetchCategories = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get(`${apiUrl('/admin/categories')}`);
+      const token = localStorage.getItem('accessToken');
+      const response = await axios.get(`${apiUrl('/admin/categories')}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       setCategories(response.data);
     } catch (err) {
       console.error(err);
       setError('Unable to fetch categories');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -36,33 +41,29 @@ const AdminCategory = () => {
     fetchCategories();
   }, []);
 
-  // ---------------- FORM ----------------
-  const handleChange = (value: string) => {
-    setForm({ name: value });
-    setError('');
-    setSuccess('');
-  };
-
-  const resetForm = () => {
-    setForm({ name: '' });
-    setSelectedCategory(null);
-  };
-
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
     setError('');
     setSuccess('');
-
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      setError('Missing admin session');
+      setLoading(false);
+      return;
+    }
     try {
       if (selectedCategory) {
-        await axios.put(apiUrl(`/admin/categories/${selectedCategory._id}`), form);
+        await axios.put(apiUrl(`/admin/categories/${selectedCategory._id}`), form, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setSuccess('Category updated successfully');
       } else {
-        await axios.post(apiUrl('/admin/categories'), form);
+        await axios.post(apiUrl('/admin/categories'), form, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setSuccess('Category created successfully');
       }
-
       resetForm();
       fetchCategories();
     } catch (err) {
@@ -73,7 +74,6 @@ const AdminCategory = () => {
     }
   };
 
-  // ---------------- ACTIONS ----------------
   const handleEdit = (category: Category) => {
     setSelectedCategory(category);
     setForm({ name: category.name });
@@ -83,9 +83,11 @@ const AdminCategory = () => {
 
   const handleDelete = async (categoryId: string) => {
     if (!confirm('Delete this category?')) return;
-
     try {
-      await axios.delete(apiUrl(`/admin/categories/${categoryId}`));
+      const token = localStorage.getItem('accessToken');
+      await axios.delete(apiUrl(`/admin/categories/${categoryId}`), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       setSuccess('Category deleted');
       fetchCategories();
     } catch (err) {
@@ -96,102 +98,63 @@ const AdminCategory = () => {
 
   const totalCategories = useMemo(() => categories.length, [categories]);
 
-  // ---------------- UI ----------------
   return (
-    <div className="min-h-screen bg-slate-900 text-white px-4 py-10">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <header className="flex flex-col gap-2">
-          <p className="text-sm uppercase text-slate-400 tracking-[0.4em]">
-            Admin dashboard
-          </p>
-          <h1 className="text-3xl font-bold">
-            Category catalog ({totalCategories})
-          </h1>
-          <p className="text-slate-400 text-sm">
-            Manage your product categories.
-          </p>
-        </header>
-
-        {/* -------- FORM -------- */}
-        <section className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6">
-          <h2 className="text-xl font-semibold mb-3">{formTitle}</h2>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-xs uppercase text-slate-400">
-                Category name
-              </label>
-              <input
-                value={form.name}
-                onChange={(e) => handleChange(e.target.value)}
-                className="w-full rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-3 text-sm"
-                placeholder="Example: T-Shirts"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-2xl bg-gradient-to-r from-rose-500 via-orange-500 to-amber-500 px-4 py-3 text-sm font-semibold uppercase tracking-[0.3em]"
-            >
-              {loading ? 'Saving...' : submitLabel}
-            </button>
-
-            {(error || success) && (
-              <p
-                className={`text-center text-xs uppercase ${error ? 'text-red-400' : 'text-emerald-400'
-                  }`}
-              >
-                {error || success}
-              </p>
-            )}
-          </form>
-
+    <div className="space-y-8">
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.6em] text-orange-500">Categories</p>
+            <h2 className="text-2xl font-semibold text-gray-900">Manage categories ({totalCategories})</h2>
+          </div>
+          <Button variant="ghost" onClick={fetchCategories}>
+            Refresh
+          </Button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            required
+            value={form.name}
+            onChange={(e) => setForm({ name: e.target.value })}
+            placeholder="Category name"
+            className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-orange-500"
+          />
+          <Button type="submit" className="bg-orange-500 text-white" disabled={loading}>
+            {loading ? 'Saving...' : submitLabel}
+          </Button>
           {selectedCategory && (
-            <button
-              type="button"
-              onClick={resetForm}
-              className="mt-4 text-xs uppercase tracking-[0.4em] text-slate-400 underline"
-            >
+            <Button variant="outline" onClick={() => { setSelectedCategory(null); setForm({ name: '' }); setError(''); setSuccess(''); }}>
               Cancel edit
-            </button>
+            </Button>
           )}
-        </section>
-
-        {/* -------- LIST -------- */}
-        <section className="rounded-3xl border border-slate-800 bg-slate-950/80 p-6">
-          <h2 className="text-xl font-semibold mb-4">Categories</h2>
-
-          <div className="space-y-3">
+          {(error || success) && (
+            <p className={`text-xs uppercase ${error ? 'text-red-500' : 'text-emerald-500'}`}>
+              {error || success}
+            </p>
+          )}
+        </form>
+      </section>
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 className="text-xl font-semibold text-gray-900 mb-4">Category list</h3>
+        {loading ? (
+          <p className="text-sm text-gray-500">Loading...</p>
+        ) : (
+          <div className="divide-y divide-gray-100">
             {categories.map((category) => (
-              <article
-                key={category._id}
-                className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/50 p-4"
-              >
-                <p className="uppercase tracking-[0.3em] text-slate-300">
-                  {category.name}
-                </p>
-
+              <div key={category._id} className="flex items-center justify-between py-3">
+                <p className="font-medium text-gray-900">{category.name}</p>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => handleEdit(category)}
-                    className="rounded-full border border-white/30 px-4 py-2 text-xs uppercase"
-                  >
+                  <Button variant="outline" onClick={() => handleEdit(category)}>
                     Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(category._id)}
-                    className="rounded-full border border-red-500/80 px-4 py-2 text-xs uppercase text-red-400"
-                  >
+                  </Button>
+                  <Button className="bg-orange-500 text-white" onClick={() => handleDelete(category._id)}>
                     Delete
-                  </button>
+                  </Button>
                 </div>
-              </article>
+              </div>
             ))}
           </div>
-        </section>
-      </div>
+        )}
+      </section>
     </div>
   );
 };

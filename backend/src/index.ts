@@ -10,6 +10,7 @@ import supplierRoutes from './routes/supplier.route';
 import { env } from './config/env';
 import cors from 'cors';
 import searchRoutes from './routes/search.route';
+import couponRoutes from './routes/coupon.route';
 dotenv.config();
 
 const app: Application = express();
@@ -48,6 +49,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/admin/suppliers', supplierRoutes);
 app.use('/api/suppliers', supplierRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/coupons', couponRoutes);
 
 // Start server
 app.listen(PORT, () => {
