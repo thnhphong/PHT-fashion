@@ -15,6 +15,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-
 import Search from './pages/Search';
 import CartPopup from './pages/CartPopup';
 import Cart from './pages/Cart';
+import Products from './pages/Products';
 
 const Layout = () => {
   return (
@@ -33,7 +34,7 @@ function App() {
           <Route path="/" element={<Home />} />
           {/* immediately show the cart popup when the user adds a product to the cart no specific route needed*/}
           <Route path="/cart-popup" element={<CartPopup />} />
-          
+          <Route path="/products" element={<Products />} />
         </Route>
         <Route path="/cart" element={<Cart />} /> 
         <Route path="/about" element={<About />} />
