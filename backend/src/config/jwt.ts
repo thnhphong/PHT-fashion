@@ -4,6 +4,7 @@ import { env } from './env';
 export interface AuthTokenPayload extends JwtPayload {
   sub: string;
   role: string;
+  email: string;
 }
 
 const jwtSecret: Secret = env.jwtSecret;

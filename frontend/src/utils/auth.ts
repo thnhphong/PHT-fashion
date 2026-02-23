@@ -77,6 +77,8 @@ export const logOut = (): void => {
   localStorage.removeItem('refreshToken');
   // Remove old insecure user storage if it exists
   localStorage.removeItem('user');
+  localStorage.removeItem('userRole');
+  localStorage.removeItem('userName');
 };
 
 /**

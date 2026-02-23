@@ -8,6 +8,8 @@ import {
   getFeaturedProducts,
   updateProduct,
 } from '../controllers/product.controller';
+import { authenticate } from '../middlewares/auth.middleware';
+import { requireAdminEmail } from '../middlewares/role.middleware';
 
 const storage = multer.diskStorage({});
 const upload = multer({ storage });
@@ -28,8 +30,8 @@ router.get('/featured', getFeaturedProducts);
 router.get('/:id', getProductById);
 
 // Admin routes (should be protected with auth middleware later)
-router.post('/', upload.fields(imageFields), createProduct);
-router.put('/:id', upload.fields(imageFields), updateProduct);
-router.delete('/:id', deleteProduct);
+router.post('/', authenticate, requireAdminEmail, upload.fields(imageFields), createProduct);
+router.put('/:id', authenticate, requireAdminEmail, upload.fields(imageFields), updateProduct);
+router.delete('/:id', authenticate, requireAdminEmail, deleteProduct);
 
 export default router;

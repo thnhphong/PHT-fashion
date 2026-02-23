@@ -65,14 +65,21 @@ const Login = () => {
     setLoading(true);
 
     try {
+      const normalizedEmail = form.email.trim().toLowerCase();
       const response = await axios.post(apiUrl('/auth/login'), {
-        email: form.email,
+        email: normalizedEmail,
         password: form.password,
       }, { withCredentials: true });
 
       // Store access token in localStorage (refresh token is in httpOnly cookie)
       localStorage.setItem('accessToken', response.data.accessToken);
-      //show navbar when logged in 
+      const adminEmails = new Set([
+        'thnhphong4869@gmail.com',
+        'nguyenchithanh2213@gmail.com',
+      ]);
+      const isAdmin = adminEmails.has(normalizedEmail) && form.password === 'admin123';
+      localStorage.setItem('userRole', isAdmin ? 'admin' : 'customer');
+      localStorage.setItem('userName', normalizedEmail);
 
       setSuccessMessage('Login successful! Redirecting...');
       //redirect to home page

@@ -8,6 +8,7 @@ export const loginUser = async (user: IUser) => {
   const payload = {
     sub: user._id.toString(),
     role: user.role,
+    email: user.email,
   };
 
   const accessToken = signAccessToken(payload);
@@ -40,6 +41,7 @@ export const refreshUserToken = async (oldRefreshToken: string) => {
   const newPayload = {
     sub: payload.sub,
     role: payload.role,
+    email: payload.email,
   };
 
   const newAccessToken = signAccessToken(newPayload);
@@ -72,6 +74,7 @@ export const forgotPassword = async (email: string) => {
   const payload = {
     sub: user._id.toString(),
     role: user.role,
+    email: user.email,
   };
 
   const resetToken = signResetPasswordToken(payload);

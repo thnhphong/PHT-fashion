@@ -19,6 +19,7 @@ import Products from './pages/Products';
 import { FavoriteProvider } from './context/FavoriteContext';
 import { CartProvider } from './context/CartContext';
 import Favorite from './pages/Favorite';
+import { AdminRoute } from './components/routes/AdminRoute';
 
 const Layout = () => {
   return (
@@ -49,7 +50,14 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/search" element={<Search />} />
         <Route path="/product/:id" element={<ProductDetail />} />
-        <Route path="/admin/*" element={<Admin />}>
+        <Route
+          path="/admin/*"
+          element={
+            <AdminRoute>
+              <Admin />
+            </AdminRoute>
+          }
+        >
           <Route index element={<Navigate to="products" replace />} />
           <Route path="products" element={<AdminProduct />} />
           <Route path="products/create" element={<AdminProductForm />} />
