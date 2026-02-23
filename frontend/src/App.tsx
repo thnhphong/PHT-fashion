@@ -16,6 +16,9 @@ import Search from './pages/Search';
 import CartPopup from './pages/CartPopup';
 import Cart from './pages/Cart';
 import Products from './pages/Products';
+import { FavoriteProvider } from './context/FavoriteContext';
+import { CartProvider } from './context/CartContext';
+import Favorite from './pages/Favorite';
 
 const Layout = () => {
   return (
@@ -29,12 +32,15 @@ const Layout = () => {
 function App() {
   return (
     <Router>
-      <Routes>
+      <FavoriteProvider>
+        <CartProvider>
+        <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
           {/* immediately show the cart popup when the user adds a product to the cart no specific route needed*/}
           <Route path="/cart-popup" element={<CartPopup />} />
           <Route path="/products" element={<Products />} />
+          <Route path="/favorite" element={<Favorite />} />
         </Route>
         <Route path="/cart" element={<Cart />} /> 
         <Route path="/about" element={<About />} />
@@ -52,6 +58,8 @@ function App() {
           <Route path="suppliers" element={<AdminSupplier />} />
         </Route>
       </Routes>
+      </CartProvider>
+      </FavoriteProvider>
     </Router>
   );
 }

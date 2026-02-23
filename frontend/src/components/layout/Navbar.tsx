@@ -5,6 +5,12 @@ import { Button } from "../ui/button";
 import LoginBtn from "../buttons/LoginBtn";
 import SignupBtn from "../buttons/SignupBtn";
 import SearchInput from "../common/SearchInput";
+import { isAuthenticated, logOut } from "../../utils/auth";
+import { LogOut } from "../buttons/LogOut";
+import { useNavigate } from "react-router-dom";
+import { useCart } from "../../context/CartContext";
+import { useFavorite } from "../../context/useFavorite";
+
 
 //put login and signup buttons in the hamburger menu
 const navLinks = [
@@ -17,15 +23,16 @@ const navLinks = [
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const { getTotalItems } = useCart();
+  const { favorites } = useFavorite();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
+ 
   return (
     <motion.nav
       initial={{ y: -100 }}
@@ -69,33 +76,43 @@ const Navbar = () => {
           <Button variant="ghost" size="icon" className="hidden md:flex">
             <User className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon" className="hidden md:flex">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden md:flex relative"
+            onClick={() => navigate('/favorite')}
+          >
             <Heart className="h-5 w-5" />
+            {favorites.length > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white font-bold">
+                {favorites.length}
+              </span>
+            )}
           </Button>
-          <Button variant="ghost" size="icon" className="relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative"
+            onClick={() => navigate('/cart')}
+          >
             <ShoppingBag className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] flex items-center justify-center text-primary-foreground font-bold">
-              0
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground font-bold">
+              {getTotalItems()}
             </span>
           </Button>
-          <LoginBtn />
-          <SignupBtn />
-
-
-
-          {/* Mobile Menu Toggle */}
+          {/* if user is authenticated, show the logout button, else show the login and signup button if not authenticated */}
+          {isAuthenticated() ? <LogOut handleLogout={logOut} /> : <LoginBtn />}
+          {!isAuthenticated() ? <SignupBtn /> : null}
           <Button
             variant="ghost"
             size="icon"
             className="lg:hidden"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
           >
             {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
-
         </div>
       </div>
-
       {/* Mobile Menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
@@ -126,8 +143,21 @@ const Navbar = () => {
                 <Button variant="ghost" size="icon">
                   <User className="h-5 w-5" />
                 </Button>
-                <Button variant="ghost" size="icon">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    navigate('/favorite');
+                  }}
+                >
                   <Heart className="h-5 w-5" />
+                  {favorites.length > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white font-bold">
+                      {favorites.length}
+                    </span>
+                  )}
                 </Button>
               </div>
             </div>

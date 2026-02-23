@@ -1,19 +1,20 @@
 // frontend/src/components/products/ProductCard.tsx
+
+import type { MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 import type { Product } from '../../types/types';
 import { Button } from './button';
-import { Plus } from 'lucide-react';
-import { useCart } from '../../context/CartContext';
-import { useState } from 'react';
-import CartPopup from '../../pages/CartPopup';
+import { Heart } from 'lucide-react';
+import { useFavorite } from '../../context/useFavorite';
 
 interface ProductCardProps {
   product: Product;
 }
 
 const ProductCard = ({ product }: ProductCardProps) => {
-  const { addToCart } = useCart();
-  const [isCartPopupOpen, setIsCartPopupOpen] = useState(false);
+  const { favorites, addFavorite, removeFavorite } = useFavorite();
+  const isFavorite = favorites.includes(product._id);
+ 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -28,9 +29,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
     return product.categoryId.name;
   };
 
-  const handleAddToCart = (product: Product) => {
-    addToCart(product, product.sizes[0].size, 1);
-    setIsCartPopupOpen(true);
+  const handleToggleFavorite = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (isFavorite) {
+      removeFavorite(product._id);
+    } else {
+      addFavorite(product._id);
+    }
   };
 
   return (
@@ -74,19 +80,21 @@ const ProductCard = ({ product }: ProductCardProps) => {
         {/* Price */}
         <div className="flex gap-4 items-center justify-between">
           <div className="flex flex-col text-left">
-            <p className="text-xs text-gray-600">
-              Stock: {product.stock}
-            </p>
-            <p className="text-lg font-bold text-orange-500">
-              {formatPrice(product.price)}
-            </p>
+            <p className="text-xs text-gray-600">Stock: {product.stock}</p>
+            <p className="text-lg font-bold text-orange-500">{formatPrice(product.price)}</p>
           </div>
-          {/* add to cart, */}
-          {/* disable click to the whole card when the button is clicked*/} 
-          <div onClick={(e) => e.preventDefault()}> 
-              <Button onClick={() => handleAddToCart(product)} className="rounded-full" variant="outline" size="icon">
-                <Plus className="h-5 w-5 text-orange-500 hover:text-orange-600" />
-              </Button>
+          <div className="flex items-center gap-2"> 
+            <Button
+              type="button"
+              onClick={handleToggleFavorite}
+              className="rounded-full"
+              variant="ghost"
+              size="icon"
+            >
+              <Heart
+                className={`h-5 w-5 transition-colors ${isFavorite ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
+              />
+            </Button>
           </div>
         </div>
 
@@ -106,7 +114,6 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
         
       </div>
-      {isCartPopupOpen && <CartPopup />}
     </Link>
   );
 };

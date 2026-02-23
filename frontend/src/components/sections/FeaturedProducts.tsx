@@ -5,7 +5,6 @@ import ProductCard from '../ui/ProductCard';
 import Pagination from '../common/Pagination';
 import type { Product, PaginatedResponse } from '../../types/types';
 import { apiUrl } from "../../utils/api";
-import handleAddToCart from '../../utils/handleAddToCart';
 
 const FeaturedProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
