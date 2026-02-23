@@ -1,7 +1,25 @@
-import { Request, Response } from 'express';
-import { loginUser, refreshUserToken, forgotPassword as forgotPasswordService, resetPassword as resetPasswordService, changePassword as changePasswordService } from '../services/auth.service';
-import { createUser, findUserByEmail } from '../services/user.service';
-import bcrypt from 'bcryptjs';
+import { Request, Response } from "express";
+import {
+  loginUser,
+  refreshUserToken,
+  logoutUser,
+  forgotPassword as forgotPasswordService,
+  resetPassword as resetPasswordService,
+  changePassword as changePasswordService,
+} from "../services/auth.service";
+import { createUser, findUserByEmail } from "../services/user.service";
+import { REFRESH_TOKEN_EXPIRY_MS } from "../config/jwt";
+import { env } from "../config/env";
+import bcrypt from "bcryptjs";
+
+// Cookie options for refresh token
+const getRefreshTokenCookieOptions = () => ({
+  httpOnly: true,
+  secure: env.nodeEnv === "production",
+  sameSite: "strict" as const,
+  maxAge: REFRESH_TOKEN_EXPIRY_MS,
+  path: "/api/auth",
+});
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -10,7 +28,7 @@ export const register = async (req: Request, res: Response) => {
     // Check if user already exists
     const existingUser = await findUserByEmail(email);
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: "User already exists" });
     }
 
     // Hash password
@@ -38,12 +56,12 @@ export const register = async (req: Request, res: Response) => {
     };
 
     return res.status(201).json({
-      message: 'User registered successfully',
+      message: "User registered successfully",
       user: userResponse,
     });
   } catch (error) {
-    console.error('Registration error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Registration error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -53,23 +71,28 @@ export const login = async (req: Request, res: Response) => {
 
     // Validate input
     if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+      return res
+        .status(400)
+        .json({ message: "Email and password are required" });
     }
 
     // Find user
     const user = await findUserByEmail(email);
     if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // Generate JWT tokens
-    const { accessToken, refreshToken } = loginUser(user);
+    // Generate JWT tokens (refresh token is saved to DB inside loginUser)
+    const { accessToken, refreshToken } = await loginUser(user);
+
+    // Set refresh token as httpOnly cookie
+    res.cookie("refreshToken", refreshToken, getRefreshTokenCookieOptions());
 
     // Remove password from response
     const userResponse = {
@@ -83,38 +106,73 @@ export const login = async (req: Request, res: Response) => {
       created_at: user.created_at,
     };
 
+    // Only return accessToken in response body (refreshToken is in cookie)
     return res.status(200).json({
-      message: 'Login successful',
+      message: "Login successful",
       accessToken,
-      refreshToken,
       user: userResponse,
     });
   } catch (error) {
-    console.error('Login error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Login error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
 export const refreshToken = async (req: Request, res: Response) => {
   try {
-    const { refreshToken } = req.body;
+    // Read refresh token from cookie instead of request body
+    const oldRefreshToken = req.cookies?.refreshToken;
 
-    if (!refreshToken) {
-      return res.status(400).json({ message: 'Refresh token is required' });
+    if (!oldRefreshToken) {
+      return res.status(401).json({ message: "Refresh token is required" });
     }
 
-    const newAccessToken = refreshUserToken(refreshToken);
+    // Rotate tokens: old token is deleted, new pair is created
+    const { accessToken, refreshToken: newRefreshToken } =
+      await refreshUserToken(oldRefreshToken);
+
+    // Set new refresh token cookie
+    res.cookie(
+      "refreshToken",
+      newRefreshToken,
+      getRefreshTokenCookieOptions()
+    );
 
     return res.status(200).json({
-      message: 'Token refreshed successfully',
-      accessToken: newAccessToken,
+      message: "Token refreshed successfully",
+      accessToken,
     });
   } catch (error) {
-    console.error('Refresh token error:', error);
-    if (error instanceof Error && error.message === 'Invalid or expired refresh token') {
-      return res.status(401).json({ message: 'Invalid or expired refresh token' });
+    console.error("Refresh token error:", error);
+    if (
+      error instanceof Error &&
+      (error.message === "Invalid or expired refresh token" ||
+        error.message === "Refresh token has been revoked")
+    ) {
+      // Clear invalid cookie
+      res.clearCookie("refreshToken", { path: "/api/auth" });
+      return res.status(401).json({ message: error.message });
     }
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const logout = async (req: Request, res: Response) => {
+  try {
+    const refreshTokenValue = req.cookies?.refreshToken;
+
+    if (refreshTokenValue) {
+      // Remove refresh token from DB
+      await logoutUser(refreshTokenValue);
+    }
+
+    // Clear cookie
+    res.clearCookie("refreshToken", { path: "/api/auth" });
+
+    return res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    console.error("Logout error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -127,20 +185,18 @@ export const forgotPassword = async (req: Request, res: Response) => {
     const resetToken = await forgotPasswordService(email);
 
     return res.status(200).json({
-      message: 'Reset password link generated',
+      message: "Reset password link generated",
       resetToken,
-      resetLink: `http://localhost:5173/reset-password/${resetToken}`
+      resetLink: `http://localhost:5173/reset-password/${resetToken}`,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === 'User not found') {
-      return res.status(404).json({ message: 'User not found' });
+    if (error instanceof Error && error.message === "User not found") {
+      return res.status(404).json({ message: "User not found" });
     }
-    console.error('Forgot password error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Forgot password error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
 
 export const resetPassword = async (req: Request, res: Response) => {
   try {
@@ -148,13 +204,20 @@ export const resetPassword = async (req: Request, res: Response) => {
 
     await resetPasswordService(token, password);
 
-    return res.status(200).json({ message: 'Password has been reset successfully' });
+    return res
+      .status(200)
+      .json({ message: "Password has been reset successfully" });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Invalid or expired reset token') {
-      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    if (
+      error instanceof Error &&
+      error.message === "Invalid or expired reset token"
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired reset token" });
     }
-    console.error('Reset password error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Reset password error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -164,20 +227,20 @@ export const changePassword = async (req: Request, res: Response) => {
     const userId = req.user?.sub;
 
     if (!userId) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     await changePasswordService(userId, oldPassword, newPassword);
 
-    return res.status(200).json({ message: 'Password changed successfully' });
+    return res.status(200).json({ message: "Password changed successfully" });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Incorrect old password') {
-      return res.status(400).json({ message: 'Incorrect old password' });
+    if (error instanceof Error && error.message === "Incorrect old password") {
+      return res.status(400).json({ message: "Incorrect old password" });
     }
-    if (error instanceof Error && error.message === 'User not found') {
-      return res.status(404).json({ message: 'User not found' });
+    if (error instanceof Error && error.message === "User not found") {
+      return res.status(404).json({ message: "User not found" });
     }
-    console.error('Change password error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Change password error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };

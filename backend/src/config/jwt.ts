@@ -7,6 +7,7 @@ export interface AuthTokenPayload extends JwtPayload {
 }
 
 const jwtSecret: Secret = env.jwtSecret;
+const refreshTokenSecret: Secret = env.refreshTokenSecret;
 
 // Access Token: 15 minutes
 const accessTokenOptions: SignOptions = {
@@ -23,7 +24,7 @@ export const signAccessToken = (payload: AuthTokenPayload): string => {
 };
 
 export const signRefreshToken = (payload: AuthTokenPayload): string => {
-  return sign(payload, jwtSecret, refreshTokenOptions);
+  return sign(payload, refreshTokenSecret, refreshTokenOptions);
 };
 
 // Reset Password Token: 10 minutes
@@ -35,11 +36,19 @@ export const signResetPasswordToken = (payload: AuthTokenPayload): string => {
   return sign(payload, jwtSecret, resetPasswordOptions);
 };
 
+// Verify access token (uses jwtSecret)
 export const verifyToken = (token: string): AuthTokenPayload => {
   return verify(token, jwtSecret) as AuthTokenPayload;
 };
 
-// Kept for backward compatibility if needed, but aliased to signAccessToken
+// Verify refresh token (uses refreshTokenSecret)
+export const verifyRefreshToken = (token: string): AuthTokenPayload => {
+  return verify(token, refreshTokenSecret) as AuthTokenPayload;
+};
+
+// Refresh token expiry in milliseconds (7 days) — used for cookie maxAge and DB expiresAt
+export const REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Kept for backward compatibility
 export const signAuthToken = signAccessToken;
 export const verifyAuthToken = verifyToken;
-
