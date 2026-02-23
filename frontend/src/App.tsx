@@ -21,6 +21,7 @@ import { CartProvider } from './context/CartContext';
 import Favorite from './pages/Favorite';
 import { AdminRoute } from './components/routes/AdminRoute';
 import Checkout from './pages/Checkout';
+import Orders from './pages/Orders';
 import AdminCoupon from './pages/admin/AdminCoupon';
 import AdminProduct from './pages/admin/AdminProduct';
 
@@ -46,6 +47,7 @@ function App() {
               <Route path="/products" element={<Products />} />
               <Route path="/favorite" element={<Favorite />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/orders" element={<Orders />} />
             </Route>
             <Route path="/cart" element={<Cart />} />
             <Route path="/about" element={<About />} />

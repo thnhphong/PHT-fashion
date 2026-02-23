@@ -1,10 +1,11 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 
 export interface IOrderItem extends Document {
-  orderId: Schema.Types.ObjectId;
-  productId: Schema.Types.ObjectId;
+  orderId: Types.ObjectId;
+  productId: Types.ObjectId;
   quantity: number;
   productSize: string;
+  unit_price: number; // snapshot of price at time of purchase
 }
 
 const OrderItemSchema = new Schema<IOrderItem>(
@@ -13,6 +14,7 @@ const OrderItemSchema = new Schema<IOrderItem>(
       type: Schema.Types.ObjectId,
       ref: 'Order',
       required: true,
+      index: true,
     },
     productId: {
       type: Schema.Types.ObjectId,
@@ -28,6 +30,12 @@ const OrderItemSchema = new Schema<IOrderItem>(
       type: String,
       required: true,
       trim: true,
+      uppercase: true,
+    },
+    unit_price: {
+      type: Number,
+      required: true,
+      min: 0,
     },
   },
   {
@@ -36,4 +44,3 @@ const OrderItemSchema = new Schema<IOrderItem>(
 );
 
 export default model<IOrderItem>('OrderItem', OrderItemSchema);
-

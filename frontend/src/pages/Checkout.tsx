@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { apiUrl } from '../utils/api';
+import { refreshAccessToken } from '../utils/auth';
 
 const SHIPPING_METHODS = [
   { id: 'standard', label: 'Standard Shipping', detail: '5-7 days • Free', price: 0 },
   { id: 'express', label: 'Express Shipping', detail: '2-3 days • 30,000 VND', price: 30000 },
-  { id: 'nextday', label: 'Next Day Delivery', detail: '1 day • 50,000 VND', price: 50000 },
+  { id: 'next_day', label: 'Next Day Delivery', detail: '1 day • 50,000 VND', price: 50000 },
 ];
 
-const PAYMENT_TABS = ['Credit Card', 'PayPal', 'Apple Pay'];
+const PAYMENT_TABS = ['Credit Card', 'PayPal', 'Apple Pay', 'Cash on Delivery'];
 
 const BASE_PROVINCE_API = 'https://provinces.open-api.vn/api/?depth=1';
 
@@ -49,7 +51,7 @@ const CheckoutStepper = ({ step }: { step: number }) => {
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { cart, getCartTotal } = useCart();
+  const { cart, getCartTotal, clearCart } = useCart();
   const [step, setStep] = useState(1);
   const [shippingMethod, setShippingMethod] = useState(SHIPPING_METHODS[0].id);
   const [paymentTab, setPaymentTab] = useState(PAYMENT_TABS[0]);
@@ -68,6 +70,9 @@ export default function Checkout() {
     saveAddress: false,
     billingSame: true,
   });
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [orderError, setOrderError] = useState('');
+  const [orderSuccess, setOrderSuccess] = useState('');
 
   useEffect(() => {
     const fetchCities = async () => {
@@ -97,6 +102,95 @@ export default function Checkout() {
 
   const handleNext = () => setStep((prev) => Math.min(prev + 1, 4));
   const handlePrev = () => setStep((prev) => Math.max(prev - 1, 1));
+
+  const handlePlaceOrder = async () => {
+    if (!cart.length) {
+      setOrderError('Your cart is empty');
+      return;
+    }
+
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    const paymentMethodMap: Record<string, string> = {
+      'Credit Card': 'credit_card',
+      PayPal: 'paypal',
+      'Apple Pay': 'apple_pay',
+      'Cash on Delivery': 'cash_on_delivery',
+    };
+
+    const items = cart.map((item) => ({
+      productId: item._id,
+      quantity: item.quantity,
+      productSize: item.selectedSize,
+    }));
+
+    const shippingAddressPayload = {
+      fullName: form.name,
+      email: form.email,
+      phone: form.phone,
+      street: form.street,
+      apartment: form.apartment,
+      city: form.city || selectedCity,
+      state: form.province || form.city || selectedCity,
+      zipCode: form.zip,
+      country: form.country,
+    };
+
+    const payload = {
+      items,
+      shippingAddress: shippingAddressPayload,
+      shippingMethod,
+      paymentMethod: paymentMethodMap[paymentTab] ?? paymentMethodMap['Credit Card'],
+    };
+
+    setOrderError('');
+    setOrderSuccess('');
+    setPlacingOrder(true);
+
+    const attemptOrderRequest = (bearerToken: string) =>
+      fetch(apiUrl('/orders'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${bearerToken}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+    let response = await attemptOrderRequest(token);
+
+    if (response.status === 401) {
+      const refreshed = await refreshAccessToken();
+      if (!refreshed) {
+        setOrderError('Session expired. Please log in again.');
+        navigate('/login');
+        setPlacingOrder(false);
+        return;
+      }
+      response = await attemptOrderRequest(refreshed);
+    }
+
+    try {
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message ?? 'Unable to place order');
+      }
+
+      await response.json();
+      setOrderSuccess('Order placed successfully. We will email you the confirmation shortly.');
+      clearCart();
+      setStep(4);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to place order';
+      setOrderError(message);
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
 
   if (!localStorage.getItem('accessToken')) {
     navigate('/login');
@@ -221,34 +315,52 @@ export default function Checkout() {
                     Billing address same as shipping
                   </label>
                 </div>
+                <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4">
+                  <h2 className="text-lg font-semibold">Shipping Method</h2>
+                  <div className="space-y-4">
+                    {SHIPPING_METHODS.map((method) => (
+                      <label
+                        key={`step1-${method.id}`}
+                        className={`flex items-center justify-between rounded-2xl border px-4 py-3 transition ${
+                          shippingMethod === method.id
+                            ? 'border-orange-500 bg-orange-50'
+                            : 'border-gray-200'
+                        }`}
+                      >
+                        <div>
+                          <p className="font-semibold">{method.label}</p>
+                          <p className="text-sm text-gray-500">{method.detail}</p>
+                        </div>
+                        <input
+                          type="radio"
+                          name="shippingMethod"
+                          checked={shippingMethod === method.id}
+                          onChange={() => setShippingMethod(method.id)}
+                          className="h-4 w-4 accent-orange-500"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </section>
               </section>
             )}
             {step === 2 && (
               <section className="rounded-2xl border border-gray-200 bg-white p-6 space-y-4">
                 <h2 className="text-xl font-semibold">Shipping Method</h2>
-                <div className="space-y-4">
-                  {SHIPPING_METHODS.map((method) => (
-                    <label
-                      key={method.id}
-                      className={`flex items-center justify-between rounded-2xl border px-4 py-3 transition ${
-                        shippingMethod === method.id
-                          ? 'border-orange-500 bg-orange-50'
-                          : 'border-gray-200'
-                      }`}
-                    >
-                      <div>
+                <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4 text-sm">
+                  {(() => {
+                    const method = SHIPPING_METHODS.find((item) => item.id === shippingMethod);
+                    if (!method) return <p>Shipping method not selected</p>;
+                    return (
+                      <>
                         <p className="font-semibold">{method.label}</p>
                         <p className="text-sm text-gray-500">{method.detail}</p>
-                      </div>
-                      <input
-                        type="radio"
-                        name="shippingMethod"
-                        checked={shippingMethod === method.id}
-                        onChange={() => setShippingMethod(method.id)}
-                        className="h-4 w-4 accent-orange-500"
-                      />
-                    </label>
-                  ))}
+                        <p className="text-sm text-gray-500">
+                          Shipping cost: {formatPrice(method.price)}
+                        </p>
+                      </>
+                    );
+                  })()}
                 </div>
               </section>
             )}
@@ -270,54 +382,71 @@ export default function Checkout() {
                     </button>
                   ))}
                 </div>
-                <div className="space-y-4">
-                  <label className="space-y-2">
-                    <span className="text-xs uppercase text-gray-500">Card Number</span>
-                    <input
-                      type="text"
-                      className="w-full rounded-xl border border-gray-200 px-4 py-2 focus:border-orange-500 outline-none"
-                      placeholder="0000 0000 0000 0000"
-                    />
-                  </label>
-                  <div className="grid gap-4 md:grid-cols-3">
+                {paymentTab === 'Credit Card' && (
+                  <div className="space-y-4">
                     <label className="space-y-2">
-                      <span className="text-xs uppercase text-gray-500">Cardholder Name</span>
+                      <span className="text-xs uppercase text-gray-500">Card Number</span>
                       <input
                         type="text"
                         className="w-full rounded-xl border border-gray-200 px-4 py-2 focus:border-orange-500 outline-none"
-                        placeholder="Full Name"
+                        placeholder="0000 0000 0000 0000"
                       />
                     </label>
-                    <label className="space-y-2">
-                      <span className="text-xs uppercase text-gray-500">Expiration</span>
-                      <input
-                        type="text"
-                        placeholder="MM/YY"
-                        className="w-full rounded-xl border border-gray-200 px-4 py-2 focus:border-orange-500 outline-none"
-                      />
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <label className="space-y-2">
+                        <span className="text-xs uppercase text-gray-500">Cardholder Name</span>
+                        <input
+                          type="text"
+                          className="w-full rounded-xl border border-gray-200 px-4 py-2 focus:border-orange-500 outline-none"
+                          placeholder="Full Name"
+                        />
+                      </label>
+                      <label className="space-y-2">
+                        <span className="text-xs uppercase text-gray-500">Expiration</span>
+                        <input
+                          type="text"
+                          placeholder="MM/YY"
+                          className="w-full rounded-xl border border-gray-200 px-4 py-2 focus:border-orange-500 outline-none"
+                        />
+                      </label>
+                      <label className="space-y-2">
+                        <span className="text-xs uppercase text-gray-500">CVV</span>
+                        <input
+                          type="text"
+                          placeholder="123"
+                          className="w-full rounded-xl border border-gray-200 px-4 py-2 focus:border-orange-500 outline-none"
+                        />
+                      </label>
+                    </div>
+                    <label className="inline-flex items-center gap-2 text-sm text-gray-600">
+                      <input type="checkbox" className="h-4 w-4 accent-orange-500" />
+                      Save card for future purchases
                     </label>
-                    <label className="space-y-2">
-                      <span className="text-xs uppercase text-gray-500">CVV</span>
-                      <input
-                        type="text"
-                        placeholder="123"
-                        className="w-full rounded-xl border border-gray-200 px-4 py-2 focus:border-orange-500 outline-none"
-                      />
-                    </label>
+                    <div className="flex flex-wrap gap-2 text-xs text-gray-500">
+                      <span className="flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1">
+                        SSL Secure
+                      </span>
+                      <span className="flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1">
+                        PCI Compliant
+                      </span>
+                    </div>
                   </div>
-                  <label className="inline-flex items-center gap-2 text-sm text-gray-600">
-                    <input type="checkbox" className="h-4 w-4 accent-orange-500" />
-                    Save card for future purchases
-                  </label>
-                  <div className="flex flex-wrap gap-2 text-xs text-gray-500">
-                    <span className="flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1">
-                      SSL Secure
-                    </span>
-                    <span className="flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1">
-                      PCI Compliant
-                    </span>
+                )}
+                {paymentTab === 'Cash on Delivery' && (
+                  <div className="space-y-2 rounded-2xl border border-dashed border-gray-300 bg-orange-50 p-4 text-sm text-gray-700">
+                    <p className="font-semibold text-gray-900">Cash on Delivery</p>
+                    <p>
+                      Pay the courier when your package arrives. Make sure you have the exact amount
+                      ready and a valid ID for verification.
+                    </p>
                   </div>
-                </div>
+                )}
+                {paymentTab !== 'Credit Card' && paymentTab !== 'Cash on Delivery' && (
+                  <div className="space-y-2 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+                    <p className="font-semibold text-gray-900">{paymentTab}</p>
+                    <p>We will redirect you to {paymentTab} to complete the payment securely.</p>
+                  </div>
+                )}
               </section>
             )}
             {step === 4 && (
@@ -382,11 +511,17 @@ export default function Checkout() {
                   Continue
                 </button>
               ) : (
-                <button className="rounded-full bg-orange-500 px-6 py-3 text-sm font-semibold text-white hover:bg-orange-600">
-                  Place Order
+                <button
+                  onClick={handlePlaceOrder}
+                  disabled={placingOrder}
+                  className={`rounded-full bg-orange-500 px-6 py-3 text-sm font-semibold text-white ${placingOrder ? 'opacity-70 cursor-wait' : 'hover:bg-orange-600'}`}
+                >
+                  {placingOrder ? 'Placing Order...' : 'Place Order'}
                 </button>
               )}
             </div>
+            {orderError && <p className="text-sm text-red-600">{orderError}</p>}
+            {orderSuccess && <p className="text-sm text-green-600">{orderSuccess}</p>}
           </div>
           <aside className="space-y-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">

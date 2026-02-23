@@ -1,3 +1,28 @@
+import { apiUrl } from './api';
+
+export const refreshAccessToken = async (): Promise<string | null> => {
+  try {
+    const response = await fetch(apiUrl('/auth/refresh-token'), {
+      method: 'POST',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    const refreshedToken = data?.accessToken;
+    if (refreshedToken) {
+      localStorage.setItem('accessToken', refreshedToken);
+      return refreshedToken;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+};
 // Utility to decode and validate JWT tokens client-side
 interface JWTPayload {
   sub: string;
