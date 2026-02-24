@@ -24,6 +24,7 @@ import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import AdminCoupon from './pages/admin/AdminCoupon';
 import AdminProduct from './pages/admin/AdminProduct';
+import CheckoutSuccess from './pages/CheckoutSuccess';
 
 const Layout = () => {
   return (
@@ -47,6 +48,7 @@ function App() {
               <Route path="/products" element={<Products />} />
               <Route path="/favorite" element={<Favorite />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/checkout/success" element={<CheckoutSuccess />} />
               <Route path="/orders" element={<Orders />} />
             </Route>
             <Route path="/cart" element={<Cart />} />
