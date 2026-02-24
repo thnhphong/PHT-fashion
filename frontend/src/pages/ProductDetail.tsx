@@ -4,7 +4,11 @@ import axios from 'axios';
 import { apiUrl } from '../utils/api';
 import Navbar from '../components/layout/Navbar';
 import { useCart } from '../context/CartContext';
-import CartPopup from './CartPopup';
+import {
+  formatSizeLabel,
+  ONE_SIZE_VALUE,
+  shouldShowSizeSelection,
+} from '../utils/sizeUtils';
 
 interface IProductSize {
   size: string;
@@ -35,7 +39,7 @@ interface IProduct {
   thumbnail_img_2?: string;
   thumbnail_img_3?: string;
   thumbnail_img_4?: string;
-  sizes: IProductSize[];
+  sizes?: IProductSize[];
   created_at: Date;
 }
 
@@ -49,7 +53,10 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState('');
   const { addToCart, setShowCartPopup } = useCart();
-  const [isCartPopupOpen, setIsCartPopupOpen] = useState(false);
+  const safeSizes = product?.sizes ?? [];
+  const showSizeSelection =
+    Boolean(product) &&
+    shouldShowSizeSelection(product?.categoryId?.name, safeSizes);
   useEffect(() => {
     if (id) {
       fetchProduct(id);
@@ -64,10 +71,17 @@ const ProductDetail = () => {
       setProduct(response.data);
       setActiveImage(response.data.img_url);
 
-      // Auto-select first available size
-      const availableSize = response.data.sizes.find(s => s.stock > 0);
-      if (availableSize) {
-        setSelectedSize(availableSize.size);
+      const sizes = response.data.sizes ?? [];
+      const showSizeSelector = shouldShowSizeSelection(
+        response.data.categoryId?.name,
+        sizes
+      );
+
+      if (showSizeSelector) {
+        const availableSize = sizes.find((s) => s.stock > 0) ?? sizes[0];
+        setSelectedSize(availableSize?.size ?? '');
+      } else {
+        setSelectedSize(ONE_SIZE_VALUE);
       }
     } catch (err) {
       console.error('Error fetching product:', err);
@@ -88,22 +102,19 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = () => {
-    if (!selectedSize) {
+    if (showSizeSelection && !selectedSize) {
       alert('Please select a size');
       return;
     }
-    // TODO: Implement add to cart functionality
-    console.log('Add to cart:', { product, selectedSize, quantity });
     addToCart(product, selectedSize, quantity);
-    setIsCartPopupOpen(true);
+    setShowCartPopup(true);
   };
 
   const handleBuyNow = () => {
-    if (!selectedSize) {
+    if (showSizeSelection && !selectedSize) {
       alert('Please select a size');
       return;
     }
-    navigate('/cart');
     addToCart(product, selectedSize, quantity);
     navigate('/cart');
   };
@@ -148,9 +159,14 @@ const ProductDetail = () => {
     );
   }
 
-  const totalStock = product.sizes.reduce((sum, size) => sum + size.stock, 0);
+  const totalStock =
+    showSizeSelection && safeSizes.length
+      ? safeSizes.reduce((sum, size) => sum + size.stock, 0)
+      : product.stock;
   const productImages = getProductImages();
-  const selectedSizeStock = product.sizes.find(s => s.size === selectedSize)?.stock || 0;
+  const selectedSizeStock = showSizeSelection
+    ? safeSizes.find((s) => s.size === selectedSize)?.stock ?? 0
+    : product.stock;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -281,31 +297,39 @@ const ProductDetail = () => {
             {/* Size Selection */}
             <div className="space-y-3">
               <h3 className="text-base font-semibold text-gray-900 text-left">Select Size</h3>
-              <div className="flex flex-wrap gap-2">
-                {product.sizes.map((sizeItem) => {
-                  const isAvailable = sizeItem.stock > 0;
-                  const isSelected = selectedSize === sizeItem.size;
+              {showSizeSelection ? (
+                <div className="flex flex-wrap gap-2">
+                  {safeSizes.map((sizeItem) => {
+                    const isAvailable = sizeItem.stock > 0;
+                    const isSelected = selectedSize === sizeItem.size;
 
-                  return (
-                    <button
-                      key={sizeItem.size}
-                      onClick={() => isAvailable && setSelectedSize(sizeItem.size)}
-                      disabled={!isAvailable}
-                      className={`px-4 py-2 rounded-lg border-2 font-medium transition-all ${isSelected
+                    return (
+                      <button
+                        key={sizeItem.size}
+                        onClick={() =>
+                          isAvailable && setSelectedSize(sizeItem.size)
+                        }
+                        disabled={!isAvailable}
+                        className={`px-4 py-2 rounded-lg border-2 font-medium transition-all ${isSelected
                           ? 'border-orange-500 bg-orange-500 text-white'
                           : isAvailable
                             ? 'border-gray-300 bg-white text-gray-900 hover:border-orange-300'
                             : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed line-through'
-                        }`}
-                    >
-                      {sizeItem.size}
-                      {isAvailable && (
-                        <span className="ml-2 text-xs">({sizeItem.stock})</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+                          }`}
+                      >
+                        {sizeItem.size}
+                        {isAvailable && (
+                          <span className="ml-2 text-xs">({sizeItem.stock})</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-600 text-left">
+                  {formatSizeLabel(ONE_SIZE_VALUE)} · {product.stock || 0} available
+                </p>
+              )}
             </div>
 
             {/* Quantity Selector */}
@@ -401,7 +425,6 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
-      {isCartPopupOpen && <CartPopup />}
     </div>
   );
 };

@@ -93,10 +93,6 @@ const ProductSchema = new Schema<IProduct>(
     sizes: {
       type: [ProductSizeSchema],
       default: defaultSizes,
-      validate: {
-        validator: (sizes: IProductSize[]) => sizes.length > 0,
-        message: 'Product must report at least one size',
-      },
     },
     created_at: {
       type: Date,

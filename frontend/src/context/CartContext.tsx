@@ -7,6 +7,7 @@ import React, {
   useCallback,
   type ReactNode,
 } from 'react';
+import { ONE_SIZE_VALUE, formatSizeLabel } from '../utils/sizeUtils';
 
 export interface CartItem {
   _id: string;
@@ -63,22 +64,25 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const addToCart = useCallback(
     (product: any, selectedSize: string, quantity: number = 1) => {
-      if (!product?._id || !selectedSize) return;
+      if (!product?._id) return;
 
-      const sizeInfo = product.sizes?.find((s: any) => s.size === selectedSize);
-      if (!sizeInfo || sizeInfo.stock < quantity) {
-        alert(`Not enough stock for size ${selectedSize}`);
+      const sizeKey = selectedSize || ONE_SIZE_VALUE;
+      const sizeInfo = product.sizes?.find((s: any) => s.size === sizeKey);
+      const availableStock = sizeInfo?.stock ?? Number(product.stock ?? 0);
+
+      if (availableStock < quantity) {
+        alert(`Not enough stock for size ${formatSizeLabel(sizeKey)}`);
         return;
       }
 
       setCart((prev) => {
         const existing = prev.find(
-          (item) => item._id === product._id && item.selectedSize === selectedSize
+          (item) => item._id === product._id && item.selectedSize === sizeKey
         );
 
         if (existing) {
           return prev.map((item) =>
-            item._id === product._id && item.selectedSize === selectedSize
+            item._id === product._id && item.selectedSize === sizeKey
               ? { ...item, quantity: item.quantity + quantity }
               : item
           );
@@ -91,9 +95,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             name: product.name,
             price: product.price,
             img_url: product.img_url,
-            selectedSize,
+            selectedSize: sizeKey,
             quantity,
-            stock: sizeInfo.stock,
+            stock: availableStock,
             supplier: product.supplierId?.name,
           },
         ];
@@ -101,7 +105,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       setShowCartPopup(true);
     },
-    []
+    [setShowCartPopup]
   );
 
   const updateQuantity = useCallback((id: string, size: string, newQuantity: number) => {

@@ -3,7 +3,8 @@ import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { apiUrl } from '../../utils/api';
-import type { Category, Product } from '../../types/types';
+import type { Category, Product, Supplier } from '../../types/types';
+
 
 const imageFields = ['img_url', 'thumbnail_img_1', 'thumbnail_img_2', 'thumbnail_img_3', 'thumbnail_img_4'];
 const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const;
@@ -63,15 +64,15 @@ const AdminProductForm = () => {
       setSizeDraft({ size: '', stock: '' });
     }
   }, [showSizes]);
-  
+
   const applyProduct = (product: Product) => {
     setSelectedProduct(product);
     setForm({
       name: product.name ?? '',
       description: product.description ?? '',
       price: product.price !== undefined ? String(product.price) : '',
-      categoryId: product.categoryId ?? '',
-      supplierId: product.supplierId ?? '',
+      categoryId: (product.categoryId as Category)?._id ?? '',
+      supplierId: (product.supplierId as Supplier)?._id ?? '',
       stock: product.stock !== undefined ? String(product.stock) : '',
     });
     setSizeEntries(
@@ -163,11 +164,6 @@ const AdminProductForm = () => {
   const getTotalSizeStock = (entries: SizeEntry[]) =>
     entries.reduce((sum, e) => sum + (Number(e.stock) || 0), 0);
 
-  const getRemainingStock = (entries: SizeEntry[], total: string) =>
-    Math.max(0, Number(total || 0) - getTotalSizeStock(entries));
-
-
-
   const addSizeEntry = () => {
     const size = sizeDraft.size.trim();
     const stock = Number(sizeDraft.stock);
@@ -234,17 +230,13 @@ const AdminProductForm = () => {
       formData.append(key, value);
     });
 
-    if (sizeEntries.length > 0) {
-      const serialized = sizeEntries
-        .filter((entry) => entry.size)
-        .map((entry) => ({
-          size: entry.size,
-          stock: Number(entry.stock) || 0,
-        }));
-      if (serialized.length) {
-        formData.append('sizes', JSON.stringify(serialized));
-      }
-    }
+    const serialized = sizeEntries
+      .filter((entry) => entry.size)
+      .map((entry) => ({
+        size: entry.size,
+        stock: Number(entry.stock) || 0,
+      }));
+    formData.append('sizes', JSON.stringify(serialized));
 
     imageFields.forEach((field) => {
       if (files[field]) {
@@ -376,7 +368,7 @@ const AdminProductForm = () => {
               />
             </div>
 
-           {showSizes && (
+            {showSizes && (
               <div className="col-span-full space-y-3">
                 <label className="text-xs uppercase text-gray-400">Sizes &amp; stock</label>
                 <div className="flex flex-wrap gap-3">
@@ -437,7 +429,7 @@ const AdminProductForm = () => {
                   ))}
                 </div>
               </div>
-           )}
+            )}
             <div className="col-span-full space-y-2">
               <label className="text-xs uppercase text-gray-400">Description</label>
               <textarea
@@ -454,7 +446,7 @@ const AdminProductForm = () => {
               <div key={field} className="space-y-2">
                 <label className="text-xs uppercase text-gray-400">{field}</label>
                 <input
-                  ref={(el) => (imageInputRefs[field] = el)} 
+                  ref={(el) => { imageInputRefs[field] = el; }}
                   type="file"
                   accept="image/*"
                   onChange={(event) => handleFileChange(field, event.target.files ?? null)}

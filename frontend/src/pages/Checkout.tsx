@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { apiUrl } from '../utils/api';
 import { refreshAccessToken } from '../utils/auth';
+import { formatSizeLabel } from '../utils/sizeUtils';
 
 const SHIPPING_METHODS = [
   { id: 'standard', label: 'Standard Shipping', detail: '5-7 days • Free', price: 0 },
@@ -459,7 +460,7 @@ export default function Checkout() {
                       <div className="flex-1 space-y-1">
                         <p className="font-semibold text-gray-900">{item.name}</p>
                         <p className="text-sm text-gray-500">
-                          Size {item.selectedSize} • Qty {item.quantity}
+                          Size {formatSizeLabel(item.selectedSize)} • Qty {item.quantity}
                         </p>
                       </div>
                       <p className="text-sm font-semibold text-gray-900">
@@ -535,7 +536,7 @@ export default function Checkout() {
                   <div className="flex-1 space-y-1 text-sm">
                     <p className="font-semibold text-gray-900">{item.name}</p>
                     <p className="text-xs uppercase tracking-[0.3em] text-gray-500">
-                      Size {item.selectedSize}
+                      Size {formatSizeLabel(item.selectedSize)}
                     </p>
                     <p className="text-xs text-gray-400">{item.quantity} × {formatPrice(item.price)}</p>
                   </div>

@@ -1,6 +1,7 @@
 import { useCart } from '../context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowLeft } from 'lucide-react';
+import { formatSizeLabel } from '../utils/sizeUtils';
 
 export default function Cart() {
   const {
@@ -76,7 +77,7 @@ export default function Cart() {
                   {item.name}
                 </h3>
                 <div className="text-sm text-gray-600 space-y-1">
-                  <p>Size: <span className="font-medium">{item.selectedSize}</span></p>
+                  <p>Size: <span className="font-medium">{formatSizeLabel(item.selectedSize)}</span></p>
                   {item.supplier && <p>Supplier: {item.supplier}</p>}
                 </div>
 

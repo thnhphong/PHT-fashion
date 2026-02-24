@@ -43,4 +43,4 @@ const OrderItemSchema = new Schema<IOrderItem>(
   }
 );
 
-export default model<IOrderItem>('OrderItem', OrderItemSchema);
+export default model<IOrderItem>('OrderItem', OrderItemSchema, 'orderItems');

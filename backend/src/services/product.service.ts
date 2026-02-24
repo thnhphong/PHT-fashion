@@ -9,7 +9,7 @@ const createProduct = async (payload: Partial<IProduct>) => {
 const getProducts = async (params: PaginationParams): Promise<PaginationResult<IProduct>> => {
   const { page, limit, sort, order } = params;
 
-  const skip = (page - 1) * limit;
+  const skip = (page ?? - 1) * (limit ?? 10); // default limit is 10
   const sortOrder = order === 'asc' ? 1 : -1;
 
   // Get total count
@@ -17,13 +17,13 @@ const getProducts = async (params: PaginationParams): Promise<PaginationResult<I
 
   // Get paginated data
   const data = await Product.find()
-    .sort({ [sort]: sortOrder })
+    .sort({ [sort ?? 'created_at']: sortOrder })
     .skip(skip)
-    .limit(limit)
+    .limit(limit ?? 10)
     .populate('categoryId', 'name')
     .populate('supplierId', 'name');
 
-  return buildPaginationResult(data, total, page, limit);
+  return buildPaginationResult(data, total, page ?? 1, limit ?? 10);
 };
 
 const getFeaturedProducts = async (params: PaginationParams): Promise<PaginationResult<IProduct>> => {

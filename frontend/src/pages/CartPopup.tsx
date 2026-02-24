@@ -2,6 +2,7 @@
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
 import { X, Plus, Minus } from 'lucide-react';
+import { formatSizeLabel } from '../utils/sizeUtils';
 
 export default function CartPopup() {
   const {
@@ -53,7 +54,7 @@ export default function CartPopup() {
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-gray-900 line-clamp-2">{item.name}</h4>
                 <p className="text-sm text-gray-600 mt-0.5">
-                  Size: {item.selectedSize} · {item.price.toLocaleString()} VND
+                  Size: {formatSizeLabel(item.selectedSize)} · {item.price.toLocaleString()} VND
                 </p>
 
                 <div className="flex items-center gap-4 mt-2">

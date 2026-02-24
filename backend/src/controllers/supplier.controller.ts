@@ -7,7 +7,7 @@ const normalizeParam = (value: string | string[] | undefined): string | undefine
 };
 
 export const getAllSuppliers = async (_req: Request, res: Response) => {
-  const suppliers = await supplierService.getAll();
+  const suppliers = await supplierService.getAllSuppliers();
   res.status(200).json(suppliers);
 };
 
@@ -17,7 +17,7 @@ export const getSupplierById = async (req: Request, res: Response) => {
     if (!supplierId) {
       return res.status(400).json({ message: 'Supplier ID is required' });
     }
-    const supplier = await supplierService.getById(supplierId);
+    const supplier = await supplierService.getSupplierById(supplierId);
     if (!supplier) {
       return res.status(404).json({ message: 'Supplier not found' });
     }
@@ -34,7 +34,7 @@ export const createSupplier = async (req: Request, res: Response) => {
     if (!name || !description) {
       return res.status(400).json({ message: 'Name and description are required' });
     }
-    const supplier = await supplierService.create({ name, description });
+    const supplier = await supplierService.createSupplier({ name, description });
     return res.status(201).json({ message: 'Supplier created', supplier });
   } catch (error) {
     console.error(error);
@@ -48,7 +48,7 @@ export const updateSupplier = async (req: Request, res: Response) => {
     if (!supplierId) {
       return res.status(400).json({ message: 'Supplier ID is required' });
     }
-    const supplier = await supplierService.updateById(supplierId, req.body);
+    const supplier = await supplierService.updateSupplierById(supplierId, req.body);
     if (!supplier) {
       return res.status(404).json({ message: 'Supplier not found' });
     }
@@ -65,7 +65,7 @@ export const deleteSupplier = async (req: Request, res: Response) => {
     if (!supplierId) {
       return res.status(400).json({ message: 'Supplier ID is required' });
     }
-    const supplier = await supplierService.deleteById(supplierId);
+    const supplier = await supplierService.deleteSupplierById(supplierId);
     if (!supplier) {
       return res.status(404).json({ message: 'Supplier not found' });
     }
