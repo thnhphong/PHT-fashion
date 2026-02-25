@@ -33,13 +33,12 @@ const CheckoutStepper = ({ step }: { step: number }) => {
       {data.map((label, index) => (
         <div key={label} className="flex-1 text-center">
           <div
-            className={`mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full border-2 ${
-              index + 1 === step
-                ? 'border-orange-500 bg-orange-500 text-white'
-                : index + 1 < step
-                  ? 'border-green-500 bg-green-500 text-white'
-                  : 'border-gray-300 text-gray-500'
-            }`}
+            className={`mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full border-2 ${index + 1 === step
+              ? 'border-orange-500 bg-orange-500 text-white'
+              : index + 1 < step
+                ? 'border-green-500 bg-green-500 text-white'
+                : 'border-gray-300 text-gray-500'
+              }`}
           >
             {index + 1}
           </div>
@@ -86,6 +85,14 @@ export default function Checkout() {
       }
     };
     fetchCities();
+
+    // Check for payment callback params
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error') === 'payment_cancelled') {
+      setOrderError('Payment was cancelled.');
+    } else if (params.get('error') === 'payment_failed') {
+      setOrderError('Payment failed or was not approved.');
+    }
   }, []);
 
   useEffect(() => {
@@ -181,7 +188,30 @@ export default function Checkout() {
         throw new Error(errorData?.message ?? 'Unable to place order');
       }
 
-      await response.json();
+      const responseData = await response.json();
+
+      if (paymentTab === 'PayPal') {
+        const orderId = responseData.order?._id;
+
+        // Initiate PayPal flow
+        const paypalRes = await fetch(apiUrl(`/payments/paypal/create-order/${orderId}`), {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (!paypalRes.ok) {
+          throw new Error('Failed to communicate with PayPal');
+        }
+
+        const paypalData = await paypalRes.json();
+        if (paypalData.approval_url) {
+          window.location.href = paypalData.approval_url;
+          return;
+        }
+      }
+
       setOrderSuccess('Order placed successfully. We will email you the confirmation shortly.');
       clearCart();
       setStep(4);
@@ -189,7 +219,9 @@ export default function Checkout() {
       const message = error instanceof Error ? error.message : 'Unable to place order';
       setOrderError(message);
     } finally {
-      setPlacingOrder(false);
+      if (paymentTab !== 'PayPal') {
+        setPlacingOrder(false);
+      }
     }
   };
 
@@ -322,11 +354,10 @@ export default function Checkout() {
                     {SHIPPING_METHODS.map((method) => (
                       <label
                         key={`step1-${method.id}`}
-                        className={`flex items-center justify-between rounded-2xl border px-4 py-3 transition ${
-                          shippingMethod === method.id
-                            ? 'border-orange-500 bg-orange-50'
-                            : 'border-gray-200'
-                        }`}
+                        className={`flex items-center justify-between rounded-2xl border px-4 py-3 transition ${shippingMethod === method.id
+                          ? 'border-orange-500 bg-orange-50'
+                          : 'border-gray-200'
+                          }`}
                       >
                         <div>
                           <p className="font-semibold">{method.label}</p>
@@ -373,11 +404,10 @@ export default function Checkout() {
                     <button
                       key={tab}
                       onClick={() => setPaymentTab(tab)}
-                      className={`flex-1 rounded-2xl border px-4 py-2 transition ${
-                        paymentTab === tab
-                          ? 'border-orange-500 bg-orange-500 text-white'
-                          : 'border-gray-200 text-gray-600'
-                      }`}
+                      className={`flex-1 rounded-2xl border px-4 py-2 transition ${paymentTab === tab
+                        ? 'border-orange-500 bg-orange-500 text-white'
+                        : 'border-gray-200 text-gray-600'
+                        }`}
                     >
                       {tab}
                     </button>
