@@ -13,6 +13,8 @@ import { env } from './config/env';
 import cors from 'cors';
 import searchRoutes from './routes/search.route';
 import couponRoutes from './routes/coupon.route';
+import { connectRedis } from './utils/redis.util';
+import { cleanupExpiredDrafts } from './services/draftOrder.service';
 
 dotenv.config();
 
@@ -34,8 +36,7 @@ app.use(cors({
   exposedHeaders: ['Content-Disposition']
 }));
 
-// Connect to database
-connectDB();
+// Connect to database inside bootstrap
 
 // Health check route
 app.get('/', (req, res) => {
@@ -57,8 +58,31 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
 
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`API available at http://localhost:${PORT}`);
+const startServer = async () => {
+  await connectDB();
+  await connectRedis();
+  const cleanupIntervalSeconds = Math.max(
+    10,
+    Number(process.env.DRAFT_CLEANUP_INTERVAL_SECONDS) || 60
+  );
+  setInterval(async () => {
+    try {
+      const cleaned = await cleanupExpiredDrafts();
+      if (cleaned > 0) {
+        console.log(`[Draft Cleanup] Restored stock for ${cleaned} expired drafts`);
+      }
+    } catch (error) {
+      console.error('Draft cleanup failed', error);
+    }
+  }, cleanupIntervalSeconds * 1000);
+
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+    console.log(`API available at http://localhost:${PORT}`);
+  });
+};
+
+startServer().catch((error) => {
+  console.error('Failed to start server:', error);
+  process.exit(1);
 });

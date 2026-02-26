@@ -1,13 +1,41 @@
 import { Request, Response } from 'express';
 import {
-  placeOrder,
+  CreateOrderInput,
   getOrderById,
   getOrdersByCustomer,
   getAllOrders,
   updateOrderStatus,
   cancelOrder,
 } from '../services/order.service';
+import {
+  cancelDraftOrder,
+  createDraftOrder,
+  finalizeDraftOrder,
+  getDraft,
+} from '../services/draftOrder.service';
 import { OrderStatus, PaymentStatus } from '../models/Order';
+
+const SHIPPING_ADDRESS_REQUIRED_FIELDS: Array<
+  [keyof CreateOrderInput['shippingAddress'], string]
+> = [
+  ['fullName', 'Full name'],
+  ['email', 'Email'],
+  ['phone', 'Phone number'],
+  ['street', 'Street address'],
+  ['city', 'City'],
+  ['state', 'State/Province'],
+  ['zipCode', 'ZIP/postal code'],
+  ['country', 'Country'],
+];
+
+const ensureShippingAddressComplete = (address: CreateOrderInput['shippingAddress']) => {
+  for (const [field, label] of SHIPPING_ADDRESS_REQUIRED_FIELDS) {
+    const value = address[field] ?? '';
+    if (!value.trim()) {
+      throw new Error(`${label} is required`);
+    }
+  }
+};
 
 // POST /api/orders  — authenticated customer
 export const createOrder = async (req: Request, res: Response) => {
@@ -23,7 +51,13 @@ export const createOrder = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Order must contain at least one item' });
     }
 
-    const result = await placeOrder({
+    if (!shippingAddress) {
+      return res.status(400).json({ message: 'Shipping address is required' });
+    }
+
+    ensureShippingAddressComplete(shippingAddress);
+
+    const draft = await createDraftOrder({
       customerId,
       items,
       shippingAddress,
@@ -33,9 +67,10 @@ export const createOrder = async (req: Request, res: Response) => {
     });
 
     return res.status(201).json({
-      message: 'Order placed successfully',
-      order: result.order,
-      items: result.orderItems,
+      message: 'Order draft created',
+      draftId: draft.draftId,
+      expiresAt: draft.expiresAt,
+      totals: draft.totals,
     });
   } catch (error) {
     if (error instanceof Error) {
@@ -43,6 +78,58 @@ export const createOrder = async (req: Request, res: Response) => {
       return res.status(400).json({ message: error.message });
     }
     console.error('Create order error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const finalizeOrderDraft = async (req: Request, res: Response) => {
+  try {
+    const customerId = req.user?.sub;
+    if (!customerId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { draftId } = req.params;
+    const draft = await getDraft(draftId as string);
+    if (!draft || draft.customerId !== customerId) {
+      return res.status(404).json({ message: 'Draft not found' });
+    }
+
+    const result = await finalizeDraftOrder(draftId as string);
+    return res.status(201).json({
+      message: 'Order finalized',
+      order: result.order,
+      items: result.orderItems,
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error('Finalize draft error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const cancelOrderDraft = async (req: Request, res: Response) => {
+  try {
+    const customerId = req.user?.sub;
+    if (!customerId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { draftId } = req.params;
+    const draft = await getDraft(draftId as string);
+    if (!draft || draft.customerId !== customerId) {
+      return res.status(404).json({ message: 'Draft not found' });
+    }
+
+    await cancelDraftOrder(draftId as string);
+    return res.status(200).json({ message: 'Draft cancelled successfully' });
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error('Cancel draft error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 };

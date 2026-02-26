@@ -4,8 +4,8 @@ import { authenticate } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-// POST /api/payments/paypal/create-order/:orderId
-router.post('/paypal/create-order/:orderId', authenticate, payWithPayPal);
+// POST /api/payments/paypal/create-order/:draftId
+router.post('/paypal/create-order/:draftId', authenticate, payWithPayPal);
 
 // GET /api/payments/paypal/success (public callback for PayPal)
 router.get('/paypal/success', payPalSuccess);

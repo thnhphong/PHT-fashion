@@ -1,6 +1,6 @@
 import paypal from 'paypal-rest-sdk';
-import { IOrder } from '../models/Order';
 import { CurrencyConverter } from '../utils/currency.util';
+import type { DraftOrderData } from './draftOrder.service';
 
 // Configure PayPal environment
 
@@ -12,13 +12,13 @@ paypal.configure({
 
 /**
  * Creates a PayPal payment order and returns the approval URL
- * @param order The database order document
+ * @param draft The draft order data backed by Redis
  * @param baseUrl The base URL of the API server (e.g. http://localhost:5000) for callbacks
  */
-export const createPayPalPayment = (order: IOrder, baseUrl: string): Promise<string> => {
+export const createPayPalPayment = (draft: DraftOrderData, baseUrl: string): Promise<string> => {
     return new Promise((resolve, reject) => {
-        // Convert VND total to USD string
-        const totalUsd = CurrencyConverter.vndToUsd(order.total_amount);
+        // Convert draft total from VND to USD string
+        const totalUsd = CurrencyConverter.vndToUsd(draft.totals.totalAmount);
 
         const create_payment_json = {
             intent: 'sale',
@@ -26,16 +26,16 @@ export const createPayPalPayment = (order: IOrder, baseUrl: string): Promise<str
                 payment_method: 'paypal',
             },
             redirect_urls: {
-                return_url: `${baseUrl}/api/payments/paypal/success?orderId=${order._id}`,
-                cancel_url: `${baseUrl}/api/payments/paypal/cancel?orderId=${order._id}`,
+                return_url: `${baseUrl}/api/payments/paypal/success?draftId=${draft.draftId}`,
+                cancel_url: `${baseUrl}/api/payments/paypal/cancel?draftId=${draft.draftId}`,
             },
             transactions: [
                 {
                     item_list: {
                         items: [
                             {
-                                name: `Order ${order.orderNumber}`,
-                                sku: order._id.toString(),
+                                name: `Draft ${draft.draftId}`,
+                                sku: draft.draftId,
                                 price: totalUsd,
                                 currency: 'USD',
                                 quantity: 1,
@@ -46,7 +46,7 @@ export const createPayPalPayment = (order: IOrder, baseUrl: string): Promise<str
                         currency: 'USD',
                         total: totalUsd,
                     },
-                    description: `Payment for Order ${order.orderNumber}`,
+                    description: `Payment for draft ${draft.draftId}`,
                 },
             ],
         };

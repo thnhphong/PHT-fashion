@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import {
+  cancelMyOrder,
+  cancelOrderDraft,
   createOrder,
+  finalizeOrderDraft,
   getMyOrders,
   getOrder,
-  cancelMyOrder,
   adminGetAllOrders,
   adminGetOrder,
   adminUpdateOrderStatus,
@@ -18,6 +20,12 @@ const router = Router();
 
 // POST /api/orders            → place a new order
 router.post('/', authenticate, createOrder);
+
+// POST /api/orders/drafts/:draftId/finalize → finalize draft
+router.post('/drafts/:draftId/finalize', authenticate, finalizeOrderDraft);
+
+// POST /api/orders/drafts/:draftId/cancel → cancel an existing draft
+router.post('/drafts/:draftId/cancel', authenticate, cancelOrderDraft);
 
 // GET  /api/orders/my         → list own orders
 router.get('/my', authenticate, getMyOrders);

@@ -169,7 +169,8 @@ export default function Checkout() {
         body: JSON.stringify(payload),
       });
 
-    let response = await attemptOrderRequest(token);
+    let bearerToken = token;
+    let response = await attemptOrderRequest(bearerToken);
 
     if (response.status === 401) {
       const refreshed = await refreshAccessToken();
@@ -179,8 +180,11 @@ export default function Checkout() {
         setPlacingOrder(false);
         return;
       }
-      response = await attemptOrderRequest(refreshed);
+      bearerToken = refreshed;
+      response = await attemptOrderRequest(bearerToken);
     }
+
+    const isPayPal = paymentTab === 'PayPal';
 
     try {
       if (!response.ok) {
@@ -189,19 +193,30 @@ export default function Checkout() {
       }
 
       const responseData = await response.json();
+      const draftId = responseData?.draftId;
+      if (!draftId) {
+        throw new Error('Unable to create draft order');
+      }
 
-      if (paymentTab === 'PayPal') {
-        const orderId = responseData.order?._id;
-
-        // Initiate PayPal flow
-        const paypalRes = await fetch(apiUrl(`/payments/paypal/create-order/${orderId}`), {
+      const cancelDraft = async () => {
+        await fetch(apiUrl(`/orders/drafts/${draftId}/cancel`), {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`
-          }
+            Authorization: `Bearer ${bearerToken}`,
+          },
+        }).catch(() => null);
+      };
+
+      if (isPayPal) {
+        const paypalRes = await fetch(apiUrl(`/payments/paypal/create-order/${draftId}`), {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${bearerToken}`,
+          },
         });
 
         if (!paypalRes.ok) {
+          await cancelDraft();
           throw new Error('Failed to communicate with PayPal');
         }
 
@@ -210,6 +225,32 @@ export default function Checkout() {
           window.location.href = paypalData.approval_url;
           return;
         }
+
+        await cancelDraft();
+        throw new Error('PayPal approval URL missing');
+      }
+
+      const finalizeDraft = async () => {
+        const finalizeRes = await fetch(apiUrl(`/orders/drafts/${draftId}/finalize`), {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${bearerToken}`,
+          },
+        });
+
+        if (!finalizeRes.ok) {
+          const errorData = await finalizeRes.json().catch(() => null);
+          throw new Error(errorData?.message ?? 'Unable to finalize order');
+        }
+
+        return finalizeRes.json();
+      };
+
+      try {
+        await finalizeDraft();
+      } catch (finalizeError) {
+        await cancelDraft();
+        throw finalizeError;
       }
 
       setOrderSuccess('Order placed successfully. We will email you the confirmation shortly.');
@@ -218,8 +259,11 @@ export default function Checkout() {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to place order';
       setOrderError(message);
+      if (isPayPal) {
+        setPlacingOrder(false);
+      }
     } finally {
-      if (paymentTab !== 'PayPal') {
+      if (!isPayPal) {
         setPlacingOrder(false);
       }
     }
