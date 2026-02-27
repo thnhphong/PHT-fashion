@@ -2,6 +2,8 @@ import { useCart } from '../context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowLeft } from 'lucide-react';
 import { formatSizeLabel } from '../utils/sizeUtils';
+import SearchInput from '../components/common/SearchInput';
+
 
 export default function Cart() {
   const {
@@ -71,6 +73,10 @@ export default function Cart() {
             </p>
           </div>
 
+          
+        </div>
+        <div className="mb-8 flex justify-end items-center gap-4">
+          <SearchInput />
           <button
             onClick={() => {
               if (window.confirm('Clear entire cart?')) clearCart();
@@ -96,25 +102,27 @@ export default function Cart() {
                     {totalItems}
                   </span>
                 </div>
-                <p className="hidden text-xs text-slate-500 sm:block">
-                  Edit quantities directly in this grid.
-                </p>
               </div>
 
-              <div className="hidden items-center justify-between border-y border-slate-100 py-3 text-xs font-medium text-slate-500 sm:grid sm:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)_minmax(0,1fr)] sm:gap-4">
-                <span className="pl-1">Product</span>
+              <div className="hidden items-center justify-between border-y border-slate-100 py-3 text-xs font-medium text-slate-500 sm:grid sm:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] sm:gap-4">
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" className="accent-orange-500 w-4 h-4" />
+                  <span className="text-left">Product</span>
+                </div>
                 <span className="text-center">Quantity</span>
                 <span className="text-right">Total</span>
+                <span className="text-right">Action</span> 
               </div>
 
               <div className="divide-y divide-slate-100">
                 {cart.map((item) => (
                   <div
                     key={`${item._id}-${item.selectedSize}`}
-                    className="group grid gap-4 py-4 sm:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)_minmax(0,1fr)] sm:items-center sm:gap-6"
+                    className="group grid gap-4 py-4 sm:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] sm:items-center sm:gap-6"
                   >
                     {/* Product info */}
                     <div className="flex items-start gap-4">
+                      <input type="checkbox" className="accent-orange-500 w-4 h-4 mt-7" />
                       <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border border-slate-100 bg-slate-100/80">
                         <img
                           src={item.img_url}
@@ -141,14 +149,7 @@ export default function Cart() {
                             </>
                           )}
                         </p>
-                        <button
-                          onClick={() => removeFromCart(item._id, item.selectedSize)}
-                          className="inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-slate-400 transition-colors duration-200 hover:text-red-500"
-                          title="Remove item"
-                        >
-                          <Trash2 size={14} />
-                          Remove
-                        </button>
+                        
                       </div>
                     </div>
 
@@ -198,7 +199,15 @@ export default function Cart() {
                         </p>
                       </div>
                     </div>
+                      <button
+                      onClick={() => removeFromCart(item._id, item.selectedSize)}
+                      className="inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-slate-400 transition-colors duration-200 hover:text-red-500 justify-end"
+                      title="Remove item"
+                    >
+                      Remove
+                    </button> 
                   </div>
+                  
                 ))}
               </div>
             </div>
