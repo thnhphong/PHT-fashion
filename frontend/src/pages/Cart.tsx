@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowLeft } from 'lucide-react';
-import { formatSizeLabel } from '../utils/sizeUtils';
+import { formatSizeLabel, shouldShowSizeSelection } from '../utils/sizeUtils';
 import SearchInput from '../components/common/SearchInput';
 
 
@@ -231,35 +231,35 @@ export default function Cart() {
                         </h3>
                         <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                           <span>Size</span>
-                          {Array.isArray(item.sizes) && item.sizes.length > 0 ? (
-                            <select
-                              value={item.selectedSize}
-                              onChange={(event) =>
-                                updateItemSize(
-                                  item._id,
-                                  item.selectedSize,
-                                  event.target.value
-                                )
-                              }
-                              className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-xs font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-orange-500"
-                            >
-                              {item.sizes.map((size) => (
-                                <option
-                                  key={size.size}
-                                  value={size.size}
-                                  disabled={size.stock <= 0}
-                                >
-                                  {formatSizeLabel(size.size)}
-                                  {size.stock > 0
-                                    ? ` (${size.stock})`
-                                    : ' - Out of stock'}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <span className="font-medium text-slate-700">
-                              {formatSizeLabel(item.selectedSize)}
-                            </span>
+                            {Array.isArray(item.sizes) && item.sizes.length > 0 && shouldShowSizeSelection(item.categoryName, item.sizes) ? (
+                              <select
+                                value={item.selectedSize}
+                                onChange={(event) =>
+                                  updateItemSize(
+                                    item._id,
+                                    item.selectedSize,
+                                    event.target.value
+                                  )
+                                }
+                                className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-xs font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                              >
+                                {item.sizes.map((size) => (
+                                  <option
+                                    key={size.size}
+                                    value={size.size}
+                                    disabled={size.stock <= 0}
+                                  >
+                                    {formatSizeLabel(size.size)}
+                                    {size.stock > 0
+                                      ? ` (${size.stock})`
+                                      : ' - Out of stock'}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="font-medium text-slate-700">
+                                {formatSizeLabel(item.selectedSize)}
+                              </span>
                           )}
                           {item.supplier && (
                             <>

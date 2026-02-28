@@ -18,6 +18,7 @@ export interface CartItem {
   quantity: number;
   stock: number;       // available stock for selected size
   supplier?: string;   // optional – from supplierId.name
+  categoryName: string;
   // optional size metadata for editing size inside cart
   sizes?: { size: string; stock: number }[];
 }
@@ -102,6 +103,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             quantity,
             stock: availableStock,
             supplier: product.supplierId?.name,
+            categoryName: product.categoryId?.name,
             sizes: Array.isArray(product.sizes)
               ? product.sizes.map((s: any) => ({
                   size: s.size,
