@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useCart } from '../context/CartContext';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useCart, type CartItem } from '../context/CartContext';
 import { apiUrl } from '../utils/api';
 import { refreshAccessToken } from '../utils/auth';
 import { formatSizeLabel } from '../utils/sizeUtils';
@@ -51,7 +51,8 @@ const CheckoutStepper = ({ step }: { step: number }) => {
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { cart, getCartTotal, clearCart } = useCart();
+  const location = useLocation();
+  const { cart, removeFromCart } = useCart();
   const [step, setStep] = useState(1);
   const [shippingMethod, setShippingMethod] = useState(SHIPPING_METHODS[0].id);
   const [paymentTab, setPaymentTab] = useState(PAYMENT_TABS[0]);
@@ -73,6 +74,12 @@ export default function Checkout() {
   const [placingOrder, setPlacingOrder] = useState(false);
   const [orderError, setOrderError] = useState('');
   const [orderSuccess, setOrderSuccess] = useState('');
+
+  const locationState = location.state as { selectedItems?: CartItem[] } | null;
+  const itemsForCheckout: CartItem[] =
+    locationState?.selectedItems && locationState.selectedItems.length
+      ? locationState.selectedItems
+      : cart;
 
   useEffect(() => {
     const fetchCities = async () => {
@@ -99,7 +106,14 @@ export default function Checkout() {
     setForm((prev) => ({ ...prev, city: selectedCity }));
   }, [selectedCity]);
 
-  const subtotal = useMemo(() => getCartTotal(), [getCartTotal]);
+  const subtotal = useMemo(
+    () =>
+      itemsForCheckout.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      ),
+    [itemsForCheckout]
+  );
   const shippingPrice =
     SHIPPING_METHODS.find((method) => method.id === shippingMethod)?.price ?? 0;
   const grandTotal = subtotal + shippingPrice;
@@ -112,14 +126,15 @@ export default function Checkout() {
   const handlePrev = () => setStep((prev) => Math.max(prev - 1, 1));
 
   const handlePlaceOrder = async () => {
-    if (!cart.length) {
+    if (!itemsForCheckout.length) {
       setOrderError('Your cart is empty');
       return;
     }
 
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      navigate('/login');
+      const loginState = { ...(location.state as object | null ?? {}), from: '/checkout' };
+      navigate('/login', { state: loginState });
       return;
     }
 
@@ -130,7 +145,7 @@ export default function Checkout() {
       'Cash on Delivery': 'cash_on_delivery',
     };
 
-    const items = cart.map((item) => ({
+    const items = itemsForCheckout.map((item) => ({
       productId: item._id,
       quantity: item.quantity,
       productSize: item.selectedSize,
@@ -176,7 +191,8 @@ export default function Checkout() {
       const refreshed = await refreshAccessToken();
       if (!refreshed) {
         setOrderError('Session expired. Please log in again.');
-        navigate('/login');
+          const loginState = { ...(location.state as object | null ?? {}), from: '/checkout' };
+          navigate('/login', { state: loginState });
         setPlacingOrder(false);
         return;
       }
@@ -254,7 +270,9 @@ export default function Checkout() {
       }
 
       setOrderSuccess('Order placed successfully. We will email you the confirmation shortly.');
-      clearCart();
+      itemsForCheckout.forEach((item) =>
+        removeFromCart(item._id, item.selectedSize)
+      );
       setStep(4);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to place order';
@@ -270,7 +288,8 @@ export default function Checkout() {
   };
 
   if (!localStorage.getItem('accessToken')) {
-    navigate('/login');
+    const loginState = { ...(location.state as object | null ?? {}), from: '/checkout' };
+    navigate('/login', { state: loginState });
     return null;
   }
 
@@ -528,7 +547,7 @@ export default function Checkout() {
               <section className="rounded-2xl border border-gray-200 bg-white p-6 space-y-4">
                 <h2 className="text-xl font-semibold">Review Order</h2>
                 <div className="space-y-4">
-                  {cart.map((item) => (
+                  {itemsForCheckout.map((item) => (
                     <div key={`${item._id}-${item.selectedSize}`} className="flex gap-4 rounded-2xl border border-gray-200 p-4">
                       <img src={item.img_url} alt={item.name} className="h-16 w-16 rounded-xl object-cover" />
                       <div className="flex-1 space-y-1">
@@ -604,7 +623,7 @@ export default function Checkout() {
               <button className="text-sm text-orange-500">Edit Cart</button>
             </div>
             <div className="space-y-3">
-              {cart.map((item) => (
+              {itemsForCheckout.map((item) => (
                 <div key={`${item._id}-${item.selectedSize}`} className="flex items-center gap-3">
                   <img src={item.img_url} alt={item.name} className="h-14 w-14 rounded-lg object-cover" />
                   <div className="flex-1 space-y-1 text-sm">

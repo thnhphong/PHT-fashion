@@ -18,6 +18,8 @@ export interface CartItem {
   quantity: number;
   stock: number;       // available stock for selected size
   supplier?: string;   // optional – from supplierId.name
+  // optional size metadata for editing size inside cart
+  sizes?: { size: string; stock: number }[];
 }
 
 interface CartContextType {
@@ -26,6 +28,7 @@ interface CartContextType {
   setShowCartPopup: (show: boolean) => void;
   addToCart: (product: any, selectedSize: string, quantity: number) => void;
   updateQuantity: (id: string, size: string, newQuantity: number) => void;
+  updateItemSize: (id: string, oldSize: string, newSize: string) => void;
   removeFromCart: (id: string, size: string) => void;
   getCartItemQuantity: (id: string, size: string) => number;
   getCartTotal: () => number;
@@ -99,6 +102,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             quantity,
             stock: availableStock,
             supplier: product.supplierId?.name,
+            sizes: Array.isArray(product.sizes)
+              ? product.sizes.map((s: any) => ({
+                  size: s.size,
+                  stock: Number(s.stock ?? 0),
+                }))
+              : undefined,
           },
         ];
       });
@@ -121,6 +130,69 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         .filter((item) => item.quantity > 0)
     );
   }, []);
+
+  const updateItemSize = useCallback(
+    (id: string, oldSize: string, newSize: string) => {
+      if (!newSize || oldSize === newSize) return;
+
+      setCart((prev) => {
+        const index = prev.findIndex(
+          (item) => item._id === id && item.selectedSize === oldSize
+        );
+        if (index === -1) return prev;
+
+        const currentItem = prev[index];
+
+        // Find stock for the new size, falling back to current stock
+        const sizeInfo =
+          currentItem.sizes?.find((s) => s.size === newSize) ?? null;
+        const availableStock =
+          sizeInfo && typeof sizeInfo.stock === 'number'
+            ? sizeInfo.stock
+            : currentItem.stock;
+
+        const adjustedQuantity = Math.max(
+          1,
+          Math.min(currentItem.quantity, availableStock)
+        );
+
+        const existingWithNewSizeIndex = prev.findIndex(
+          (item, idx) =>
+            idx !== index && item._id === id && item.selectedSize === newSize
+        );
+
+        const next = [...prev];
+
+        if (existingWithNewSizeIndex !== -1) {
+          // Merge into existing line with new size
+          const existingItem = next[existingWithNewSizeIndex];
+          const mergedQuantity = Math.min(
+            existingItem.quantity + adjustedQuantity,
+            availableStock
+          );
+          next[existingWithNewSizeIndex] = {
+            ...existingItem,
+            quantity: mergedQuantity,
+            stock: availableStock,
+          };
+          // Remove old-size line
+          next.splice(index, 1);
+          return next;
+        }
+
+        // Just update the existing line with the new size
+        next[index] = {
+          ...currentItem,
+          selectedSize: newSize,
+          quantity: adjustedQuantity,
+          stock: availableStock,
+        };
+
+        return next;
+      });
+    },
+    []
+  );
 
   const removeFromCart = useCallback((id: string, size: string) => {
     setCart((prev) =>
@@ -154,6 +226,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setShowCartPopup,
     addToCart,
     updateQuantity,
+    updateItemSize,
     removeFromCart,
     getCartItemQuantity,
     getCartTotal,

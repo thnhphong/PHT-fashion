@@ -7,8 +7,8 @@
 ---
 
 **Project:** PHT Fashion
-**Generated:** 2026-02-27 15:23:07
-**Category:** SaaS (General)
+**Generated:** 2026-02-28 14:51:31
+**Category:** E-commerce
 
 ---
 
@@ -151,13 +151,13 @@
 
 ## Style Guidelines
 
-**Style:** Glassmorphism
+**Style:** Vibrant & Block-based
 
-**Keywords:** Frosted glass, transparent, blurred background, layered, vibrant background, light source, depth, multi-layer
+**Keywords:** Bold, energetic, playful, block layout, geometric shapes, high color contrast, duotone, modern, energetic
 
-**Best For:** Modern SaaS, financial dashboards, high-end corporate, lifestyle apps, modal overlays, navigation
+**Best For:** Startups, creative agencies, gaming, social media, youth-focused, entertainment, consumer
 
-**Key Effects:** Backdrop blur (10-20px), subtle border (1px solid rgba white 0.2), light reflection, Z-depth
+**Key Effects:** Large sections (48px+ gaps), animated patterns, bold hover (color shift), scroll-snap, large type (32px+), 200-300ms
 
 ### Page Pattern
 
@@ -174,8 +174,8 @@
 
 ## Anti-Patterns (Do NOT Use)
 
-- ❌ Excessive animation
-- ❌ Dark mode by default
+- ❌ Flat design without depth
+- ❌ Text-heavy pages
 
 ### Additional Forbidden Patterns
 

@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowLeft } from 'lucide-react';
@@ -9,12 +10,92 @@ export default function Cart() {
   const {
     cart,
     updateQuantity,
+    updateItemSize,
     removeFromCart,
-    getCartTotal,
     getTotalItems,
     clearCart,
   } = useCart();
   const navigate = useNavigate();
+
+  const [selectedKeys, setSelectedKeys] = useState<string[]>(() =>
+    cart.map((item) => `${item._id}-${item.selectedSize}`)
+  );
+
+  useEffect(() => {
+    setSelectedKeys((prev) => {
+      const validKeys = new Set(
+        cart.map((item) => `${item._id}-${item.selectedSize}`)
+      );
+      const next = prev.filter((key) => validKeys.has(key));
+
+      if (next.length === 0 && cart.length > 0) {
+        return Array.from(validKeys);
+      }
+
+      return next;
+    });
+  }, [cart]);
+
+  const selectedItems = useMemo(
+    () =>
+      cart.filter((item) =>
+        selectedKeys.includes(`${item._id}-${item.selectedSize}`)
+      ),
+    [cart, selectedKeys]
+  );
+
+  const selectedItemCount = useMemo(
+    () => selectedItems.reduce((sum, item) => sum + item.quantity, 0),
+    [selectedItems]
+  );
+
+  const selectedSubtotal = useMemo(
+    () =>
+      selectedItems.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      ),
+    [selectedItems]
+  );
+
+  const allSelected = cart.length > 0 && selectedKeys.length === cart.length;
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedKeys([]);
+    } else {
+      setSelectedKeys(cart.map((item) => `${item._id}-${item.selectedSize}`));
+    }
+  };
+
+  const toggleSelectItem = (id: string, size: string) => {
+    const key = `${id}-${size}`;
+    setSelectedKeys((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  };
+
+  const handleRemoveSelected = () => {
+    if (!selectedItems.length) return;
+    if (!window.confirm('Remove selected items from cart?')) return;
+    selectedItems.forEach((item) =>
+      removeFromCart(item._id, item.selectedSize)
+    );
+  };
+
+  const handleProceedToCheckout = () => {
+    if (!selectedItems.length) return;
+
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      navigate('/login', {
+        state: { from: '/checkout', selectedItems },
+      });
+      return;
+    }
+
+    navigate('/checkout', { state: { selectedItems } });
+  };
 
   if (cart.length === 0) {
     return (
@@ -52,11 +133,10 @@ export default function Cart() {
       </div>
     );
   }
-  const subtotal = getCartTotal();
   const totalItems = getTotalItems();
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-200/60 py-10">
+    <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-200/60 pt-10 pb-28">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.06),_transparent_60%),_radial-gradient(circle_at_bottom,_rgba(249,115,22,0.05),_transparent_55%)]" />
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -106,7 +186,12 @@ export default function Cart() {
 
               <div className="hidden items-center justify-between border-y border-slate-100 py-3 text-xs font-medium text-slate-500 sm:grid sm:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] sm:gap-4">
                 <div className="flex items-center gap-2">
-                  <input type="checkbox" className="accent-orange-500 w-4 h-4" />
+                  <input
+                    type="checkbox"
+                    className="accent-orange-500 w-4 h-4 cursor-pointer"
+                    checked={allSelected}
+                    onChange={toggleSelectAll}
+                  />
                   <span className="text-left">Product</span>
                 </div>
                 <span className="text-center">Quantity</span>
@@ -115,14 +200,24 @@ export default function Cart() {
               </div>
 
               <div className="divide-y divide-slate-100">
-                {cart.map((item) => (
+                {cart.map((item) => {
+                  const itemKey = `${item._id}-${item.selectedSize}`;
+                  const isSelected = selectedKeys.includes(itemKey);
+                  return (
                   <div
-                    key={`${item._id}-${item.selectedSize}`}
+                    key={itemKey}
                     className="group grid gap-4 py-4 sm:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] sm:items-center sm:gap-6"
                   >
                     {/* Product info */}
                     <div className="flex items-start gap-4">
-                      <input type="checkbox" className="accent-orange-500 w-4 h-4 mt-7" />
+                      <input
+                        type="checkbox"
+                        className="accent-orange-500 w-4 h-4 mt-7 cursor-pointer"
+                        checked={isSelected}
+                        onChange={() =>
+                          toggleSelectItem(item._id, item.selectedSize)
+                        }
+                      />
                       <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border border-slate-100 bg-slate-100/80">
                         <img
                           src={item.img_url}
@@ -134,22 +229,47 @@ export default function Cart() {
                         <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
                           {item.name}
                         </h3>
-                        <p className="text-xs text-slate-500">
-                          Size{' '}
-                          <span className="font-medium text-slate-700">
-                            {formatSizeLabel(item.selectedSize)}
-                          </span>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                          <span>Size</span>
+                          {Array.isArray(item.sizes) && item.sizes.length > 0 ? (
+                            <select
+                              value={item.selectedSize}
+                              onChange={(event) =>
+                                updateItemSize(
+                                  item._id,
+                                  item.selectedSize,
+                                  event.target.value
+                                )
+                              }
+                              className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-xs font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                            >
+                              {item.sizes.map((size) => (
+                                <option
+                                  key={size.size}
+                                  value={size.size}
+                                  disabled={size.stock <= 0}
+                                >
+                                  {formatSizeLabel(size.size)}
+                                  {size.stock > 0
+                                    ? ` (${size.stock})`
+                                    : ' - Out of stock'}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span className="font-medium text-slate-700">
+                              {formatSizeLabel(item.selectedSize)}
+                            </span>
+                          )}
                           {item.supplier && (
                             <>
-                              {' '}
-                              ·{' '}
+                              <span>·</span>
                               <span className="text-slate-500">
                                 {item.supplier}
                               </span>
                             </>
                           )}
-                        </p>
-                        
+                        </div>
                       </div>
                     </div>
 
@@ -169,9 +289,26 @@ export default function Cart() {
                         >
                           <Minus size={14} />
                         </button>
-                        <span className="min-w-[2.5rem] text-center text-sm font-medium text-slate-900">
-                          {item.quantity}
-                        </span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={item.stock}
+                          value={item.quantity}
+                          onChange={(event) => {
+                            const value = Number(event.target.value);
+                            if (Number.isNaN(value)) return;
+                            const nextQuantity = Math.max(
+                              1,
+                              Math.min(item.stock, value)
+                            );
+                            updateQuantity(
+                              item._id,
+                              item.selectedSize,
+                              nextQuantity
+                            );
+                          }}
+                          className="h-8 w-12 border-x border-slate-200 bg-transparent text-center text-sm font-medium text-slate-900 focus:outline-none focus-visible:ring-0"
+                        />
                         <button
                           onClick={() =>
                             updateQuantity(
@@ -207,8 +344,8 @@ export default function Cart() {
                       Remove
                     </button> 
                   </div>
-                  
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -242,58 +379,61 @@ export default function Cart() {
             </div>
           </div>
 
-          {/* Right column - summary card (bento tile) */}
-          <aside className="lg:sticky lg:top-24">
-            <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-md shadow-slate-200/80 backdrop-blur-xl sm:p-6">
-              <h2 className="text-base font-semibold text-slate-900 sm:text-lg">
-                Order summary
-              </h2>
+        </div>
+      </div>
 
-              <div className="mt-4 space-y-3 text-sm text-slate-700">
-                <div className="flex items-center justify-between">
-                  <span>Subtotal</span>
-                  <span>{subtotal.toLocaleString()} VND</span>
-                </div>
-                <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>Shipping</span>
-                  <span className="text-emerald-600">
-                    Calculated at checkout
-                  </span>
-                </div>
-                <div className="border-t border-slate-100 pt-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-slate-900">
-                      Total
-                    </span>
-                    <div className="text-right">
-                      <p className="text-lg font-semibold text-orange-600">
-                        {subtotal.toLocaleString()} VND
-                      </p>
-                      <p className="text-[11px] text-slate-500">
-                        incl. taxes where applicable
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+      {/* Bottom price bar */}
+      <div className="fixed bottom-0 left-0 right-0 border-t border-slate-200 bg-white/95 backdrop-blur-xl shadow-[0_-8px_24px_rgba(15,23,42,0.08)]">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-slate-600">
+            <label className="inline-flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                className="accent-orange-500 h-4 w-4"
+                checked={allSelected}
+                onChange={toggleSelectAll}
+              />
+              <span>
+                Select all ({cart.length}{' '}
+                {cart.length === 1 ? 'item' : 'items'})
+              </span>
+            </label>
+            <button
+              type="button"
+              onClick={handleRemoveSelected}
+              className="text-red-500 hover:text-red-600 font-medium"
+            >
+              Remove selected
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="hidden text-slate-500 hover:text-slate-700 sm:inline-flex items-center gap-1"
+            >
+              <ArrowLeft size={14} />
+              Continue shopping
+            </button>
+          </div>
 
-              <div className="mt-6 space-y-3">
-                <button
-                  onClick={() => navigate(-1)}
-                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
-                >
-                  <ArrowLeft size={16} />
-                  Continue shopping
-                </button>
-                <Link
-                  to="/checkout"
-                  className="flex w-full cursor-pointer items-center justify-center rounded-full bg-orange-500 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-orange-200 transition-transform transition-colors duration-200 hover:bg-orange-600 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
-                >
-                  Proceed to checkout
-                </Link>
-              </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="text-right">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                Total ({selectedItemCount}{' '}
+                {selectedItemCount === 1 ? 'item' : 'items'})
+              </p>
+              <p className="text-lg font-semibold text-orange-600 sm:text-xl">
+                {selectedSubtotal.toLocaleString()} VND
+              </p>
             </div>
-          </aside>
+            <button
+              type="button"
+              onClick={handleProceedToCheckout}
+              disabled={!selectedItems.length}
+              className="inline-flex min-w-[160px] cursor-pointer items-center justify-center rounded-full bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-orange-200 transition-colors duration-200 hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Proceed to checkout
+            </button>
+          </div>
         </div>
       </div>
     </div>

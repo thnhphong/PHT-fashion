@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { apiUrl } from '../utils/api';
 import carousel1 from '../assets/images/carousel_login_1.jpeg';
 import carousel2 from '../assets/images/carousel_login_2.jpeg';
@@ -45,7 +45,10 @@ const Login = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const location = useLocation();
   const navigate = useNavigate();
+  const from =
+    (location.state as { from?: string } | null)?.from || '/';
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -82,8 +85,8 @@ const Login = () => {
       localStorage.setItem('userName', normalizedEmail);
 
       setSuccessMessage('Login successful! Redirecting...');
-      //redirect to home page
-      navigate('/');
+      // Redirect to intended page or home
+      navigate(from, { state: location.state });
       setForm(INITIAL_FORM);
 
       // Redirect to dashboard or home after 1 second

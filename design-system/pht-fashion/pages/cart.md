@@ -1,7 +1,7 @@
 # Cart Page Overrides
 
 > **PROJECT:** PHT Fashion
-> **Generated:** 2026-02-27 15:23:07
+> **Generated:** 2026-02-28 14:51:31
 > **Page Type:** Checkout / Payment
 
 > ⚠️ **IMPORTANT:** Rules in this file **override** the Master file (`design-system/MASTER.md`).
@@ -13,13 +13,13 @@
 
 ### Layout Overrides
 
-- **Max Width:** 1400px or full-width
-- **Grid:** 12-column grid for data flexibility
+- **Max Width:** 1200px (standard)
+- **Layout:** Full-width sections, centered content
 - **Sections:** 1. Intro (Vertical), 2. The Journey (Horizontal Track), 3. Detail Reveal, 4. Vertical Footer
 
 ### Spacing Overrides
 
-- **Content Density:** High — optimize for information display
+- No overrides — use Master spacing
 
 ### Typography Overrides
 
@@ -43,5 +43,5 @@
 
 ## Recommendations
 
-- Effects: Hover scale (1.02), soft shadow expansion, smooth layout shifts, content reveal
+- Effects: Drag-to-rotate, pinch-to-zoom, spin animation, AR placement, material switching, smooth orbit controls
 - CTA Placement: Floating Sticky CTA or End of Horizontal Track
