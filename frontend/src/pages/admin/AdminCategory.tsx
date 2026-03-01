@@ -18,8 +18,14 @@ const AdminCategory = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [form, setForm] = useState({ name: '' });
 
-  const formTitle = selectedCategory ? 'Update category' : 'Create new category';
   const submitLabel = selectedCategory ? 'Update category' : 'Create category';
+
+  const resetForm = () => {
+    setSelectedCategory(null);
+    setForm({ name: '' });
+    setError('');
+    setSuccess('');
+  };
 
   const fetchCategories = async () => {
     setLoading(true);
@@ -122,7 +128,7 @@ const AdminCategory = () => {
             {loading ? 'Saving...' : submitLabel}
           </Button>
           {selectedCategory && (
-            <Button variant="outline" onClick={() => { setSelectedCategory(null); setForm({ name: '' }); setError(''); setSuccess(''); }}>
+            <Button variant="outline" onClick={resetForm}>
               Cancel edit
             </Button>
           )}

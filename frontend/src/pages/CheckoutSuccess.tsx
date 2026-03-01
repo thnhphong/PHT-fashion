@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { CheckCircle } from 'lucide-react';
 

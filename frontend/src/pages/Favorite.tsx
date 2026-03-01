@@ -5,8 +5,6 @@ import { apiUrl } from '../utils/api';
 import { Button } from '../components/ui/button';
 import type { Product } from '../types/types';
 import { useFavorite } from '../context/useFavorite';
-import { Heart } from 'lucide-react';
-
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('vi-VN', {
@@ -129,4 +127,3 @@ export default function Favorite() {
     </section>
   );
 }
-
