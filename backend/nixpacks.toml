@@ -8,4 +8,4 @@ cmds = ["corepack enable && corepack prepare pnpm@10.28.1 --activate && pnpm ins
 cmds = ["pnpm run build"]
 
 [start]
-cmd = "node dist/index.js"=
+cmd = "node dist/index.js"

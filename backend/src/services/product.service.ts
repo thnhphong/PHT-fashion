@@ -7,37 +7,39 @@ const createProduct = async (payload: Partial<IProduct>) => {
 };
 
 const getProducts = async (params: PaginationParams): Promise<PaginationResult<IProduct>> => {
-  const { page, limit, sort, order } = params;
-
-  const skip = (page ?? - 1) * (limit ?? 10); // default limit is 10
-  const sortOrder = order === 'asc' ? 1 : -1;
-
-  // Get total count
-  const total = await Product.countDocuments();
-
-  // Get paginated data
-  const data = await Product.find()
-    .sort({ [sort ?? 'created_at']: sortOrder })
-    .skip(skip)
-    .limit(limit ?? 10)
-    .populate('categoryId', 'name')
-    .populate('supplierId', 'name');
-
-  return buildPaginationResult(data, total, page ?? 1, limit ?? 10);
-};
-
-const getFeaturedProducts = async (params: PaginationParams): Promise<PaginationResult<IProduct>> => {
-  const { page, limit, sort, order } = params;
+  const page = params.page ?? 1;
+  const limit = params.limit ?? 10;
+  const sort = params.sort ?? 'created_at';
+  const order = params.order ?? 'desc';
 
   const skip = (page - 1) * limit;
   const sortOrder = order === 'asc' ? 1 : -1;
 
-  // Get total count of featured products (you can add a 'featured' field to schema later)
   const total = await Product.countDocuments();
 
-  // Get paginated featured products
   const data = await Product.find()
-    .sort({ [sort]: sortOrder })
+    .sort({ [sort]: sortOrder } as any)
+    .skip(skip)
+    .limit(limit)
+    .populate('categoryId', 'name')
+    .populate('supplierId', 'name');
+
+  return buildPaginationResult(data, total, page, limit);
+};
+
+const getFeaturedProducts = async (params: PaginationParams): Promise<PaginationResult<IProduct>> => {
+  const page = params.page ?? 1;
+  const limit = params.limit ?? 10;
+  const sort = params.sort ?? 'created_at';
+  const order = params.order ?? 'desc';
+
+  const skip = (page - 1) * limit;
+  const sortOrder = order === 'asc' ? 1 : -1;
+
+  const total = await Product.countDocuments();
+
+  const data = await Product.find()
+    .sort({ [sort]: sortOrder } as any)
     .skip(skip)
     .limit(limit)
     .populate('categoryId', 'name')
