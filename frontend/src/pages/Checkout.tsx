@@ -18,6 +18,7 @@ const PAYMENT_METHODS = [
   { id: 'cash_on_delivery', label: 'Cash on Delivery' },
   { id: 'paypal', label: 'PayPal' },
   { id: 'credit_card', label: 'Credit Card' },
+  { id: 'vnpay', label: 'VNPay' },
 ];
 
 const BASE_PROVINCE_API = 'https://provinces.open-api.vn/api/?depth=1';
@@ -207,6 +208,18 @@ export default function Checkout() {
         if (ppData.approval_url) { window.location.href = ppData.approval_url; return; }
         await cancelDraft();
         throw new Error('PayPal approval URL missing');
+      }
+      // VNPay flow
+      if (paymentMethod === 'vnpay'){
+        const vnpayRes = await fetch(apiUrl(`/payments/vnpay/create-order/${draftId}`), {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${bearerToken}` },
+        });
+        if (!vnpayRes.ok) { await cancelDraft(); throw new Error('Failed to communicate with VNPay'); }
+        const vnpayData = await vnpayRes.json();
+        if (vnpayData.payment_url) { window.location.href = vnpayData.payment_url; return; }
+        await cancelDraft();
+        throw new Error('VNPay payment URL missing');
       }
 
       // Standard flow — finalize

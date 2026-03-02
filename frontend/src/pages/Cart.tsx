@@ -4,6 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowLeft } from 'lucide-react';
 import { formatSizeLabel, shouldShowSizeSelection } from '../utils/sizeUtils';
 import SearchInput from '../components/common/SearchInput';
+import { useLocation } from 'react-router-dom';
+
 
 
 export default function Cart() {
@@ -16,6 +18,19 @@ export default function Cart() {
     clearCart,
   } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromBuyNow = location.state?.fromBuyNow ?? false;
+  const displayedItems = fromBuyNow
+    ? cart.filter((item) => {
+      return true;
+    })
+    : cart;
+  const lastItem = fromBuyNow && cart.length > 0 ? cart[cart.length - 1] : null;
+
+  const itemsToShow = fromBuyNow && lastItem ? [lastItem] : displayedItems;
+  const displayedCount = itemsToShow.length;
+  const displayedTotalItems = itemsToShow.reduce((sum, i) => sum + i.quantity, 0);
+  const displayedSubtotal = itemsToShow.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   const [selectedKeys, setSelectedKeys] = useState<string[]>(() =>
     cart.map((item) => `${item._id}-${item.selectedSize}`)
@@ -179,7 +194,7 @@ export default function Cart() {
                     Cart items
                   </h2>
                   <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-                    {totalItems}
+                    {displayedTotalItems} {displayedTotalItems === 1 ? 'item' : 'items'} ready to check out.
                   </span>
                 </div>
               </div>
@@ -200,7 +215,7 @@ export default function Cart() {
               </div>
 
               <div className="divide-y divide-slate-100">
-                {cart.map((item) => {
+                {itemsToShow.map((item) => {
                   const itemKey = `${item._id}-${item.selectedSize}`;
                   const isSelected = selectedKeys.includes(itemKey);
                   return (
@@ -418,11 +433,10 @@ export default function Cart() {
           <div className="flex flex-wrap items-center gap-4">
             <div className="text-right">
               <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                Total ({selectedItemCount}{' '}
-                {selectedItemCount === 1 ? 'item' : 'items'})
+                Total ({displayedTotalItems} {displayedTotalItems === 1 ? 'item' : 'items'})
               </p>
               <p className="text-lg font-semibold text-orange-600 sm:text-xl">
-                {selectedSubtotal.toLocaleString()} VND
+                {displayedSubtotal.toLocaleString()} VND
               </p>
             </div>
             <button
