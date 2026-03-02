@@ -4,7 +4,6 @@ import type { ChangeEvent, FormEvent } from 'react';
 import PHTLogo from '../assets/images/PHT-Fashion-Logo.png';
 import { apiUrl } from '../utils/api';
 import { motion } from 'framer-motion';
-import {Link} from 'react-router-dom';
 import image from '../assets/images/img_signup.png';
 import { Truck, Sparkles, Gift, Award } from 'lucide-react';
 
