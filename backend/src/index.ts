@@ -20,6 +20,7 @@ dotenv.config();
 
 const app: Application = express();
 const PORT = env.port;
+const FRONTEND_URL = process.env.FRONTEND_URL;
 
 // Middleware to parse JSON bodies
 app.use(express.json());
@@ -28,8 +29,21 @@ app.use(express.json());
 app.use(cookieParser());
 
 // CORS configuration
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  FRONTEND_URL,
+];
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS blocked: ${origin}`));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
