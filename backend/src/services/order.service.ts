@@ -24,7 +24,7 @@ export interface CreateOrderInput {
     country: string;
   };
   shippingMethod: 'standard' | 'express' | 'next_day';
-  paymentMethod: 'credit_card' | 'paypal' | 'apple_pay' | 'google_pay' | 'cash_on_delivery';
+  paymentMethod: 'credit_card' | 'paypal' | 'apple_pay' | 'google_pay' | 'cash_on_delivery' | 'vnpay';
   couponCode?: string;
 }
 

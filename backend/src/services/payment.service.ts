@@ -1,6 +1,57 @@
 import paypal from 'paypal-rest-sdk';
+import { VNPay, ProductCode, VnpLocale, ignoreLogger, HashAlgorithm, ReturnQueryFromVNPay } from 'vnpay';
 import { CurrencyConverter } from '../utils/currency.util';
 import type { DraftOrderData } from './draftOrder.service';
+
+const vnpay = new VNPay({
+    tmnCode: process.env.VNP_TMNCODE as string,
+    secureSecret: process.env.VNP_SECRET as string,
+    vnpayHost: 'https://sandbox.vnpayment.vn',
+    testMode: process.env.NODE_ENV !== 'production',
+    hashAlgorithm: HashAlgorithm.SHA512,
+    enableLog: process.env.NODE_ENV === 'development',
+    loggerFn: ignoreLogger,
+});
+/**
+ * Creates a VNPay payment URL and returns it for client redirect.
+ * @param draft   The draft order stored in Redis
+ * @param ipAddr  The customer's IP address
+ * @param baseUrl The API base URL (e.g. http://localhost:5000)
+ */
+export const createVNPayPayment = (
+    draft: DraftOrderData,
+    ipAddr: string,
+    baseUrl: string,
+): string => {
+    // VNPay requires amount in VND (whole number, no decimals)
+    const amount = Math.round(draft.totals.totalAmount);
+
+    const paymentUrl = vnpay.buildPaymentUrl({
+        vnp_Amount: amount,
+        vnp_IpAddr: ipAddr,
+        vnp_TxnRef: draft.draftId,
+        vnp_OrderInfo: `Payment for draft ${draft.draftId}`,
+        vnp_OrderType: ProductCode.Other,
+        vnp_ReturnUrl: `${baseUrl}/api/payments/vnpay/return`,
+        vnp_Locale: VnpLocale.VN,
+    });
+
+    return paymentUrl;
+};
+/**
+ * Verifies the return URL parameters from VNPay after the customer completes payment.
+ */
+export const verifyVNPayReturn = (query: ReturnQueryFromVNPay) => {
+    return vnpay.verifyReturnUrl(query);
+};
+
+/**
+ * Verifies an IPN (Instant Payment Notification) call from VNPay servers.
+ */
+export const verifyVNPayIpn = (query: ReturnQueryFromVNPay) => {
+    return vnpay.verifyIpnCall(query);
+};
+
 
 // Configure PayPal environment
 

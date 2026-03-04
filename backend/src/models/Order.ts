@@ -24,7 +24,7 @@ export interface IOrder extends Document {
   tax: number;
   shipping_address: IShippingAddress;
   shipping_method: 'standard' | 'express' | 'next_day';
-  payment_method: 'credit_card' | 'paypal' | 'apple_pay' | 'google_pay' | 'cash_on_delivery';
+  payment_method: 'credit_card' | 'paypal' | 'apple_pay' | 'google_pay' | 'cash_on_delivery' | 'vnpay';
   coupon_code?: string;
   total_amount: number;
   payment_status: PaymentStatus;
@@ -136,7 +136,7 @@ const OrderSchema = new Schema<IOrder>(
     },
     payment_method: {
       type: String,
-      enum: ['credit_card', 'paypal', 'apple_pay', 'google_pay', 'cash_on_delivery'],
+      enum: ['credit_card', 'paypal', 'apple_pay', 'google_pay', 'cash_on_delivery', 'vnpay'],
       required: true,
     },
     coupon_code: {

@@ -4,6 +4,7 @@ import axios from 'axios';
 import { apiUrl } from '../utils/api';
 import Navbar from '../components/layout/Navbar';
 import { useCart } from '../context/CartContext';
+
 import {
   formatSizeLabel,
   ONE_SIZE_VALUE,
@@ -50,6 +51,9 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
+  const [isBuyNow, setIsBuyNow] = useState(false);
+
+
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState('');
   const { addToCart, setShowCartPopup } = useCart();
@@ -115,23 +119,10 @@ const ProductDetail = () => {
       alert('Please select a size');
       return;
     }
-    addToCart(product, selectedSize, quantity);
-    navigate('/cart');
+    setIsBuyNow(true);
+    addToCart(product, selectedSize, quantity);  
+    navigate('/cart', { state: { fromBuyNow: true } });
   };
-
-  if (loading) {
-    return (
-      <div>
-        <Navbar />
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-range-500 mx-auto mb-4"></div>
-            <p className="text-gray-600 text-lg">Loading product details...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (error || !product) {
     return (
