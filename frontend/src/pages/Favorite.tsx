@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { apiUrl } from '../utils/api';
 import { Button } from '../components/ui/button';
@@ -15,6 +15,14 @@ const formatPrice = (price: number) =>
 export default function Favorite() {
   const { favorites, removeFavorite } = useFavorite();
   const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      navigate('/login');
+    }
+  }, [navigate]);
   useEffect(() => {
     if (favorites.length === 0) {
       setFavoriteProducts([]);

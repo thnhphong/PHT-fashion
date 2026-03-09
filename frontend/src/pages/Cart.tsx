@@ -19,16 +19,24 @@ export default function Cart() {
   } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      navigate('/login');
+    }
+  }, [navigate]);
+
   const fromBuyNow = location.state?.fromBuyNow ?? false;
   const displayedItems = fromBuyNow
-    ? cart.filter((item) => {
+    ? cart.filter(() => {
       return true;
     })
     : cart;
   const lastItem = fromBuyNow && cart.length > 0 ? cart[cart.length - 1] : null;
 
   const itemsToShow = fromBuyNow && lastItem ? [lastItem] : displayedItems;
-  const displayedCount = itemsToShow.length;
+  // const displayedCount = itemsToShow.length;
   const displayedTotalItems = itemsToShow.reduce((sum, i) => sum + i.quantity, 0);
   const displayedSubtotal = itemsToShow.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
@@ -59,19 +67,19 @@ export default function Cart() {
     [cart, selectedKeys]
   );
 
-  const selectedItemCount = useMemo(
-    () => selectedItems.reduce((sum, item) => sum + item.quantity, 0),
-    [selectedItems]
-  );
+  // const selectedItemCount = useMemo(
+  //   () => selectedItems.reduce((sum, item) => sum + item.quantity, 0),
+  //   [selectedItems]
+  // );
 
-  const selectedSubtotal = useMemo(
-    () =>
-      selectedItems.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0
-      ),
-    [selectedItems]
-  );
+  // const selectedSubtotal = useMemo(
+  //   () =>
+  //     selectedItems.reduce(
+  //       (sum, item) => sum + item.price * item.quantity,
+  //       0
+  //     ),
+  //   [selectedItems]
+  // );
 
   const allSelected = cart.length > 0 && selectedKeys.length === cart.length;
 
@@ -168,7 +176,7 @@ export default function Cart() {
             </p>
           </div>
 
-          
+
         </div>
         <div className="mb-8 flex justify-end items-center gap-4">
           <SearchInput />
@@ -211,7 +219,7 @@ export default function Cart() {
                 </div>
                 <span className="text-center">Quantity</span>
                 <span className="text-right">Total</span>
-                <span className="text-right">Action</span> 
+                <span className="text-right">Action</span>
               </div>
 
               <div className="divide-y divide-slate-100">
@@ -219,33 +227,33 @@ export default function Cart() {
                   const itemKey = `${item._id}-${item.selectedSize}`;
                   const isSelected = selectedKeys.includes(itemKey);
                   return (
-                  <div
-                    key={itemKey}
-                    className="group grid gap-4 py-4 sm:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] sm:items-center sm:gap-6"
-                  >
-                    {/* Product info */}
-                    <div className="flex items-start gap-4">
-                      <input
-                        type="checkbox"
-                        className="accent-orange-500 w-4 h-4 mt-7 cursor-pointer"
-                        checked={isSelected}
-                        onChange={() =>
-                          toggleSelectItem(item._id, item.selectedSize)
-                        }
-                      />
-                      <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border border-slate-100 bg-slate-100/80">
-                        <img
-                          src={item.img_url}
-                          alt={item.name}
-                          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                    <div
+                      key={itemKey}
+                      className="group grid gap-4 py-4 sm:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] sm:items-center sm:gap-6"
+                    >
+                      {/* Product info */}
+                      <div className="flex items-start gap-4">
+                        <input
+                          type="checkbox"
+                          className="accent-orange-500 w-4 h-4 mt-7 cursor-pointer"
+                          checked={isSelected}
+                          onChange={() =>
+                            toggleSelectItem(item._id, item.selectedSize)
+                          }
                         />
-                      </div>
-                      <div className="min-w-0 space-y-1">
-                        <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
-                          {item.name}
-                        </h3>
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                          <span>Size</span>
+                        <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border border-slate-100 bg-slate-100/80">
+                          <img
+                            src={item.img_url}
+                            alt={item.name}
+                            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                          />
+                        </div>
+                        <div className="min-w-0 space-y-1">
+                          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {item.name}
+                          </h3>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                            <span>Size</span>
                             {Array.isArray(item.sizes) && item.sizes.length > 0 && shouldShowSizeSelection(item.categoryName, item.sizes) ? (
                               <select
                                 value={item.selectedSize}
@@ -275,90 +283,90 @@ export default function Cart() {
                               <span className="font-medium text-slate-700">
                                 {formatSizeLabel(item.selectedSize)}
                               </span>
-                          )}
-                          {item.supplier && (
-                            <>
-                              <span>·</span>
-                              <span className="text-slate-500">
-                                {item.supplier}
-                              </span>
-                            </>
-                          )}
+                            )}
+                            {item.supplier && (
+                              <>
+                                <span>·</span>
+                                <span className="text-slate-500">
+                                  {item.supplier}
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Quantity */}
-                    <div className="mt-3 flex items-center justify-start sm:mt-0 sm:justify-center">
-                      <div className="inline-flex items-center rounded-full border border-slate-200 bg-white/80 text-xs shadow-sm">
-                        <button
-                          onClick={() =>
-                            updateQuantity(
-                              item._id,
-                              item.selectedSize,
-                              item.quantity - 1,
-                            )
-                          }
-                          disabled={item.quantity <= 1}
-                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-l-full text-slate-600 transition-colors duration-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          <Minus size={14} />
-                        </button>
-                        <input
-                          type="number"
-                          min={1}
-                          max={item.stock}
-                          value={item.quantity}
-                          onChange={(event) => {
-                            const value = Number(event.target.value);
-                            if (Number.isNaN(value)) return;
-                            const nextQuantity = Math.max(
-                              1,
-                              Math.min(item.stock, value)
-                            );
-                            updateQuantity(
-                              item._id,
-                              item.selectedSize,
-                              nextQuantity
-                            );
-                          }}
-                          className="h-8 w-12 border-x border-slate-200 bg-transparent text-center text-sm font-medium text-slate-900 focus:outline-none focus-visible:ring-0"
-                        />
-                        <button
-                          onClick={() =>
-                            updateQuantity(
-                              item._id,
-                              item.selectedSize,
-                              item.quantity + 1,
-                            )
-                          }
-                          disabled={item.quantity >= item.stock}
-                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-r-full text-slate-600 transition-colors duration-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          <Plus size={14} />
-                        </button>
+                      {/* Quantity */}
+                      <div className="mt-3 flex items-center justify-start sm:mt-0 sm:justify-center">
+                        <div className="inline-flex items-center rounded-full border border-slate-200 bg-white/80 text-xs shadow-sm">
+                          <button
+                            onClick={() =>
+                              updateQuantity(
+                                item._id,
+                                item.selectedSize,
+                                item.quantity - 1,
+                              )
+                            }
+                            disabled={item.quantity <= 1}
+                            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-l-full text-slate-600 transition-colors duration-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <Minus size={14} />
+                          </button>
+                          <input
+                            type="number"
+                            min={1}
+                            max={item.stock}
+                            value={item.quantity}
+                            onChange={(event) => {
+                              const value = Number(event.target.value);
+                              if (Number.isNaN(value)) return;
+                              const nextQuantity = Math.max(
+                                1,
+                                Math.min(item.stock, value)
+                              );
+                              updateQuantity(
+                                item._id,
+                                item.selectedSize,
+                                nextQuantity
+                              );
+                            }}
+                            className="h-8 w-12 border-x border-slate-200 bg-transparent text-center text-sm font-medium text-slate-900 focus:outline-none focus-visible:ring-0"
+                          />
+                          <button
+                            onClick={() =>
+                              updateQuantity(
+                                item._id,
+                                item.selectedSize,
+                                item.quantity + 1,
+                              )
+                            }
+                            disabled={item.quantity >= item.stock}
+                            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-r-full text-slate-600 transition-colors duration-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Line total */}
-                    <div className="mt-1 flex items-center justify-between sm:mt-0 sm:justify-end">
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-orange-600">
-                          {(item.price * item.quantity).toLocaleString()} VND
-                        </p>
-                        <p className="text-[11px] text-slate-500">
-                          {item.price.toLocaleString()} VND / item
-                        </p>
+                      {/* Line total */}
+                      <div className="mt-1 flex items-center justify-between sm:mt-0 sm:justify-end">
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-orange-600">
+                            {(item.price * item.quantity).toLocaleString()} VND
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            {item.price.toLocaleString()} VND / item
+                          </p>
+                        </div>
                       </div>
-                    </div>
                       <button
-                      onClick={() => removeFromCart(item._id, item.selectedSize)}
-                      className="inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-slate-400 transition-colors duration-200 hover:text-red-500 justify-end"
-                      title="Remove item"
-                    >
-                      Remove
-                    </button> 
-                  </div>
+                        onClick={() => removeFromCart(item._id, item.selectedSize)}
+                        className="inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-slate-400 transition-colors duration-200 hover:text-red-500 justify-end"
+                        title="Remove item"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   );
                 })}
               </div>

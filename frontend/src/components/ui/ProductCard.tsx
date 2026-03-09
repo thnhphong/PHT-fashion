@@ -1,7 +1,7 @@
 // frontend/src/components/products/ProductCard.tsx
 
 import type { MouseEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { Product } from '../../types/types';
 import { Button } from './button';
 import { Heart } from 'lucide-react';
@@ -12,9 +12,10 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product }: ProductCardProps) => {
+  const navigate = useNavigate();
   const { favorites, addFavorite, removeFavorite } = useFavorite();
   const isFavorite = favorites.includes(product._id);
- 
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -32,6 +33,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const handleToggleFavorite = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
     if (isFavorite) {
       removeFavorite(product._id);
     } else {
@@ -83,7 +89,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
             <p className="text-xs text-gray-600">Stock: {product.stock}</p>
             <p className="text-lg font-bold text-orange-500">{formatPrice(product.price)}</p>
           </div>
-          <div className="flex items-center gap-2"> 
+          <div className="flex items-center gap-2">
             <Button
               type="button"
               onClick={handleToggleFavorite}
@@ -112,7 +118,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
           </div>
         )} */}
 
-        
+
       </div>
     </Link>
   );

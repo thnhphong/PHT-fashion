@@ -48,10 +48,10 @@ const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [product, setProduct] = useState<IProduct | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
-  const [isBuyNow, setIsBuyNow] = useState(false);
+  const [, setIsBuyNow] = useState(false);
 
 
   const [quantity, setQuantity] = useState(1);
@@ -106,6 +106,12 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
     if (showSizeSelection && !selectedSize) {
       alert('Please select a size');
       return;
@@ -115,12 +121,18 @@ const ProductDetail = () => {
   };
 
   const handleBuyNow = () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
     if (showSizeSelection && !selectedSize) {
       alert('Please select a size');
       return;
     }
     setIsBuyNow(true);
-    addToCart(product, selectedSize, quantity);  
+    addToCart(product, selectedSize, quantity);
     navigate('/cart', { state: { fromBuyNow: true } });
   };
 
