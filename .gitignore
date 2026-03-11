@@ -1,4 +1,5 @@
 backend/.env
+backend/uploads/
 frontend/.env
 .env
 node_modules
@@ -14,3 +15,10 @@ ApiEndpoints.txt
 Response.txt
 uiux_promax_readme.md
 pencil-new.pen
+
+uxui_promax_promax.md
+/docs
+
+APIEndpoint.txt
+PHT-Fashion-Lovable-Prompts.md
+images/
