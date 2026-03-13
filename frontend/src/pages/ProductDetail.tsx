@@ -49,10 +49,8 @@ const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [product, setProduct] = useState<IProduct | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
-  const [isBuyNow, setIsBuyNow] = useState(false);
 
 
   const [quantity, setQuantity] = useState(1);
@@ -70,7 +68,6 @@ const ProductDetail = () => {
   }, [id]);
 
   const fetchProduct = async (productId: string) => {
-    setLoading(true);
     setError('');
     try {
       const response = await axios.get<IProduct>(`${apiUrl(`products/${productId}`)}`);
@@ -92,8 +89,6 @@ const ProductDetail = () => {
     } catch (err) {
       console.error('Error fetching product:', err);
       setError('Unable to load product details. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -108,6 +103,7 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = () => {
+    if (!product) return;
     if (showSizeSelection && !selectedSize) {
       alert('Please select a size');
       return;
@@ -118,11 +114,11 @@ const ProductDetail = () => {
   };
 
   const handleBuyNow = () => {
+    if (!product) return;
     if (showSizeSelection && !selectedSize) {
       alert('Please select a size');
       return;
     }
-    setIsBuyNow(true);
     addToCart(product, selectedSize, quantity);  
     navigate('/cart', { 
       state: { 

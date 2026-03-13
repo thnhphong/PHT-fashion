@@ -24,7 +24,6 @@ export default function Cart() {
   const buyNowItemSize = location.state?.buyNowItemSize;
 
   const itemsToShow = cart; // Display all items regardless of fromBuyNow
-  const displayedCount = itemsToShow.length;
   const displayedTotalItems = itemsToShow.reduce((sum, i) => sum + i.quantity, 0);
   const displayedSubtotal = itemsToShow.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
@@ -60,20 +59,6 @@ export default function Cart() {
         selectedKeys.includes(`${item._id}-${item.selectedSize}`)
       ),
     [cart, selectedKeys]
-  );
-
-  const selectedItemCount = useMemo(
-    () => selectedItems.reduce((sum, item) => sum + item.quantity, 0),
-    [selectedItems]
-  );
-
-  const selectedSubtotal = useMemo(
-    () =>
-      selectedItems.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0
-      ),
-    [selectedItems]
   );
 
   const allSelected = cart.length > 0 && selectedKeys.length === cart.length;

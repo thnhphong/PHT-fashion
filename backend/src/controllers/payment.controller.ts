@@ -135,7 +135,8 @@ export const payPalSuccess = async (req: Request, res: Response) => {
         if (isIdempotent) {
             console.log(`[PayPal] Payment ${paymentId} already processed (idempotent request).`);
             const existingPending = await getPendingPaymentByDraftId(draftId as string);
-            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+            const frontendUrl = process.env.FRONTEND_URL;
+            //  || 'http://localhost:5173';
             return res.redirect(`${frontendUrl}/checkout/success?orderId=${existingPending?.orderId}`);
         }
 

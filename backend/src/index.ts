@@ -39,21 +39,23 @@ const allowedOrigins = [
   'http://127.0.0.1:5173',
   FRONTEND_URL,
   FRONTEND_URL_2
-];
+].filter(Boolean);
+
+const allowedOriginPatterns = [
+  /^https:\/\/pht-fashion-frontend[a-zA-Z0-9-]*\.vercel\.app$/,
+]
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    if (allowedOriginPatterns.some((p) => p.test(origin))) return callback(null, true);
     return callback(new Error(`CORS blocked: ${origin}`));
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
-  exposedHeaders: ['Content-Disposition']
+  exposedHeaders: ['Content-Disposition'],
 }));
 
 // Connect to database inside bootstrap

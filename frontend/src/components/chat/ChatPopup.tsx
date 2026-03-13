@@ -6,7 +6,6 @@ import ProductContextBanner from './ProductContextBanner';
 import ProductCardMessage from './ProductCardMessage';
 import type { MessageItem } from '../../context/ChatContext';
 import EmojiPicker, { type EmojiClickData } from 'emoji-picker-react';
-
 const formatTime = (dateStr: string) =>
   new Date(dateStr).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
@@ -47,9 +46,8 @@ function MessageBubble({ msg, isOwn }: { msg: MessageItem; isOwn: boolean }) {
   }
   return (
     <div
-      className={`max-w-[75%] px-4 py-1 rounded-2xl shadow-sm ${
-        isOwn ? 'bg-orange-500 text-white ml-auto' : 'bg-gray-100 text-gray-900'
-      }`}
+      className={`max-w-[75%] px-4 py-1 rounded-2xl shadow-sm ${isOwn ? 'bg-orange-500 text-white ml-auto' : 'bg-gray-100 text-gray-900'
+        }`}
     >
       <p className="text-sm whitespace-pre-wrap break-words text-left ml-2">{msg.content}</p>
       <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
@@ -93,13 +91,13 @@ export default function ChatPopup() {
   const token = localStorage.getItem('accessToken');
   const userId = token
     ? (() => {
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          return payload.sub;
-        } catch {
-          return null;
-        }
-      })()
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.sub;
+      } catch {
+        return null;
+      }
+    })()
     : null;
 
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -248,25 +246,25 @@ export default function ChatPopup() {
                       : 'PHT-Admin';
                     const avatarLetter = isAdmin ? (c.customerId?.name?.[0] || c.customerId?.email?.[0] || 'C') : 'P';
                     return (
-                    <button
-                      key={c._id}
-                      onClick={() => selectConversation(c._id)}
-                      className="w-full text-left p-3 rounded-xl border border-gray-200 hover:bg-orange-50 hover:border-orange-200 flex items-center gap-3"
-                    >
-                      <div className="w-10 h-10 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 font-semibold">
-                        {avatarLetter.toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{convDisplayName}</p>
-                        <p className="text-sm text-gray-600 truncate">{c.lastMessage?.content}</p>
-                      </div>
-                      {c.customerUnread > 0 && (
-                        <span className="w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
-                          {c.customerUnread}
-                        </span>
-                      )}
-                    </button>
-                  );
+                      <button
+                        key={c._id}
+                        onClick={() => selectConversation(c._id)}
+                        className="w-full text-left p-3 rounded-xl border border-gray-200 hover:bg-orange-50 hover:border-orange-200 flex items-center gap-3"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 font-semibold">
+                          {avatarLetter.toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 truncate">{convDisplayName}</p>
+                          <p className="text-sm text-gray-600 truncate">{c.lastMessage?.content}</p>
+                        </div>
+                        {c.customerUnread > 0 && (
+                          <span className="w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
+                            {c.customerUnread}
+                          </span>
+                        )}
+                      </button>
+                    );
                   })}
                 </div>
               )}
@@ -368,7 +366,6 @@ export default function ChatPopup() {
                           }}
                           width={320}
                           height={360}
-                          theme="light"
                           previewConfig={{ showPreview: false }}
                         />
                       </div>

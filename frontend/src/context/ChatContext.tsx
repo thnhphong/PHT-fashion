@@ -244,10 +244,10 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         }
         const data = await res.json();
         const newMsgs = Array.isArray(data.messages) ? data.messages : [data];
-        setMessages((prev) => {
-          const ids = new Set(prev.map((m) => m._id));
-          const added = newMsgs.filter((m) => !ids.has(m._id?.toString?.() ?? m._id));
-          return [...prev, ...added];
+        setMessages((prev: MessageItem[]) => {
+          const ids = new Set(prev.map((m: MessageItem) => m._id));
+          const added = newMsgs.filter((m: any) => !ids.has(m._id?.toString?.() ?? m._id));
+          return [...prev, ...added] as MessageItem[];
         });
         setProductContext(null);
         await fetchConversations();
