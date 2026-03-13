@@ -13,3 +13,11 @@ export const uploadImage = async (filePath: string, options?: UploadApiOptions) 
     ...options,
   });
 };
+
+export const uploadVideo = async (filePath: string, options?: UploadApiOptions) => {
+  return cloudinary.v2.uploader.upload(filePath, {
+    resource_type: 'video',
+    folder: 'pht_chat_videos',
+    ...options,
+  });
+};

@@ -5,6 +5,10 @@ import axios from 'axios';
 import { apiUrl } from '../../utils/api';
 import type { ProductCardData } from '../../context/ChatContext';
 
+//import isAdmin from ChatContext 
+import { useChat } from '../../context/ChatContext';
+
+
 interface ProductCardMessageProps {
   product: ProductCardData;
 }
@@ -13,8 +17,9 @@ const formatPrice = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
 
 export default function ProductCardMessage({ product }: ProductCardMessageProps) {
-  const { addToCart, setShowCartPopup } = useCart();
 
+  const { addToCart, setShowCartPopup } = useCart();
+  const { isAdmin } = useChat(); 
   const handleAddToCart = async () => {
     try {
       const token = localStorage.getItem('accessToken');
@@ -47,20 +52,24 @@ export default function ProductCardMessage({ product }: ProductCardMessageProps)
         </div>
       </div>
       <div className="flex gap-2 mt-3">
+        {!isAdmin && (
         <button
           onClick={handleAddToCart}
           className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600"
         >
           <ShoppingCart size={16} />
-          Thêm vào giỏ
+          Add to cart
         </button>
+        )}
+        {!isAdmin && (  
         <Link
           to={`/product/${product.slug || product.productId}?buyNow=true`}
           className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 border border-orange-500 text-orange-500 rounded-lg text-sm font-medium hover:bg-orange-50"
         >
           <Zap size={16} />
-          Mua ngay
+          Buy now
         </Link>
+        )}
       </div>
     </div>
   );

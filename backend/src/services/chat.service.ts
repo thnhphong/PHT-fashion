@@ -225,6 +225,47 @@ export const sendImageMessage = async (
   return msg;
 };
 
+export const sendVideoMessage = async (
+  conversationId: string,
+  senderId: string,
+  senderRole: 'customer' | 'admin',
+  videoUrl: string,
+  videoPublicId: string
+): Promise<IMessage> => {
+  const conv = await Conversation.findById(conversationId);
+  if (!conv) throw new Error('Conversation not found');
+
+  const senderObjId = new Types.ObjectId(senderId);
+  const convObjId = new Types.ObjectId(conversationId);
+  const now = new Date();
+
+  const [msg] = await Message.create([
+    {
+      conversationId: convObjId,
+      senderId: senderObjId,
+      senderRole,
+      type: 'video',
+      videoUrl,
+      videoPublicId,
+      status: 'sent',
+      createdAt: now,
+    },
+  ]);
+
+  const unreadField = senderRole === 'customer' ? 'adminUnread' : 'customerUnread';
+  await Conversation.findByIdAndUpdate(conversationId, {
+    lastMessage: {
+      content: '[Video]',
+      sentAt: now,
+      senderId: senderObjId,
+    },
+    updatedAt: now,
+    $inc: { [unreadField]: 1 },
+  });
+
+  return msg;
+};
+
 export const markDelivered = async (
   conversationId: string,
   userId: string,
@@ -295,7 +336,9 @@ export const deleteMessage = async (
   const lastContent = lastMsg
     ? lastMsg.type === 'image'
       ? '[Image]'
-      : (lastMsg.content ?? '').slice(0, 100)
+      : lastMsg.type === 'video'
+        ? '[Video]'
+        : (lastMsg.content ?? '').slice(0, 100)
     : 'Conversation started';
   const lastSentAt = lastMsg?.createdAt ?? new Date();
   const lastSenderId = lastMsg?.senderId ?? msg.senderId;

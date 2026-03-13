@@ -7,11 +7,12 @@ import {
   getMessages,
   sendTextMessage,
   sendImageMessage,
+  sendVideoMessage,
   markDelivered,
   deleteMessage,
   getMessageById,
 } from '../services/chat.service';
-import { uploadImage } from '../config/cloudinary';
+import { uploadImage, uploadVideo } from '../config/cloudinary';
 import cloudinary from 'cloudinary';
 import fs from 'fs';
 import { Server } from 'socket.io';
@@ -206,6 +207,52 @@ export const postImageMessage = async (req: Request, res: Response) => {
   }
 };
 
+export const postVideoMessage = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.sub;
+    const userRole = req.user?.role ?? 'customer';
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const file = req.file;
+    if (!file) return res.status(400).json({ message: 'Video file is required' });
+
+    const id = req.params.id as string;
+    await ensureConversationAccess(id, userId, userRole);
+    const senderRole = getSenderRole(userRole);
+
+    const uploaded = await uploadVideo(file.path, { folder: 'pht_chat_videos' });
+
+    try {
+      fs.unlinkSync(file.path);
+    } catch {
+      // ignore cleanup error
+    }
+
+    const msg = await sendVideoMessage(
+      id,
+      userId,
+      senderRole,
+      uploaded.secure_url,
+      uploaded.public_id
+    );
+
+    const io = getIo(req);
+    if (io) {
+      const serialized = msg && typeof (msg as { toObject?: () => object }).toObject === 'function' ? (msg as { toObject: () => object }).toObject() : msg;
+      emitNewMessage(io, id, serialized);
+    }
+
+    return res.status(201).json(msg);
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'Conversation not found') return res.status(404).json({ message: 'Conversation not found' });
+      if (error.message === 'Forbidden') return res.status(403).json({ message: 'Forbidden' });
+    }
+    console.error('Send video error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 export const patchDelivered = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.sub;
@@ -243,7 +290,7 @@ export const deleteMessageHandler = async (req: Request, res: Response) => {
     const messageId = req.params.messageId as string;
     await ensureConversationAccess(id, userId, userRole);
 
-    const msg = await getMessageById(messageId) as { type?: string; imagePublicId?: string } | null;
+    const msg = await getMessageById(messageId) as { type?: string; imagePublicId?: string; videoPublicId?: string } | null;
     if (!msg) return res.status(404).json({ message: 'Message not found' });
 
     if (msg.type === 'image' && msg.imagePublicId) {
@@ -251,6 +298,13 @@ export const deleteMessageHandler = async (req: Request, res: Response) => {
         await cloudinary.v2.uploader.destroy(msg.imagePublicId);
       } catch (e) {
         console.error('Cloudinary destroy error:', e);
+      }
+    }
+    if (msg.type === 'video' && msg.videoPublicId) {
+      try {
+        await cloudinary.v2.uploader.destroy(msg.videoPublicId, { resource_type: 'video' });
+      } catch (e) {
+        console.error('Cloudinary destroy video error:', e);
       }
     }
 

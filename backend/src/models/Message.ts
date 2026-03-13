@@ -8,7 +8,7 @@ export interface IProductCard {
   slug: string;
 }
 
-export type MessageType = 'text' | 'image' | 'product_card';
+export type MessageType = 'text' | 'image' | 'product_card' | 'video';
 export type MessageStatus = 'sent' | 'delivered';
 
 export interface IMessage extends Document {
@@ -19,6 +19,8 @@ export interface IMessage extends Document {
   content?: string;
   imageUrl?: string;
   imagePublicId?: string;
+  videoUrl?: string;
+  videoPublicId?: string;
   product?: IProductCard;
   status: MessageStatus;
   createdAt: Date;
@@ -54,12 +56,14 @@ const MessageSchema = new Schema<IMessage>(
     },
     type: {
       type: String,
-      enum: ['text', 'image', 'product_card'],
+      enum: ['text', 'image', 'product_card', 'video'],
       required: true,
     },
     content: { type: String },
     imageUrl: { type: String },
     imagePublicId: { type: String },
+    videoUrl: { type: String },
+    videoPublicId: { type: String },
     product: { type: ProductCardSchema },
     status: {
       type: String,

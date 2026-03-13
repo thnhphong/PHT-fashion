@@ -6,6 +6,7 @@ import {
   getConversationMessages,
   postTextMessage,
   postImageMessage,
+  postVideoMessage,
   patchDelivered,
   deleteMessageHandler,
 } from '../controllers/chat.controller';
@@ -16,7 +17,7 @@ const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, 'uploads/'),
   filename: (_req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
 });
-const upload = multer({
+const imageUpload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
@@ -26,11 +27,22 @@ const upload = multer({
   },
 });
 
+const videoUpload = multer({
+  storage,
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['video/mp4', 'video/webm', 'video/quicktime'];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Only MP4, WebM, MOV allowed'));
+  },
+});
+
 router.post('/', authenticate, createOrGetConversation);
 router.get('/', authenticate, listMyConversations);
 router.get('/:id/messages', authenticate, getConversationMessages);
 router.post('/:id/messages', authenticate, postTextMessage);
-router.post('/:id/messages/image', authenticate, upload.single('image'), postImageMessage);
+router.post('/:id/messages/image', authenticate, imageUpload.single('image'), postImageMessage);
+router.post('/:id/messages/video', authenticate, videoUpload.single('video'), postVideoMessage);
 router.patch('/:id/delivered', authenticate, patchDelivered);
 router.delete('/:id/messages/:messageId', authenticate, deleteMessageHandler);
 

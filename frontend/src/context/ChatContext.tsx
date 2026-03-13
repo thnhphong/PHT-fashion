@@ -15,6 +15,7 @@ export interface ConversationSummary {
   lastMessage: { content: string; sentAt: string; senderId: string };
   customerUnread: number;
   updatedAt: string;
+  customerId?: { _id: string; name?: string; email?: string };
 }
 
 export interface ProductCardData {
@@ -29,10 +30,12 @@ export interface MessageItem {
   _id: string;
   senderId: string;
   senderRole: 'customer' | 'admin';
-  type: 'text' | 'image' | 'product_card';
+  type: 'text' | 'image' | 'product_card' | 'video';
   content?: string;
   imageUrl?: string;
   imagePublicId?: string;
+  videoUrl?: string;
+  videoPublicId?: string;
   product?: ProductCardData;
   status: 'sent' | 'delivered';
   createdAt: string;
@@ -41,6 +44,7 @@ export interface MessageItem {
 interface ChatContextType {
   isOpen: boolean;
   setIsOpen: (v: boolean) => void;
+  isAdmin: boolean;
   unreadTotal: number;
   conversations: ConversationSummary[];
   activeConversationId: string | null;
@@ -55,6 +59,8 @@ interface ChatContextType {
   selectConversation: (id: string | null) => void; 
   loadMessages: (conversationId: string, append?: boolean) => Promise<void>;
   sendMessage: (content: string, productCard?: ProductCardData) => Promise<void>;
+  sendImage: (conversationId: string, file: File) => Promise<void>;
+  sendVideo: (conversationId: string, file: File) => Promise<void>;
   markDelivered: (conversationId: string) => Promise<void>;
   socket: Socket | null;
   reconnectSocket: () => void;
@@ -63,6 +69,8 @@ interface ChatContextType {
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 const getToken = () => localStorage.getItem('accessToken');
+
+const getIsAdmin = () => localStorage.getItem('userRole') === 'admin';
 
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -83,13 +91,26 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const fetchConversations = useCallback(async () => {
     const token = getToken();
     if (!token) return;
+    const isAdmin = getIsAdmin();
+    const path = isAdmin ? '/admin/chats' : '/chats';
     try {
-      const res = await fetch(apiUrl('/chats'), {
+      const res = await fetch(apiUrl(path), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return;
       const data = await res.json();
-      setConversations(data.conversations ?? []);
+      const list = data.conversations ?? [];
+      setConversations(
+        isAdmin
+          ? list.map((c: any) => ({
+              _id: c._id,
+              lastMessage: c.lastMessage,
+              customerUnread: c.adminUnread ?? 0,
+              updatedAt: c.updatedAt,
+              customerId: c.customerId,
+            }))
+          : list
+      );
     } catch (e) {
       console.error('Fetch conversations error:', e);
     }
@@ -104,11 +125,15 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     async (conversationId: string, append = false) => {
       const token = getToken();
       if (!token) return;
+      const isAdmin = getIsAdmin();
       const before = append ? nextCursor : undefined;
       const params = new URLSearchParams({ limit: '30' });
       if (before) params.set('before', before);
+      const path = isAdmin
+        ? `/admin/chats/${conversationId}/messages?${params}`
+        : `/chats/${conversationId}/messages?${params}`;
       try {
-        const res = await fetch(apiUrl(`/chats/${conversationId}/messages?${params}`), {
+        const res = await fetch(apiUrl(path), {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) return;
@@ -230,6 +255,50 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     [activeConversationId, fetchConversations]
   );
 
+  const sendImage = useCallback(
+    async (conversationId: string, file: File) => {
+      const token = getToken();
+      if (!token) return;
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await fetch(apiUrl(`/chats/${conversationId}/messages/image`), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message ?? 'Failed to send image');
+      }
+      const data = await res.json();
+      setMessages((prev) => [...prev, { ...data, _id: data._id?.toString?.() ?? data._id }]);
+      await fetchConversations();
+    },
+    [fetchConversations]
+  );
+
+  const sendVideo = useCallback(
+    async (conversationId: string, file: File) => {
+      const token = getToken();
+      if (!token) return;
+      const formData = new FormData();
+      formData.append('video', file);
+      const res = await fetch(apiUrl(`/chats/${conversationId}/messages/video`), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message ?? 'Failed to send video');
+      }
+      const data = await res.json();
+      setMessages((prev) => [...prev, { ...data, _id: data._id?.toString?.() ?? data._id }]);
+      await fetchConversations();
+    },
+    [fetchConversations]
+  );
+
   const markDelivered = useCallback(async (conversationId: string) => {
     const token = getToken();
     if (!token) return;
@@ -324,6 +393,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const value: ChatContextType = {
     isOpen,
     setIsOpen,
+    isAdmin: getIsAdmin(),
     unreadTotal,
     conversations,
     activeConversationId,
@@ -338,6 +408,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     selectConversation,
     loadMessages,
     sendMessage,
+    sendImage,
+    sendVideo,
     markDelivered,
     socket,
     reconnectSocket,
