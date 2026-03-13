@@ -30,6 +30,7 @@ export interface IPendingPayment extends Document {
   status: PendingPaymentStatus;
   expiresAt: Date;
   orderId?: Types.ObjectId;
+  paymentId?: string;
   created_at: Date;
 }
 
@@ -77,6 +78,7 @@ const PendingPaymentSchema = new Schema<IPendingPayment>(
       index: { expires: 3600 },
     },
     orderId: { type: Schema.Types.ObjectId, ref: 'Order' },
+    paymentId: { type: String, trim: true },
     created_at: { type: Date, default: Date.now },
   },
   { versionKey: false }

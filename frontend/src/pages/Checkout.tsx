@@ -38,6 +38,9 @@ export default function Checkout() {
   const itemsForCheckout: CartItem[] =
     locationState?.selectedItems?.length ? locationState.selectedItems : cart;
 
+  // Unique identifier for this checkout session to prevent duplicate drafts
+  const idempotencyKeyRef = useRef(crypto.randomUUID());
+
   // Guard — redirect if not logged in
   useEffect(() => {
     if (!localStorage.getItem('accessToken')) {
@@ -159,6 +162,7 @@ export default function Checkout() {
       shippingMethod,
       paymentMethod,
       couponCode: couponApplied ? couponCode.trim().toUpperCase() : undefined,
+      idempotencyKey: idempotencyKeyRef.current,
     };
 
     const attemptRequest = (token: string) =>

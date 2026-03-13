@@ -212,6 +212,18 @@ export const restoreStockForItems = async (items: DraftedItem[]) => {
  *     and is re-checked at finalize time.
  */
 export const createDraftOrder = async (payload: CreateOrderInput) => {
+  const draftId = payload.idempotencyKey || randomUUID();
+
+  // Check if draft already exists (idempotency check)
+  const existingDraft = await getDraft(draftId);
+  if (existingDraft && existingDraft.customerId === payload.customerId) {
+    return {
+      draftId: existingDraft.draftId,
+      expiresAt: existingDraft.expiresAt,
+      totals: existingDraft.totals,
+    };
+  }
+
   const session = await mongoose.startSession();
 
   try {
@@ -263,7 +275,6 @@ export const createDraftOrder = async (payload: CreateOrderInput) => {
       (subtotal - discountAmount + shippingCost + tax).toFixed(2),
     );
 
-    const draftId = randomUUID();
     const ttlSeconds = parseDraftTtl();
     const now = Date.now();
     const expiresAt = now + ttlSeconds * 1000;

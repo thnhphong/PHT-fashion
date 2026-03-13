@@ -18,6 +18,7 @@ import {
     cancelPendingPayment,
     getPendingPaymentsForUser,
     getPendingPaymentByDraftId,
+    checkPaymentIdempotency,
 } from '../services/pendingPayment.service';
 import Product from '../models/Product';
 import { ReturnQueryFromVNPay } from 'vnpay';
@@ -130,12 +131,21 @@ export const payPalSuccess = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Missing required PayPal parameters' });
         }
 
+        const isIdempotent = await checkPaymentIdempotency(paymentId as string);
+        if (isIdempotent) {
+            console.log(`[PayPal] Payment ${paymentId} already processed (idempotent request).`);
+            const existingPending = await getPendingPaymentByDraftId(draftId as string);
+            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+            return res.redirect(`${frontendUrl}/checkout/success?orderId=${existingPending?.orderId}`);
+        }
+
         const payment = await executePayPalPayment(paymentId as string, PayerID as string);
         if (payment.state === 'approved') {
             const result = await finalizeDraftOrder(draftId as string);
             await updateOrderStatus(result.order._id.toString(), 'processing', 'paid');
-            await completePendingPayment(draftId as string, result.order._id.toString());
+            await completePendingPayment(draftId as string, result.order._id.toString(), paymentId as string);
 
+            //remember to add process.env.FRONTEND_URL if production
             const frontendUrl = 'http://localhost:5173';
             return res.redirect(`${frontendUrl}/checkout/success?orderId=${result.order._id}`);
         }
@@ -244,6 +254,7 @@ export const vnpayReturn = async (req: Request, res: Response) => {
         const query = req.query as ReturnQueryFromVNPay;
         const verification = verifyVNPayReturn(query);
         const draftId = query.vnp_TxnRef as string;
+        const transactionNo = query.vnp_TransactionNo as string;
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
         if (!verification.isSuccess) {
@@ -261,10 +272,17 @@ export const vnpayReturn = async (req: Request, res: Response) => {
             );
         }
 
+        const isIdempotent = await checkPaymentIdempotency(transactionNo);
+        if (isIdempotent) {
+            console.log(`[VNPay] Payment ${transactionNo} already processed (idempotent request).`);
+            const existingPending = await getPendingPaymentByDraftId(draftId);
+            return res.redirect(`${frontendUrl}/checkout/success?orderId=${existingPending?.orderId}`);
+        }
+
         console.log('[VNPay] Payment verified. Finalizing draft:', draftId);
         const result = await finalizeDraftOrder(draftId);
         await updateOrderStatus(result.order._id.toString(), 'processing', 'paid');
-        await completePendingPayment(draftId, result.order._id.toString());
+        await completePendingPayment(draftId, result.order._id.toString(), transactionNo);
 
         return res.redirect(`${frontendUrl}/checkout/success?orderId=${result.order._id}`);
     } catch (error) {
@@ -289,14 +307,25 @@ export const vnpayIpn = async (req: Request, res: Response) => {
         }
 
         const draftId = query.vnp_TxnRef as string;
+        const transactionNo = query.vnp_TransactionNo as string;
+
+        const isIdempotent = await checkPaymentIdempotency(transactionNo);
+        if (isIdempotent) {
+            console.log(`[VNPay] IPN for Payment ${transactionNo} already processed (idempotent request).`);
+            return res.status(200).json({ RspCode: '00', Message: 'Success' });
+        }
+
         const draft = await getDraft(draftId);
         if (!draft) {
+            // Note: because we process idempotency above, if draft is missing here
+            // it means it was finalized but the paymentId wasn't recorded correctly
+            // (e.g. legacy pending payments), or someone is tampering.
             return res.status(200).json({ RspCode: '02', Message: 'Order already confirmed' });
         }
 
         const result = await finalizeDraftOrder(draftId);
         await updateOrderStatus(result.order._id.toString(), 'processing', 'paid');
-        await completePendingPayment(draftId, result.order._id.toString());
+        await completePendingPayment(draftId, result.order._id.toString(), transactionNo);
 
         return res.status(200).json({ RspCode: '00', Message: 'Success' });
     } catch (error) {

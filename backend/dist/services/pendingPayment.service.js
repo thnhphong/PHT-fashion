@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPendingPaymentByDraftId = exports.cancelPendingPayment = exports.completePendingPayment = exports.getPendingPaymentsForUser = exports.createPendingPayment = void 0;
+exports.getPendingPaymentByDraftId = exports.cancelPendingPayment = exports.checkPaymentIdempotency = exports.completePendingPayment = exports.getPendingPaymentsForUser = exports.createPendingPayment = void 0;
 const PendingPayment_1 = __importDefault(require("../models/PendingPayment"));
 const mongoose_1 = require("mongoose");
 /**
@@ -66,10 +66,28 @@ exports.getPendingPaymentsForUser = getPendingPaymentsForUser;
 /**
  * Marks a pending payment as completed and links it to the finalized Order.
  */
-const completePendingPayment = async (draftId, orderId) => {
-    await PendingPayment_1.default.findOneAndUpdate({ draftId }, { $set: { status: 'completed', orderId: new mongoose_1.Types.ObjectId(orderId) } });
+const completePendingPayment = async (draftId, orderId, paymentId) => {
+    const updatePayload = { status: 'completed', orderId: new mongoose_1.Types.ObjectId(orderId) };
+    if (paymentId) {
+        updatePayload.paymentId = paymentId;
+    }
+    await PendingPayment_1.default.findOneAndUpdate({ draftId }, { $set: updatePayload });
 };
 exports.completePendingPayment = completePendingPayment;
+/**
+ * Checks if a payment with the given paymentId has already been completed.
+ * Used to enforce idempotency in payment webhook callbacks.
+ */
+const checkPaymentIdempotency = async (paymentId) => {
+    if (!paymentId)
+        return false;
+    const existing = await PendingPayment_1.default.findOne({
+        paymentId,
+        status: 'completed',
+    });
+    return !!existing;
+};
+exports.checkPaymentIdempotency = checkPaymentIdempotency;
 /**
  * Marks a pending payment as cancelled (user explicitly cancelled the payment).
  */

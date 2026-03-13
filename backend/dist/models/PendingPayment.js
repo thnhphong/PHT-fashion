@@ -44,6 +44,7 @@ const PendingPaymentSchema = new mongoose_1.Schema({
         index: { expires: 3600 },
     },
     orderId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Order' },
+    paymentId: { type: String, trim: true },
     created_at: { type: Date, default: Date.now },
 }, { versionKey: false });
 exports.default = (0, mongoose_1.model)('PendingPayment', PendingPaymentSchema);

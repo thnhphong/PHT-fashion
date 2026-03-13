@@ -74,12 +74,33 @@ export const getPendingPaymentsForUser = async (userId: string) => {
  */
 export const completePendingPayment = async (
   draftId: string,
-  orderId: string
+  orderId: string,
+  paymentId?: string
 ): Promise<void> => {
+  const updatePayload: any = { status: 'completed', orderId: new Types.ObjectId(orderId) };
+  if (paymentId) {
+    updatePayload.paymentId = paymentId;
+  }
+
   await PendingPayment.findOneAndUpdate(
     { draftId },
-    { $set: { status: 'completed', orderId: new Types.ObjectId(orderId) } }
+    { $set: updatePayload }
   );
+};
+
+/**
+ * Checks if a payment with the given paymentId has already been completed.
+ * Used to enforce idempotency in payment webhook callbacks.
+ */
+export const checkPaymentIdempotency = async (
+  paymentId: string
+): Promise<boolean> => {
+  if (!paymentId) return false;
+  const existing = await PendingPayment.findOne({
+    paymentId,
+    status: 'completed',
+  });
+  return !!existing;
 };
 
 /**

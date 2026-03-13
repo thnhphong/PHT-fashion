@@ -492,7 +492,6 @@ export const createDraftOrder = async (payload: CreateOrderInput) => {
         payload.items,
         session
       );
-
       // ... rest of draft creation logic
     });
   } finally {

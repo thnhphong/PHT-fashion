@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadImage = void 0;
+exports.uploadVideo = exports.uploadImage = void 0;
 const cloudinary_1 = __importDefault(require("cloudinary"));
 cloudinary_1.default.v2.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -18,3 +18,11 @@ const uploadImage = async (filePath, options) => {
     });
 };
 exports.uploadImage = uploadImage;
+const uploadVideo = async (filePath, options) => {
+    return cloudinary_1.default.v2.uploader.upload(filePath, {
+        resource_type: 'video',
+        folder: 'pht_chat_videos',
+        ...options,
+    });
+};
+exports.uploadVideo = uploadVideo;

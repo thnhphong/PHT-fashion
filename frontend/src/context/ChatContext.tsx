@@ -244,7 +244,11 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         }
         const data = await res.json();
         const newMsgs = Array.isArray(data.messages) ? data.messages : [data];
-        setMessages((prev) => [...prev, ...newMsgs]);
+        setMessages((prev) => {
+          const ids = new Set(prev.map((m) => m._id));
+          const added = newMsgs.filter((m) => !ids.has(m._id?.toString?.() ?? m._id));
+          return [...prev, ...added];
+        });
         setProductContext(null);
         await fetchConversations();
       } catch (e) {
@@ -271,7 +275,11 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         throw new Error(err.message ?? 'Failed to send image');
       }
       const data = await res.json();
-      setMessages((prev) => [...prev, { ...data, _id: data._id?.toString?.() ?? data._id }]);
+      setMessages((prev) => {
+        const id = data._id?.toString?.() ?? data._id;
+        if (prev.some((m) => m._id === id)) return prev;
+        return [...prev, { ...data, _id: id }];
+      });
       await fetchConversations();
     },
     [fetchConversations]
@@ -293,7 +301,11 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         throw new Error(err.message ?? 'Failed to send video');
       }
       const data = await res.json();
-      setMessages((prev) => [...prev, { ...data, _id: data._id?.toString?.() ?? data._id }]);
+      setMessages((prev) => {
+        const id = data._id?.toString?.() ?? data._id;
+        if (prev.some((m) => m._id === id)) return prev;
+        return [...prev, { ...data, _id: id }];
+      });
       await fetchConversations();
     },
     [fetchConversations]

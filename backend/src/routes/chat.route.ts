@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
+import fs from 'fs';
 import {
   createOrGetConversation,
   listMyConversations,
@@ -14,7 +15,13 @@ import { authenticate } from '../middlewares/auth.middleware';
 
 const router = Router();
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, 'uploads/'),
+  destination: (_req, _file, cb) => {
+    const dir = 'uploads/';
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
   filename: (_req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
 });
 const imageUpload = multer({

@@ -124,7 +124,13 @@ const ProductDetail = () => {
     }
     setIsBuyNow(true);
     addToCart(product, selectedSize, quantity);  
-    navigate('/cart', { state: { fromBuyNow: true } });
+    navigate('/cart', { 
+      state: { 
+        fromBuyNow: true,
+        buyNowItemId: product._id,
+        buyNowItemSize: selectedSize
+      } 
+    });
     reconnectSocket();
   };
 

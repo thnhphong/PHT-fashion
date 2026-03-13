@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.resetUnreadForConversation = exports.getMessageById = exports.deleteMessage = exports.markDelivered = exports.sendImageMessage = exports.sendTextMessage = exports.getMessages = exports.getConversationById = exports.getAdminConversations = exports.getConversationsForCustomer = exports.findOrCreateConversation = void 0;
+exports.resetUnreadForConversation = exports.getMessageById = exports.deleteMessage = exports.markDelivered = exports.sendVideoMessage = exports.sendImageMessage = exports.sendTextMessage = exports.getMessages = exports.getConversationById = exports.getAdminConversations = exports.getConversationsForCustomer = exports.findOrCreateConversation = void 0;
 const mongoose_1 = require("mongoose");
 const Conversation_1 = __importDefault(require("../models/Conversation"));
 const Message_1 = __importDefault(require("../models/Message"));
@@ -180,6 +180,38 @@ const sendImageMessage = async (conversationId, senderId, senderRole, imageUrl, 
     return msg;
 };
 exports.sendImageMessage = sendImageMessage;
+const sendVideoMessage = async (conversationId, senderId, senderRole, videoUrl, videoPublicId) => {
+    const conv = await Conversation_1.default.findById(conversationId);
+    if (!conv)
+        throw new Error('Conversation not found');
+    const senderObjId = new mongoose_1.Types.ObjectId(senderId);
+    const convObjId = new mongoose_1.Types.ObjectId(conversationId);
+    const now = new Date();
+    const [msg] = await Message_1.default.create([
+        {
+            conversationId: convObjId,
+            senderId: senderObjId,
+            senderRole,
+            type: 'video',
+            videoUrl,
+            videoPublicId,
+            status: 'sent',
+            createdAt: now,
+        },
+    ]);
+    const unreadField = senderRole === 'customer' ? 'adminUnread' : 'customerUnread';
+    await Conversation_1.default.findByIdAndUpdate(conversationId, {
+        lastMessage: {
+            content: '[Video]',
+            sentAt: now,
+            senderId: senderObjId,
+        },
+        updatedAt: now,
+        $inc: { [unreadField]: 1 },
+    });
+    return msg;
+};
+exports.sendVideoMessage = sendVideoMessage;
 const markDelivered = async (conversationId, userId, userRole) => {
     const conv = await Conversation_1.default.findById(conversationId);
     if (!conv)
@@ -229,7 +261,9 @@ const deleteMessage = async (conversationId, messageId, userId, userRole) => {
     const lastContent = lastMsg
         ? lastMsg.type === 'image'
             ? '[Image]'
-            : (lastMsg.content ?? '').slice(0, 100)
+            : lastMsg.type === 'video'
+                ? '[Video]'
+                : (lastMsg.content ?? '').slice(0, 100)
         : 'Conversation started';
     const lastSentAt = lastMsg?.createdAt ?? new Date();
     const lastSenderId = lastMsg?.senderId ?? msg.senderId;

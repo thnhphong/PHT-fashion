@@ -145,6 +145,16 @@ exports.restoreStockForItems = restoreStockForItems;
  *     and is re-checked at finalize time.
  */
 const createDraftOrder = async (payload) => {
+    const draftId = payload.idempotencyKey || (0, crypto_1.randomUUID)();
+    // Check if draft already exists (idempotency check)
+    const existingDraft = await (0, exports.getDraft)(draftId);
+    if (existingDraft && existingDraft.customerId === payload.customerId) {
+        return {
+            draftId: existingDraft.draftId,
+            expiresAt: existingDraft.expiresAt,
+            totals: existingDraft.totals,
+        };
+    }
     const session = await mongoose_2.default.startSession();
     try {
         // All stock decrements happen inside a single ACID transaction.
@@ -182,7 +192,6 @@ const createDraftOrder = async (payload) => {
         const taxableAmount = subtotal - discountAmount;
         const tax = parseFloat((taxableAmount * order_constants_1.TAX_RATE).toFixed(2));
         const totalAmount = parseFloat((subtotal - discountAmount + shippingCost + tax).toFixed(2));
-        const draftId = (0, crypto_1.randomUUID)();
         const ttlSeconds = parseDraftTtl();
         const now = Date.now();
         const expiresAt = now + ttlSeconds * 1000;

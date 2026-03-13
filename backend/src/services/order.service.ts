@@ -26,6 +26,7 @@ export interface CreateOrderInput {
   shippingMethod: 'standard' | 'express' | 'next_day';
   paymentMethod: 'credit_card' | 'paypal' | 'apple_pay' | 'google_pay' | 'cash_on_delivery' | 'vnpay';
   couponCode?: string;
+  idempotencyKey?: string;
 }
 
 export const getOrderById = async (orderId: string, customerId?: string) => {

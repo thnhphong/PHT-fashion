@@ -26,12 +26,14 @@ const MessageSchema = new mongoose_1.Schema({
     },
     type: {
         type: String,
-        enum: ['text', 'image', 'product_card'],
+        enum: ['text', 'image', 'product_card', 'video'],
         required: true,
     },
     content: { type: String },
     imageUrl: { type: String },
     imagePublicId: { type: String },
+    videoUrl: { type: String },
+    videoPublicId: { type: String },
     product: { type: ProductCardSchema },
     status: {
         type: String,
