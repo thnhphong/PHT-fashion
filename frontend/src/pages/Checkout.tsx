@@ -5,6 +5,7 @@ import { apiUrl } from '../utils/api';
 import { refreshAccessToken } from '../utils/auth';
 import { formatSizeLabel } from '../utils/sizeUtils';
 import { ChevronDown, MapPin, Truck, CreditCard, Tag, ShieldCheck } from 'lucide-react';
+import PendingPaymentBanner from '../components/PendingPaymentBanner';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,9 @@ export default function Checkout() {
   const locationState = location.state as { selectedItems?: CartItem[] } | null;
   const itemsForCheckout: CartItem[] =
     locationState?.selectedItems?.length ? locationState.selectedItems : cart;
+
+  // Unique identifier for this checkout session to prevent duplicate drafts
+  const idempotencyKeyRef = useRef(crypto.randomUUID());
 
   // Guard — redirect if not logged in
   useEffect(() => {
@@ -83,7 +87,6 @@ export default function Checkout() {
     if (params.get('error') === 'payment_failed') setOrderError('Payment failed or was not approved.');
   }, []);
 
-  // ── Totals ──────────────────────────────────────────────────────────────────
   const subtotal = useMemo(
     () => itemsForCheckout.reduce((sum, item) => sum + item.price * item.quantity, 0),
     [itemsForCheckout]
@@ -95,7 +98,6 @@ export default function Checkout() {
   );
   const grandTotal = subtotal + shippingPrice - discountAmount;
 
-  // ── Coupon ──────────────────────────────────────────────────────────────────
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
     setCouponLoading(true);
@@ -160,6 +162,7 @@ export default function Checkout() {
       shippingMethod,
       paymentMethod,
       couponCode: couponApplied ? couponCode.trim().toUpperCase() : undefined,
+      idempotencyKey: idempotencyKeyRef.current,
     };
 
     const attemptRequest = (token: string) =>
@@ -254,7 +257,7 @@ export default function Checkout() {
   return (
     <div className="min-h-screen bg-gray-100 py-6 px-2 sm:px-4">
       <div className="max-w-5xl mx-auto space-y-4">
-
+        <PendingPaymentBanner />
         {/* Header */}
         <div className="flex items-center gap-3 pb-2 border-b border-orange-200">
           <Link to="/" className="font-bold text-2xl text-orange-500 tracking-tight">PHT</Link>

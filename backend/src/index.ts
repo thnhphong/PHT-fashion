@@ -1,3 +1,4 @@
+import http from 'http';
 import express, { Application } from 'express';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
@@ -15,7 +16,11 @@ import searchRoutes from './routes/search.route';
 import couponRoutes from './routes/coupon.route';
 import { connectRedis } from './utils/redis.util';
 import { cleanupExpiredDrafts } from './services/draftOrder.service';
-
+import pendingPaymentRoutes from './routes/payment.route';
+import chatRoutes from './routes/chat.route';
+import adminChatRoutes from './routes/admin.chat.route';
+import { initSocket } from './socket';
+import { registerChatHandlers } from './socket/chat.socket';
 dotenv.config();
 
 const app: Application = express();
@@ -71,6 +76,9 @@ app.use('/api/search', searchRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/pending-payments', pendingPaymentRoutes);
+app.use('/api/chats', chatRoutes);
+app.use('/api/admin/chats', adminChatRoutes);
 
 
 const startServer = async () => {
@@ -91,7 +99,12 @@ const startServer = async () => {
     }
   }, cleanupIntervalSeconds * 1000);
 
-  app.listen(PORT, () => {
+  const httpServer = http.createServer(app);
+  const io = initSocket(httpServer);
+  registerChatHandlers(io);
+  app.set('io', io);
+
+  httpServer.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
     console.log(`API available at http://localhost:${PORT}`);
   });

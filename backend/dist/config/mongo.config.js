@@ -1,0 +1,62 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.connectDB = connectDB;
+// src/config/db.ts
+const mongoose_1 = __importDefault(require("mongoose"));
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config(); // Load .env variables (you can also load it only in index.ts)
+const MONGODB_URI = process.env.MONGO_URI;
+if (!MONGODB_URI) {
+    throw new Error('Please define the MONGO_URI environment variable inside .env');
+}
+let cached = global.mongoose;
+if (!cached) {
+    cached = global.mongoose = { conn: null, promise: null };
+}
+async function connectDB() {
+    // If we already have a connection, return it
+    if (cached.conn) {
+        console.log('→ Using existing MongoDB connection');
+        return cached.conn;
+    }
+    if (!cached.promise) {
+        const opts = {
+            bufferCommands: false, // Disable mongoose buffering
+            // You can add more options here if needed
+            // serverSelectionTimeoutMS: 5000,
+            // maxPoolSize: 10,
+        };
+        console.log('→ Connecting to MongoDB...');
+        cached.promise = mongoose_1.default
+            .connect(MONGODB_URI, opts)
+            .then((mongooseInstance) => {
+            console.log('MongoDB connected successfully');
+            return mongooseInstance;
+        })
+            .catch((error) => {
+            console.error('MongoDB connection error:', error);
+            cached.promise = null; // Reset promise on failure
+            throw error;
+        });
+    }
+    try {
+        cached.conn = await cached.promise;
+    }
+    catch (e) {
+        cached.promise = null;
+        throw e;
+    }
+    return cached.conn;
+}
+// Optional: Graceful shutdown (good for production)
+process.on('SIGINT', async () => {
+    if (cached.conn) {
+        await cached.conn.disconnect();
+        console.log('MongoDB disconnected on app termination');
+    }
+    process.exit(0);
+});
+exports.default = connectDB;

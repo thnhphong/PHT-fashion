@@ -18,6 +18,7 @@ import Cart from './pages/Cart';
 import Products from './pages/Products';
 import { FavoriteProvider } from './context/FavoriteContext';
 import { CartProvider } from './context/CartContext';
+import { ChatProvider } from './context/ChatContext';
 import Favorite from './pages/Favorite';
 import { AdminRoute } from './components/routes/AdminRoute';
 import Checkout from './pages/Checkout';
@@ -25,11 +26,15 @@ import Orders from './pages/Orders';
 import AdminCoupon from './pages/admin/AdminCoupon';
 import AdminProduct from './pages/admin/AdminProduct';
 import CheckoutSuccess from './pages/CheckoutSuccess';
+import FloatingChatButton from './components/chat/FloatingChatButton';
+import ChatPopup from './components/chat/ChatPopup';
 
 const Layout = () => {
   return (
     <>
       <CartPopup />
+      <ChatPopup />
+      <FloatingChatButton />
       <Outlet />
     </>
   );
@@ -40,7 +45,8 @@ function App() {
     <Router>
       <FavoriteProvider>
         <CartProvider>
-          <Routes>
+          <ChatProvider>
+            <Routes>
             <Route element={<Layout />}>
               <Route path="/" element={<Home />} />
               {/* immediately show the cart popup when the user adds a product to the cart no specific route needed*/}
@@ -50,14 +56,14 @@ function App() {
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/checkout/success" element={<CheckoutSuccess />} />
               <Route path="/orders" element={<Orders />} />
+              <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/search" element={<Search />} />
             </Route>
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
             <Route
               path="/admin/*"
               element={
@@ -74,7 +80,8 @@ function App() {
               <Route path="suppliers" element={<AdminSupplier />} />
               <Route path="coupons" element={<AdminCoupon />} />
             </Route>
-          </Routes>
+            </Routes>
+          </ChatProvider>
         </CartProvider>
       </FavoriteProvider>
     </Router>

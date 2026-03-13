@@ -76,6 +76,7 @@ const Login = () => {
 
       // Store access token in localStorage (refresh token is in httpOnly cookie)
       localStorage.setItem('accessToken', response.data.accessToken);
+      window.dispatchEvent(new CustomEvent('auth-token-set'));
       const adminEmails = new Set([
         'thnhphong4869@gmail.com',
         'nguyenchithanh2213@gmail.com',

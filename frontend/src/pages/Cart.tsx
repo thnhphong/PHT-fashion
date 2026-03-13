@@ -20,21 +20,24 @@ export default function Cart() {
   const navigate = useNavigate();
   const location = useLocation();
   const fromBuyNow = location.state?.fromBuyNow ?? false;
-  const displayedItems = fromBuyNow
-    ? cart.filter((item) => {
-      return true;
-    })
-    : cart;
-  const lastItem = fromBuyNow && cart.length > 0 ? cart[cart.length - 1] : null;
+  const buyNowItemId = location.state?.buyNowItemId;
+  const buyNowItemSize = location.state?.buyNowItemSize;
 
-  const itemsToShow = fromBuyNow && lastItem ? [lastItem] : displayedItems;
+  const itemsToShow = cart; // Display all items regardless of fromBuyNow
   const displayedCount = itemsToShow.length;
   const displayedTotalItems = itemsToShow.reduce((sum, i) => sum + i.quantity, 0);
   const displayedSubtotal = itemsToShow.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
-  const [selectedKeys, setSelectedKeys] = useState<string[]>(() =>
-    cart.map((item) => `${item._id}-${item.selectedSize}`)
-  );
+  const [selectedKeys, setSelectedKeys] = useState<string[]>(() => {
+    if (fromBuyNow && buyNowItemId && buyNowItemSize) {
+      return [`${buyNowItemId}-${buyNowItemSize}`];
+    } else if (fromBuyNow && cart.length > 0) {
+      // Fallback to last item if missing ID/size
+      const last = cart[cart.length - 1];
+      return [`${last._id}-${last.selectedSize}`];
+    }
+    return cart.map((item) => `${item._id}-${item.selectedSize}`);
+  });
 
   useEffect(() => {
     setSelectedKeys((prev) => {

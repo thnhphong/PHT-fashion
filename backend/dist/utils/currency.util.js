@@ -1,0 +1,19 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CurrencyConverter = void 0;
+class CurrencyConverter {
+    /**
+     * Converts VND amount to USD string formatted to 2 decimal places.
+     * PayPal requires the amount format to be string like "10.00"
+     * @param vndAmount Amount in Vietnamese Dong
+     * @returns String representation of USD amount
+     */
+    static vndToUsd(vndAmount) {
+        const usdAmount = vndAmount / this.VND_TO_USD_RATE;
+        return usdAmount.toFixed(2);
+    }
+}
+exports.CurrencyConverter = CurrencyConverter;
+// Assuming a static exchange rate for demonstration.
+// In a real application, you might fetch this dynamically from an API.
+CurrencyConverter.VND_TO_USD_RATE = 25000;

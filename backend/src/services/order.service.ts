@@ -1,7 +1,7 @@
 import Order, { IOrder, OrderStatus, PaymentStatus } from '../models/Order';
 import OrderItem from '../models/OrderItem';
 import Product from '../models/Product';
-
+import { restoreCouponCount } from './coupon.service';
 
 export interface CreateOrderItemInput {
   productId: string;
@@ -26,11 +26,12 @@ export interface CreateOrderInput {
   shippingMethod: 'standard' | 'express' | 'next_day';
   paymentMethod: 'credit_card' | 'paypal' | 'apple_pay' | 'google_pay' | 'cash_on_delivery' | 'vnpay';
   couponCode?: string;
+  idempotencyKey?: string;
 }
 
 export const getOrderById = async (orderId: string, customerId?: string) => {
-  const query: any = { _id: orderId };
-  if (customerId) query.customerId = customerId; // scoped to user if not admin
+  const query: Record<string, unknown> = { _id: orderId };
+  if (customerId) query.customerId = customerId;
 
   const order = await Order.findOne(query).lean();
   if (!order) return null;
@@ -43,20 +44,17 @@ export const getOrderById = async (orderId: string, customerId?: string) => {
 };
 
 export const getOrdersByCustomer = async (customerId: string) => {
-  // Query 1: fetch all orders for this customer
   const orders = await Order.find({ customerId })
     .sort({ created_at: -1 })
     .lean();
 
   if (orders.length === 0) return [];
 
-  // Query 2: fetch ALL items for ALL orders in one $in query — eliminates N+1
   const orderIds = orders.map((o) => o._id);
   const allItems = await OrderItem.find({ orderId: { $in: orderIds } })
     .populate('productId', 'name img_url price')
     .lean();
 
-  // Group items by orderId in memory — O(n), zero extra queries
   const itemsByOrderId = new Map<string, typeof allItems>();
   for (const item of allItems) {
     const key = item.orderId.toString();
@@ -64,7 +62,6 @@ export const getOrdersByCustomer = async (customerId: string) => {
     itemsByOrderId.get(key)!.push(item);
   }
 
-  // Attach items to each order
   return orders.map((order) => ({
     ...order,
     items: itemsByOrderId.get(order._id.toString()) ?? [],
@@ -72,7 +69,7 @@ export const getOrdersByCustomer = async (customerId: string) => {
 };
 
 export const getAllOrders = async (page = 1, limit = 20, status?: OrderStatus) => {
-  const query: any = {};
+  const query: Record<string, unknown> = {};
   if (status) query.status = status;
 
   const skip = (page - 1) * limit;
@@ -102,7 +99,7 @@ export const getAllOrders = async (page = 1, limit = 20, status?: OrderStatus) =
 export const updateOrderStatus = async (
   orderId: string,
   status: OrderStatus,
-  paymentStatus?: PaymentStatus
+  paymentStatus?: PaymentStatus,
 ) => {
   const update: Partial<IOrder> = { status };
   if (paymentStatus) update.payment_status = paymentStatus;
@@ -112,8 +109,21 @@ export const updateOrderStatus = async (
   return order;
 };
 
+/**
+ * Cancels an order and restores inventory + coupon quota.
+ *
+ * COUPON RESTORE:
+ *   If the order was placed with a coupon (`coupon_code` field is set), we
+ *   increment the coupon's count by 1 so the freed slot can be used again.
+ *   This mirrors the `validateAndConsumeCoupon` decrement that happened at
+ *   finalization time.
+ *
+ *   Note: We do NOT restore the coupon if the order was cancelled at the
+ *   *draft* stage — the count was never decremented for drafts, only for
+ *   finalized orders.
+ */
 export const cancelOrder = async (orderId: string, customerId?: string) => {
-  const query: any = { _id: orderId };
+  const query: Record<string, unknown> = { _id: orderId };
   if (customerId) query.customerId = customerId;
 
   const order = await Order.findOne(query);
@@ -127,16 +137,21 @@ export const cancelOrder = async (orderId: string, customerId?: string) => {
     throw new Error('Order is already cancelled');
   }
 
-  // Restore stock — concurrent writes, not sequential
+  // Restore per-size and aggregate stock — concurrent writes, not sequential.
   const items = await OrderItem.find({ orderId: order._id });
   await Promise.all(
     items.map((item) =>
       Product.updateOne(
         { _id: item.productId, 'sizes.size': item.productSize },
-        { $inc: { 'sizes.$.stock': item.quantity, stock: item.quantity } }
-      )
-    )
+        { $inc: { 'sizes.$.stock': item.quantity, stock: item.quantity } },
+      ),
+    ),
   );
+
+  // Restore coupon quota only if this order consumed one at finalization.
+  if (order.coupon_code) {
+    await restoreCouponCount(order.coupon_code);
+  }
 
   order.status = 'cancelled';
   order.payment_status = 'refunded';

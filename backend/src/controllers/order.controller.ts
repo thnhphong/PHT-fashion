@@ -45,7 +45,7 @@ export const createOrder = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const { items, shippingAddress, shippingMethod, paymentMethod, couponCode } = req.body;
+    const { items, shippingAddress, shippingMethod, paymentMethod, couponCode, idempotencyKey } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'Order must contain at least one item' });
@@ -64,6 +64,7 @@ export const createOrder = async (req: Request, res: Response) => {
       shippingMethod,
       paymentMethod,
       couponCode,
+      idempotencyKey,
     });
 
     return res.status(201).json({
