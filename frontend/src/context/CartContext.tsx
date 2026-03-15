@@ -36,6 +36,7 @@ interface CartContextType {
   getTotalItems: () => number;
   clearCart: () => Promise<void>;
   mergeGuestCart: () => Promise<void>;
+  syncCartToDbOnLogout: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -43,125 +44,131 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 const CART_STORAGE_KEY = 'pht_cart';
 const GUEST_SESSION_KEY = 'pht_guest_session_at';
 
+const mergeCartItems = (api: CartItem[], local: CartItem[]): CartItem[] => {
+  const byKey = new Map<string, CartItem>();
+  for (const item of api) {
+    byKey.set(`${item._id}:${item.selectedSize}`, item);
+  }
+  for (const item of local) {
+    const key = `${item._id}:${item.selectedSize}`;
+    const existing = byKey.get(key);
+    if (existing) {
+      byKey.set(key, { ...existing, quantity: Math.max(existing.quantity, item.quantity) });
+    } else {
+      byKey.set(key, item);
+    }
+  }
+  return Array.from(byKey.values());
+};
+
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>(() => {
-    if (!isAuthenticated()) {
-      try {
-        const sessionTime = localStorage.getItem(GUEST_SESSION_KEY);
-        if (sessionTime) {
-          const age = Date.now() - parseInt(sessionTime, 10);
-          if (age > 24 * 60 * 60 * 1000) { // 24 hours
-            localStorage.removeItem(CART_STORAGE_KEY);
-            localStorage.removeItem('pht_favorites');
-            localStorage.removeItem(GUEST_SESSION_KEY);
-            return [];
-          }
+    try {
+      const sessionTime = localStorage.getItem(GUEST_SESSION_KEY);
+      if (sessionTime) {
+        const age = Date.now() - parseInt(sessionTime, 10);
+        if (age > 24 * 60 * 60 * 1000) {
+          localStorage.removeItem(CART_STORAGE_KEY);
+          localStorage.removeItem('pht_favorites');
+          localStorage.removeItem(GUEST_SESSION_KEY);
+          return [];
         }
-
-        const saved = localStorage.getItem(CART_STORAGE_KEY);
-        if (!saved) return [];
-        const parsed = JSON.parse(saved);
-        return parsed.map((item: any) => ({
-          ...item,
-          price: Number(item.price),
-          quantity: Number(item.quantity),
-        }));
-      } catch {
-        return [];
       }
+      const saved = localStorage.getItem(CART_STORAGE_KEY);
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return parsed.map((item: any) => ({
+        ...item,
+        price: Number(item.price),
+        quantity: Number(item.quantity),
+      }));
+    } catch {
+      return [];
     }
-    return [];
   });
 
   const [showCartPopup, setShowCartPopup] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Fetch cart from API on load or when authentication changes
+  // On load: fetch from DB when logged in (merge with localStorage), else load from localStorage
   useEffect(() => {
     let isMounted = true;
     const fetchCart = async () => {
       if (isAuthenticated()) {
         try {
           const res = await fetch(apiUrl('/cart'), {
-            headers: {
-              Authorization: `Bearer ${getAccessToken()}`,
-            },
+            headers: { Authorization: `Bearer ${getAccessToken()}` },
           });
           if (res.ok) {
             const data = await res.json();
-            if (isMounted && data.items) {
-              // Transform API response to CartItem[]
-              const apiCart = data.items.map((item: any) => ({
-                _id: item.productId._id,
-                name: item.productId.name,
-                price: item.productId.price,
-                img_url: item.productId.img_url || item.productId.images?.[0] || '',
-                selectedSize: item.size,
-                quantity: item.quantity,
-                stock: item.productId.stock || 0,
-                supplier: item.productId.supplierId?.name,
-                categoryName: item.productId.categoryId?.name,
-                sizes: item.productId.sizes,
-              }));
-              setCart(apiCart);
-            }
+            const apiItems = (data.items ?? []).map((item: any) => ({
+              _id: item.productId._id,
+              name: item.productId.name,
+              price: item.productId.price,
+              img_url: item.productId.img_url || item.productId.images?.[0] || '',
+              selectedSize: item.size,
+              quantity: item.quantity,
+              stock: item.productId.stock || 0,
+              supplier: item.productId.supplierId?.name,
+              categoryName: item.productId.categoryId?.name,
+              sizes: item.productId.sizes,
+            }));
+            const saved = localStorage.getItem(CART_STORAGE_KEY);
+            const localItems = saved ? JSON.parse(saved) : [];
+            const merged = mergeCartItems(apiItems, localItems);
+            if (isMounted) setCart(merged);
+            localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(merged));
           }
         } catch (err) {
           console.error('Failed to fetch cart:', err);
+          const saved = localStorage.getItem(CART_STORAGE_KEY);
+          if (isMounted && saved) {
+            const parsed = JSON.parse(saved).map((item: any) => ({
+              ...item,
+              price: Number(item.price),
+              quantity: Number(item.quantity),
+            }));
+            setCart(parsed);
+          }
         }
       } else {
-        // For guest, try to load from localStorage
-        try {
-          const sessionTime = localStorage.getItem(GUEST_SESSION_KEY);
-          if (sessionTime) {
-            const age = Date.now() - parseInt(sessionTime, 10);
-            if (age > 24 * 60 * 60 * 1000) {
-              localStorage.removeItem(CART_STORAGE_KEY);
-              localStorage.removeItem('pht_favorites');
-              localStorage.removeItem(GUEST_SESSION_KEY);
-              if (isMounted) setCart([]);
-              return;
-            }
+        const sessionTime = localStorage.getItem(GUEST_SESSION_KEY);
+        if (sessionTime) {
+          const age = Date.now() - parseInt(sessionTime, 10);
+          if (age > 24 * 60 * 60 * 1000) {
+            localStorage.removeItem(CART_STORAGE_KEY);
+            localStorage.removeItem('pht_favorites');
+            localStorage.removeItem(GUEST_SESSION_KEY);
+            if (isMounted) setCart([]);
+            setIsInitialized(true);
+            return;
           }
-          const saved = localStorage.getItem(CART_STORAGE_KEY);
-          if (isMounted) {
-            if (!saved) {
-              setCart([]);
-            } else {
-              const parsed = JSON.parse(saved);
-              setCart(parsed.map((item: any) => ({
-                ...item,
-                price: Number(item.price),
-                quantity: Number(item.quantity),
-              })));
-            }
-          }
-        } catch {
-          if (isMounted) setCart([]);
+        }
+        const saved = localStorage.getItem(CART_STORAGE_KEY);
+        if (isMounted) {
+          setCart(saved ? JSON.parse(saved).map((item: any) => ({
+            ...item,
+            price: Number(item.price),
+            quantity: Number(item.quantity),
+          })) : []);
         }
       }
       if (isMounted) setIsInitialized(true);
     };
 
     fetchCart();
-
-    const handleAuthChange = () => {
-      fetchCart();
-    };
-
-    window.addEventListener('auth-token-set', handleAuthChange);
+    window.addEventListener('auth-token-set', fetchCart);
     return () => {
       isMounted = false;
-      window.removeEventListener('auth-token-set', handleAuthChange);
+      window.removeEventListener('auth-token-set', fetchCart);
     };
   }, []);
 
-  // Persist to localStorage for guests
+  // Persist to localStorage for both guest and logged-in (browsing uses localStorage only)
   useEffect(() => {
-    if (isInitialized && !isAuthenticated()) {
+    if (isInitialized) {
       try {
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
-        // Set guest session timestamp if not exists
         if (!localStorage.getItem(GUEST_SESSION_KEY) && cart.length > 0) {
           localStorage.setItem(GUEST_SESSION_KEY, Date.now().toString());
         }
@@ -182,26 +189,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       if (availableStock < quantity) {
         alert(`Not enough stock for size ${formatSizeLabel(sizeKey)}`);
         return;
-      }
-
-      if (isAuthenticated()) {
-        try {
-          const res = await fetch(apiUrl('/cart/items'), {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${getAccessToken()}`,
-            },
-            body: JSON.stringify({
-              productId: product._id,
-              size: sizeKey,
-              quantity,
-            }),
-          });
-          if (!res.ok) throw new Error('Failed to add to cart API');
-        } catch (err) {
-          console.error(err);
-        }
       }
 
       setCart((prev) => {
@@ -247,32 +234,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const updateQuantity = useCallback(async (id: string, size: string, newQuantity: number) => {
     if (newQuantity < 0) return;
 
-    if (isAuthenticated()) {
-      try {
-        if (newQuantity === 0) {
-          await fetch(apiUrl(`/cart/items/${id}`), {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${getAccessToken()}`,
-            },
-            body: JSON.stringify({ size }),
-          });
-        } else {
-          await fetch(apiUrl(`/cart/items/${id}`), {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${getAccessToken()}`,
-            },
-            body: JSON.stringify({ size, quantity: newQuantity }),
-          });
-        }
-      } catch (err) {
-        console.error('Failed to update quantity API', err);
-      }
-    }
-
     setCart((prev) =>
       prev
         .map((item) =>
@@ -287,36 +248,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const updateItemSize = useCallback(
     async (id: string, oldSize: string, newSize: string) => {
       if (!newSize || oldSize === newSize) return;
-
-      if (isAuthenticated()) {
-        try {
-          const currentItem = cart.find(c => c._id === id && c.selectedSize === oldSize);
-          if (currentItem) {
-            await fetch(apiUrl(`/cart/items/${id}`), {
-              method: 'DELETE',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${getAccessToken()}`,
-              },
-              body: JSON.stringify({ size: oldSize }),
-            });
-            await fetch(apiUrl('/cart/items'), {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${getAccessToken()}`,
-              },
-              body: JSON.stringify({
-                productId: id,
-                size: newSize,
-                quantity: currentItem.quantity,
-              }),
-            });
-          }
-        } catch (err) {
-          console.error('Failed to update size API', err);
-        }
-      }
 
       setCart((prev) => {
         const index = prev.findIndex(
@@ -369,25 +300,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         return next;
       });
     },
-    [cart]
+    []
   );
 
   const removeFromCart = useCallback(async (id: string, size: string) => {
-    if (isAuthenticated()) {
-      try {
-        await fetch(apiUrl(`/cart/items/${id}`), {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${getAccessToken()}`,
-          },
-          body: JSON.stringify({ size }),
-        });
-      } catch (err) {
-        console.error('Failed to remove item API', err);
-      }
-    }
-
     setCart((prev) =>
       prev.filter((item) => !(item._id === id && item.selectedSize === size))
     );
@@ -398,19 +314,46 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       try {
         await fetch(apiUrl('/cart'), {
           method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${getAccessToken()}`,
-          },
+          headers: { Authorization: `Bearer ${getAccessToken()}` },
         });
       } catch (err) {
         console.error('Failed to clear cart API', err);
       }
-    } else {
-      localStorage.removeItem(CART_STORAGE_KEY);
-      localStorage.removeItem(GUEST_SESSION_KEY);
     }
+    localStorage.removeItem(CART_STORAGE_KEY);
+    localStorage.removeItem(GUEST_SESSION_KEY);
     setCart([]);
   }, []);
+
+  const syncCartToDbOnLogout = useCallback(async () => {
+    if (!isAuthenticated()) return;
+    const token = getAccessToken();
+    if (!token) return;
+    try {
+      const items = cart.map((item) => ({
+        productId: item._id,
+        size: item.selectedSize,
+        quantity: item.quantity,
+      }));
+      if (items.length === 0) {
+        await fetch(apiUrl('/cart'), {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        await fetch(apiUrl('/cart/merge'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ items }),
+        });
+      }
+    } catch (err) {
+      console.error('Failed to sync cart on logout', err);
+    }
+  }, [cart]);
 
   const mergeGuestCart = useCallback(async () => {
     const saved = localStorage.getItem(CART_STORAGE_KEY);
@@ -495,6 +438,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     getTotalItems,
     clearCart,
     mergeGuestCart,
+    syncCartToDbOnLogout,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

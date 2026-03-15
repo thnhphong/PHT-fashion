@@ -1,8 +1,7 @@
 import Favorite from '../models/Favorite';
 import { Types } from 'mongoose';
 
-
-const populateFavorites = (query: any) =>
+const populateFavorites = (query: { populate: (opts: object) => unknown }) =>
   query.populate({
     path: 'productIds',
     select: 'name price img_url stock sizes categoryId supplierId',
@@ -13,19 +12,21 @@ const populateFavorites = (query: any) =>
   });
 
 export const getFavorites = async (userId: string) => {
+  const userObjId = new Types.ObjectId(userId);
   let fav = await populateFavorites(
-    Favorite.findOne({ userId })
+    Favorite.findOne({ userId: userObjId }) as { populate: (opts: object) => unknown }
   );
   if (!fav) {
-    fav = await Favorite.create({ userId, productIds: [] });
+    fav = await Favorite.create({ userId: userObjId, productIds: [] });
   }
   return fav;
 };
 
 export const addFavorite = async (userId: string, productId: string) => {
-  let fav = await Favorite.findOne({ userId });
+  const userObjId = new Types.ObjectId(userId);
+  let fav = await Favorite.findOne({ userId: userObjId });
   if (!fav) {
-    fav = new Favorite({ userId, productIds: [] });
+    fav = new Favorite({ userId: userObjId, productIds: [] });
   }
 
   const pid = new Types.ObjectId(productId);
@@ -34,11 +35,12 @@ export const addFavorite = async (userId: string, productId: string) => {
     await fav.save();
   }
 
-  return populateFavorites(Favorite.findById(fav._id));
+  return populateFavorites(Favorite.findById(fav._id) as { populate: (opts: object) => unknown });
 };
 
 export const removeFavorite = async (userId: string, productId: string) => {
-  const fav = await Favorite.findOne({ userId });
+  const userObjId = new Types.ObjectId(userId);
+  const fav = await Favorite.findOne({ userId: userObjId });
   if (!fav) throw new Error('Favorites not found');
 
   fav.productIds = fav.productIds.filter(
@@ -46,13 +48,14 @@ export const removeFavorite = async (userId: string, productId: string) => {
   );
   await fav.save();
 
-  return populateFavorites(Favorite.findById(fav._id));
+  return populateFavorites(Favorite.findById(fav._id) as { populate: (opts: object) => unknown });
 };
 
 export const mergeFavorites = async (userId: string, productIds: string[]) => {
-  let fav = await Favorite.findOne({ userId });
+  const userObjId = new Types.ObjectId(userId);
+  let fav = await Favorite.findOne({ userId: userObjId });
   if (!fav) {
-    fav = new Favorite({ userId, productIds: [] });
+    fav = new Favorite({ userId: userObjId, productIds: [] });
   }
 
   for (const productId of productIds) {
@@ -63,5 +66,5 @@ export const mergeFavorites = async (userId: string, productIds: string[]) => {
   }
 
   await fav.save();
-  return populateFavorites(Favorite.findById(fav._id));
+  return populateFavorites(Favorite.findById(fav._id) as { populate: (opts: object) => unknown });
 };

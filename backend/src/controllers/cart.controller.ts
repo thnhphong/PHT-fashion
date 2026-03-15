@@ -7,9 +7,10 @@ export const getCart = async (req: Request, res: Response) => {
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
     const cart = await cartService.getCart(userId as string);
-    return res.json(cart);
-  } catch (error: any) {
-    return res.status(500).json({ message: error.message || 'Internal server error' });
+    return res.json(cart ?? { items: [] });
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Internal server error';
+    return res.status(500).json({ message: msg });
   }
 };
 

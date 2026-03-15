@@ -14,13 +14,13 @@ const router = Router();
 // GET /api/favorites — get user's favorites
 router.get('/', authenticate, getFavorites);
 
+// POST /api/favorites/merge — merge guest favorites into DB (must be before /:productId)
+router.post('/merge', authenticate, validateRequest(mergeFavoritesSchema), mergeFavorites);
+
 // POST /api/favorites/:productId — add product to favorites
 router.post('/:productId', authenticate, addFavorite);
 
 // DELETE /api/favorites/:productId — remove product from favorites
 router.delete('/:productId', authenticate, removeFavorite);
-
-// POST /api/favorites/merge — merge guest favorites into DB
-router.post('/merge', authenticate, validateRequest(mergeFavoritesSchema), mergeFavorites);
 
 export default router;

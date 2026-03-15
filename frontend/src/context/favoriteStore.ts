@@ -6,6 +6,7 @@ export interface FavoriteContextType {
   removeFavorite: (productId: string) => Promise<void>;
   mergeGuestFavorites: () => Promise<void>;
   clearLocalFavorites: () => void;
+  syncFavoritesToDbOnLogout: () => Promise<void>;
 }
 
 export const FavoriteContext = createContext<FavoriteContextType | undefined>(undefined);

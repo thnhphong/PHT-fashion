@@ -7,51 +7,64 @@ const STORAGE_KEY = 'pht_favorites';
 
 export const FavoriteProvider = ({ children }: { children: ReactNode }) => {
   const [favorites, setFavorites] = useState<string[]>(() => {
-    if (!isAuthenticated()) {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        return stored ? (JSON.parse(stored) as string[]) : [];
-      } catch (err) {
-        console.error('Failed to read favorites:', err);
-        return [];
-      }
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? (JSON.parse(stored) as string[]) : [];
+    } catch (err) {
+      console.error('Failed to read favorites:', err);
+      return [];
     }
-    return [];
   });
 
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Fetch favorites from API on load if authenticated
+  // On load: fetch from DB when logged in (merge with localStorage), else load from localStorage
   useEffect(() => {
     let isMounted = true;
     const fetchFavorites = async () => {
       if (isAuthenticated()) {
         try {
           const res = await fetch(apiUrl('/favorites'), {
-            headers: {
-              Authorization: `Bearer ${getAccessToken()}`,
-            },
+            headers: { Authorization: `Bearer ${getAccessToken()}` },
           });
           if (res.ok) {
             const data = await res.json();
-            if (isMounted && data.productIds) {
-              setFavorites(data.productIds);
-            }
+            const apiIds = (data.productIds ?? []) as string[];
+            const localIds = (() => {
+              try {
+                const s = localStorage.getItem(STORAGE_KEY);
+                return s ? (JSON.parse(s) as string[]) : [];
+              } catch {
+                return [];
+              }
+            })();
+            const merged = [...new Set([...apiIds, ...localIds])];
+            if (isMounted) setFavorites(merged);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
           }
         } catch (err) {
           console.error('Failed to fetch favorites:', err);
+          const s = localStorage.getItem(STORAGE_KEY);
+          if (isMounted && s) setFavorites(JSON.parse(s) as string[]);
         }
+      } else {
+        const s = localStorage.getItem(STORAGE_KEY);
+        if (isMounted) setFavorites(s ? (JSON.parse(s) as string[]) : []);
       }
       if (isMounted) setIsInitialized(true);
     };
 
     fetchFavorites();
-    return () => { isMounted = false; };
+    window.addEventListener('auth-token-set', fetchFavorites);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('auth-token-set', fetchFavorites);
+    };
   }, []);
 
-  // Persist to localStorage for guests
+  // Persist to localStorage for both guest and logged-in
   useEffect(() => {
-    if (isInitialized && !isAuthenticated()) {
+    if (isInitialized) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
       } catch (err) {
@@ -61,35 +74,30 @@ export const FavoriteProvider = ({ children }: { children: ReactNode }) => {
   }, [favorites, isInitialized]);
 
   const addFavorite = async (productId: string) => {
-    if (isAuthenticated()) {
-      try {
-        await fetch(apiUrl(`/favorites/${productId}`), {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${getAccessToken()}`,
-          },
-        });
-      } catch (err) {
-        console.error('Failed to add favorite API:', err);
-      }
-    }
     setFavorites((prev) => (prev.includes(productId) ? prev : [...prev, productId]));
   };
 
   const removeFavorite = async (productId: string) => {
-    if (isAuthenticated()) {
-      try {
-        await fetch(apiUrl(`/favorites/${productId}`), {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${getAccessToken()}`,
-          },
-        });
-      } catch (err) {
-        console.error('Failed to remove favorite API:', err);
-      }
-    }
     setFavorites((prev) => prev.filter((id) => id !== productId));
+  };
+
+  const syncFavoritesToDbOnLogout = async () => {
+    if (!isAuthenticated()) return;
+    const token = getAccessToken();
+    if (!token) return;
+    if (favorites.length === 0) return;
+    try {
+      await fetch(apiUrl('/favorites/merge'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ productIds: favorites }),
+      });
+    } catch (err) {
+      console.error('Failed to sync favorites on logout', err);
+    }
   };
 
   const mergeGuestFavorites = async () => {
@@ -139,6 +147,7 @@ export const FavoriteProvider = ({ children }: { children: ReactNode }) => {
     removeFavorite,
     mergeGuestFavorites,
     clearLocalFavorites,
+    syncFavoritesToDbOnLogout,
   };
 
   return <FavoriteContext.Provider value={value}>{children}</FavoriteContext.Provider>;

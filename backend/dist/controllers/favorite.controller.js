@@ -40,11 +40,13 @@ const getFavorites = async (req, res) => {
         const userId = req.user?.sub;
         if (!userId)
             return res.status(401).json({ message: 'Unauthorized' });
-        const favorites = await favoriteService.getFavorites(userId);
-        return res.json(favorites);
+        const fav = await favoriteService.getFavorites(userId);
+        const productIds = (fav?.productIds ?? []).map((p) => p && typeof p === 'object' && '_id' in p ? (p._id?.toString?.() ?? '') : String(p)).filter(Boolean);
+        return res.json({ productIds });
     }
     catch (error) {
-        return res.status(500).json({ message: error.message || 'Internal server error' });
+        const msg = error instanceof Error ? error.message : 'Internal server error';
+        return res.status(500).json({ message: msg });
     }
 };
 exports.getFavorites = getFavorites;
@@ -54,11 +56,13 @@ const addFavorite = async (req, res) => {
         if (!userId)
             return res.status(401).json({ message: 'Unauthorized' });
         const { productId } = req.params;
-        const favorites = await favoriteService.addFavorite(userId, productId);
-        return res.status(201).json(favorites);
+        const fav = await favoriteService.addFavorite(userId, productId);
+        const productIds = (fav?.productIds ?? []).map((p) => p && typeof p === 'object' && '_id' in p ? (p._id?.toString?.() ?? '') : String(p)).filter(Boolean);
+        return res.status(201).json({ productIds });
     }
     catch (error) {
-        return res.status(500).json({ message: error.message || 'Internal server error' });
+        const msg = error instanceof Error ? error.message : 'Internal server error';
+        return res.status(500).json({ message: msg });
     }
 };
 exports.addFavorite = addFavorite;
@@ -68,14 +72,16 @@ const removeFavorite = async (req, res) => {
         if (!userId)
             return res.status(401).json({ message: 'Unauthorized' });
         const { productId } = req.params;
-        const favorites = await favoriteService.removeFavorite(userId, productId);
-        return res.json(favorites);
+        const fav = await favoriteService.removeFavorite(userId, productId);
+        const productIds = (fav?.productIds ?? []).map((p) => p && typeof p === 'object' && '_id' in p ? (p._id?.toString?.() ?? '') : String(p)).filter(Boolean);
+        return res.json({ productIds });
     }
     catch (error) {
-        if (error.message === 'Favorites not found') {
+        if (error instanceof Error && error.message === 'Favorites not found') {
             return res.status(404).json({ message: error.message });
         }
-        return res.status(500).json({ message: error.message || 'Internal server error' });
+        const msg = error instanceof Error ? error.message : 'Internal server error';
+        return res.status(500).json({ message: msg });
     }
 };
 exports.removeFavorite = removeFavorite;
@@ -84,12 +90,14 @@ const mergeFavorites = async (req, res) => {
         const userId = req.user?.sub;
         if (!userId)
             return res.status(401).json({ message: 'Unauthorized' });
-        const { productIds } = req.body;
-        const favorites = await favoriteService.mergeFavorites(userId, productIds);
-        return res.json(favorites);
+        const { productIds = [] } = req.body;
+        const fav = await favoriteService.mergeFavorites(userId, Array.isArray(productIds) ? productIds : []);
+        const ids = (fav?.productIds ?? []).map((p) => p && typeof p === 'object' && '_id' in p ? (p._id?.toString?.() ?? '') : String(p)).filter(Boolean);
+        return res.json({ productIds: ids });
     }
     catch (error) {
-        return res.status(500).json({ message: error.message || 'Internal server error' });
+        const msg = error instanceof Error ? error.message : 'Internal server error';
+        return res.status(500).json({ message: msg });
     }
 };
 exports.mergeFavorites = mergeFavorites;

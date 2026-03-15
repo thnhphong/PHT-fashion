@@ -60,9 +60,8 @@ const CartSchema = new Schema<ICart>(
   }
 );
 
-CartSchema.pre('save', function (this: ICart, next) {
+CartSchema.pre('save', function (this: ICart) {
   this.updatedAt = new Date();
-  next();
 });
 
 export default model<ICart>('Cart', CartSchema);
