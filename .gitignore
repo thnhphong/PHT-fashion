@@ -10,6 +10,7 @@ frontend/node_modules
 .pnpm-store 
 
 .cursor 
+.claude
 .shared
 ApiEndpoints.txt 
 Response.txt

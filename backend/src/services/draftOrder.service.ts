@@ -47,7 +47,7 @@ export interface DraftedItem {
 
 export interface DraftOrderData {
   draftId: string;
-  customerId: string;
+  customerId?: string;
   shippingAddress: CreateOrderInput['shippingAddress'];
   shippingMethod: CreateOrderInput['shippingMethod'];
   paymentMethod: CreateOrderInput['paymentMethod'];
@@ -406,7 +406,7 @@ export const createOrderFromDraft = async (
   const [order] = await Order.create(
     [
       {
-        customerId: new Types.ObjectId(draft.customerId),
+        ...(draft.customerId && { customerId: new Types.ObjectId(draft.customerId) }),
         orderNumber: generateOrderNumber(),
         status: 'pending' as OrderStatus,
         payment_status: 'pending' as PaymentStatus,

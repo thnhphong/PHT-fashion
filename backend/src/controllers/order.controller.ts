@@ -83,6 +83,70 @@ export const createOrder = async (req: Request, res: Response) => {
   }
 };
 
+export const createGuestOrder = async (req: Request, res: Response) => {
+  try {
+    const { items, shippingAddress, shippingMethod, paymentMethod, couponCode, idempotencyKey } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: 'Order must contain at least one item' });
+    }
+
+    if (!shippingAddress) {
+      return res.status(400).json({ message: 'Shipping address is required' });
+    }
+
+    ensureShippingAddressComplete(shippingAddress);
+
+    const draft = await createDraftOrder({
+      items,
+      shippingAddress,
+      shippingMethod,
+      paymentMethod,
+      couponCode,
+      idempotencyKey,
+    });
+
+    return res.status(201).json({
+      message: 'Guest order draft created',
+      draftId: draft.draftId,
+      expiresAt: draft.expiresAt,
+      totals: draft.totals,
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error('Create guest order error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const finalizeGuestOrderDraft = async (req: Request, res: Response) => {
+  try {
+    const { draftId } = req.params;
+    const draft = await getDraft(draftId as string);
+    if (!draft) {
+      return res.status(404).json({ message: 'Draft not found' });
+    }
+    if (draft.customerId) {
+      return res.status(401).json({ message: 'Must be logged in to finalize this draft' });
+    }
+
+    const result = await finalizeDraftOrder(draftId as string);
+    return res.status(201).json({
+      message: 'Guest order finalized',
+      order: result.order,
+      items: result.orderItems,
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error('Finalize guest draft error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 export const finalizeOrderDraft = async (req: Request, res: Response) => {
   try {
     const customerId = req.user?.sub;
@@ -107,6 +171,28 @@ export const finalizeOrderDraft = async (req: Request, res: Response) => {
       return res.status(400).json({ message: error.message });
     }
     console.error('Finalize draft error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const cancelGuestOrderDraft = async (req: Request, res: Response) => {
+  try {
+    const { draftId } = req.params;
+    const draft = await getDraft(draftId as string);
+    if (!draft) {
+      return res.status(404).json({ message: 'Draft not found' });
+    }
+    if (draft.customerId) {
+      return res.status(401).json({ message: 'Cannot cancel an authenticated draft from this endpoint' });
+    }
+
+    await cancelDraftOrder(draftId as string);
+    return res.status(200).json({ message: 'Guest draft cancelled successfully' });
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error('Cancel guest draft error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 };

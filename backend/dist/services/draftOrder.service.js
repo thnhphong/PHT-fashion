@@ -307,7 +307,7 @@ exports.finalizeDraftOrder = finalizeDraftOrder;
 const createOrderFromDraft = async (draft, session) => {
     const [order] = await Order_1.default.create([
         {
-            customerId: new mongoose_1.Types.ObjectId(draft.customerId),
+            ...(draft.customerId && { customerId: new mongoose_1.Types.ObjectId(draft.customerId) }),
             orderNumber: (0, order_constants_1.generateOrderNumber)(),
             status: 'pending',
             payment_status: 'pending',

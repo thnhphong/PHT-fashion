@@ -24,8 +24,15 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const { getTotalItems } = useCart();
-  const { favorites } = useFavorite();
+  const { getTotalItems, clearCart } = useCart();
+  const { favorites, clearLocalFavorites } = useFavorite();
+
+  const handleLogout = async () => {
+    // Clear cart and favorites from local storage / state
+    await clearCart();
+    clearLocalFavorites();
+    logOut();
+  };
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -100,7 +107,7 @@ const Navbar = () => {
               {getTotalItems()}
             </span>
           </Button>
-          {isAuthenticated() ? <LogOut handleLogout={logOut} /> : <LoginBtn />}
+          {isAuthenticated() ? <LogOut handleLogout={handleLogout} /> : <LoginBtn />}
           {!isAuthenticated() ? <SignupBtn /> : null}
           <Button
             variant="ghost"

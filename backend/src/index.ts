@@ -21,6 +21,8 @@ import chatRoutes from './routes/chat.route';
 import adminChatRoutes from './routes/admin.chat.route';
 import { initSocket } from './socket';
 import { registerChatHandlers } from './socket/chat.socket';
+import cartRoutes from './routes/cart.route';
+import favoriteRoutes from './routes/favorite.route';
 dotenv.config();
 
 const app: Application = express();
@@ -81,8 +83,8 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/pending-payments', pendingPaymentRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/admin/chats', adminChatRoutes);
-
-
+app.use('/api/cart', cartRoutes);
+app.use('/api/favorites', favoriteRoutes);
 const startServer = async () => {
   await connectDB();
   await connectRedis();

@@ -8,6 +8,9 @@ import carousel2 from '../assets/images/carousel_login_2.jpeg';
 import carousel3 from '../assets/images/carousel_login_3.jpeg';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
+import { useFavorite } from '../context/useFavorite';
+import ConflictDialog from '../components/common/ConflictDialog';
 
 type LoginForm = {
   email: string;
@@ -45,6 +48,9 @@ const Login = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [showConflictDialog, setShowConflictDialog] = useState(false);
+  const { mergeGuestCart } = useCart();
+  const { mergeGuestFavorites } = useFavorite();
   const location = useLocation();
   const navigate = useNavigate();
   const from =
@@ -85,6 +91,34 @@ const Login = () => {
       localStorage.setItem('userRole', isAdmin ? 'admin' : 'customer');
       localStorage.setItem('userName', normalizedEmail);
 
+      try {
+        const savedCart = localStorage.getItem('pht_cart');
+        const guestCart = savedCart ? JSON.parse(savedCart) : [];
+
+        // Merge favorites silently
+        await mergeGuestFavorites();
+
+        if (guestCart.length > 0) {
+          // Check DB cart to see if we need a conflict dialog
+          const cartRes = await axios.get(apiUrl('/cart'), {
+            headers: { Authorization: `Bearer ${response.data.accessToken}` }
+          });
+          const dbCart = cartRes.data?.items || [];
+
+          if (dbCart.length > 0) {
+            // Both DB and local have items -> show dialog
+            setShowConflictDialog(true);
+            setLoading(false);
+            return; // Pause login flow
+          } else {
+            // DB is empty, merge silently
+            await mergeGuestCart();
+          }
+        }
+      } catch (err) {
+        console.error('Failed to merge guest data on login', err);
+      }
+
       setSuccessMessage('Login successful! Redirecting...');
       // Redirect to intended page or home
       navigate(from, { state: location.state });
@@ -110,8 +144,37 @@ const Login = () => {
         setError('Unable to login');
       }
     } finally {
-      setLoading(false);
+      if (!showConflictDialog) {
+        setLoading(false);
+      }
     }
+  };
+
+  const handleKeepPrevious = async () => {
+    setShowConflictDialog(false);
+    setLoading(true);
+    try {
+      await mergeGuestCart();
+    } catch (e) {
+      console.error(e);
+    }
+    setSuccessMessage('Login successful! Redirecting...');
+    navigate(from, { state: location.state });
+    setLoading(false);
+  };
+
+  const handleStartFresh = async () => {
+    setShowConflictDialog(false);
+    setLoading(true);
+    // Just clear local storage and guest session, start fresh with DB cart
+    localStorage.removeItem('pht_cart');
+    localStorage.removeItem('pht_guest_session_at');
+    // For cart context to refresh correctly, window reload or context refetch works.
+    // Since we are redirecting, the next page will likely re-mount and context will fetch automatically
+    setSuccessMessage('Login successful! Redirecting...');
+    navigate(from, { state: location.state });
+    // Force a reload to let the cart context initialize with DB data
+    window.location.href = from === '/login' ? '/' : from;
   };
 
   return (
@@ -344,6 +407,13 @@ const Login = () => {
           </div>
         </motion.div>
       </div>
+
+      <ConflictDialog
+        isOpen={showConflictDialog}
+        onClose={() => setShowConflictDialog(false)}
+        onKeep={handleKeepPrevious}
+        onDiscard={handleStartFresh}
+      />
     </div>
   );
 };

@@ -67,19 +67,34 @@ export const payWithPayPal = async (req: Request, res: Response) => {
     console.log('[PayPal] Initiating payment for draft:', req.params.draftId);
     try {
         const { draftId } = req.params;
+        const isGuest = req.path.includes('/guest/');
         const customerId = req.user?.sub;
-        if (!customerId) return res.status(401).json({ message: 'Unauthorized' });
+
+        if (!isGuest && !customerId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
 
         const draft = await getDraft(draftId as string);
-        if (!draft || draft.customerId !== customerId) {
+
+        if (!draft) {
             return res.status(404).json({ message: 'Draft not found' });
         }
+
+        if (isGuest && draft.customerId) {
+            return res.status(401).json({ message: 'Cannot use guest checkout for authenticated draft' });
+        }
+
+        if (!isGuest && draft.customerId !== customerId) {
+            return res.status(403).json({ message: 'Forbidden: Draft belongs to another user' });
+        }
+
         if (draft.paymentMethod !== 'paypal') {
             return res.status(400).json({ message: 'PayPal is not the selected payment method' });
         }
 
         const productNames = await buildProductNamesMap(draft.items.map((i) => i.productId));
-        await createPendingPayment(customerId, draft, productNames);
+        // For guest, customerId is undefined, which is fine for pending payment record if schema allows it
+        await createPendingPayment(customerId as string, draft, productNames);
 
         const approvalUrl = await createPayPalPayment(draft, getBaseUrl(req));
         return res.status(200).json({ approval_url: approvalUrl });
@@ -194,19 +209,33 @@ export const payWithVNPay = async (req: Request, res: Response) => {
     console.log('[VNPay] Initiating payment for draft:', req.params.draftId);
     try {
         const { draftId } = req.params;
+        const isGuest = req.path.includes('/guest/');
         const customerId = req.user?.sub;
-        if (!customerId) return res.status(401).json({ message: 'Unauthorized' });
+
+        if (!isGuest && !customerId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
 
         const draft = await getDraft(draftId as string);
-        if (!draft || draft.customerId !== customerId) {
+
+        if (!draft) {
             return res.status(404).json({ message: 'Draft not found' });
         }
+
+        if (isGuest && draft.customerId) {
+            return res.status(401).json({ message: 'Cannot use guest checkout for authenticated draft' });
+        }
+
+        if (!isGuest && draft.customerId !== customerId) {
+            return res.status(403).json({ message: 'Forbidden: Draft belongs to another user' });
+        }
+
         if (draft.paymentMethod !== 'vnpay') {
             return res.status(400).json({ message: 'VNPay is not the selected payment method' });
         }
 
         const productNames = await buildProductNamesMap(draft.items.map((i) => i.productId));
-        await createPendingPayment(customerId, draft, productNames);
+        await createPendingPayment(customerId as string, draft, productNames);
 
         const paymentUrl = createVNPayPayment(draft, getClientIp(req), getBaseUrl(req));
         return res.status(200).json({ payment_url: paymentUrl });

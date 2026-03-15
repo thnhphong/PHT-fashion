@@ -100,10 +100,17 @@ export const getUserFromToken = (): JWTPayload | null => {
 export const logOut = (): void => {
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
-  // Remove old insecure user storage if it exists
   localStorage.removeItem('user');
   localStorage.removeItem('userRole');
   localStorage.removeItem('userName');
+  
+  // Also clear fashion related guest data
+  localStorage.removeItem('pht_cart');
+  localStorage.removeItem('pht_favorites');
+  localStorage.removeItem('pht_guest_session_at');
+
+  // Dispatch event so context providers can reset
+  window.dispatchEvent(new CustomEvent('auth-token-set'));
 };
 
 /**

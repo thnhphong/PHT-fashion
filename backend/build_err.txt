@@ -1,0 +1,30 @@
+
+> backend@1.0.0 build C:\Users\NGUYEN-DINHKIET\Documents\ReactJsProjects\PHT-fashion\backend
+> tsc
+
+src/models/Cart.ts(65,3): error TS2349: This expression is not callable.
+  Type 'SaveOptions' has no call signatures.
+src/services/favorite.service.ts(16,24): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(filter?: _QueryFilter<{ _id: ObjectId; created_at: Date; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<IFavorite, keyof Paths> & Paths; ... 272 more ...; "productIds.validateAll": (validators: (RegExp | ... 1 more ... | ValidatorFunction<...>)[]) => ObjectId; }> | undefined, projection?: ProjectionType<...> | ... 1 more ... | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Type 'string' is not assignable to type 'Condition<ApplyBasicQueryCasting<ObjectId>> | undefined'.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<IFavorite> | null | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and 'userId' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/services/favorite.service.ts(19,35): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type 'string' is not assignable to type '{ readonly schemaName?: "ObjectId" | undefined; auto?: ((turnOn: boolean) => ObjectId) | undefined; $conditionalHandlers?: { [x: string]: ((val: any, context: any) => any) | undefined; } | undefined; ... 23 more ...; validateAll?: ((validators: (RegExp | ... 1 more ... | ValidatorFunction<...>)[]) => ObjectId) | und...'.
+src/services/favorite.service.ts(25,38): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(filter?: _QueryFilter<{ _id: ObjectId; created_at: Date; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<IFavorite, keyof Paths> & Paths; ... 272 more ...; "productIds.validateAll": (validators: (RegExp | ... 1 more ... | ValidatorFunction<...>)[]) => ObjectId; }> | undefined, projection?: ProjectionType<...> | ... 1 more ... | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Type 'string' is not assignable to type 'Condition<ApplyBasicQueryCasting<ObjectId>> | undefined'.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<IFavorite> | null | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and 'userId' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/services/favorite.service.ts(40,40): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(filter?: _QueryFilter<{ _id: ObjectId; created_at: Date; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<IFavorite, keyof Paths> & Paths; ... 272 more ...; "productIds.validateAll": (validators: (RegExp | ... 1 more ... | ValidatorFunction<...>)[]) => ObjectId; }> | undefined, projection?: ProjectionType<...> | ... 1 more ... | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Type 'string' is not assignable to type 'Condition<ApplyBasicQueryCasting<ObjectId>> | undefined'.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<IFavorite> | null | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and 'userId' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+src/services/favorite.service.ts(52,38): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(filter?: _QueryFilter<{ _id: ObjectId; created_at: Date; $assertPopulated: <Paths = {}>(path: string | string[], values?: Partial<Paths> | undefined) => Omit<IFavorite, keyof Paths> & Paths; ... 272 more ...; "productIds.validateAll": (validators: (RegExp | ... 1 more ... | ValidatorFunction<...>)[]) => ObjectId; }> | undefined, projection?: ProjectionType<...> | ... 1 more ... | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Type 'string' is not assignable to type 'Condition<ApplyBasicQueryCasting<ObjectId>> | undefined'.
+  Overload 2 of 4, '(filter?: Query<any, any, {}, unknown, "find", Record<string, never>> | undefined, projection?: ProjectionType<IFavorite> | null | undefined, options?: (QueryOptions<...> & Abortable) | ... 1 more ... | undefined): Query<...>', gave the following error.
+    Object literal may only specify known properties, and 'userId' does not exist in type 'Query<any, any, {}, unknown, "find", Record<string, never>>'.
+ ELIFECYCLE  Command failed with exit code 2.

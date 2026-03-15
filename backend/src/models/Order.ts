@@ -16,7 +16,7 @@ export interface IShippingAddress {
 }
 
 export interface IOrder extends Document {
-  customerId: Types.ObjectId;
+  customerId?: Types.ObjectId;
   orderNumber: string;
   status: OrderStatus;
   subtotal: number;
@@ -93,7 +93,7 @@ const OrderSchema = new Schema<IOrder>(
     customerId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: false,
     },
     status: {
       type: String,

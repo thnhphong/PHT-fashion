@@ -6,6 +6,13 @@ const order_controller_1 = require("../controllers/order.controller");
 const auth_middleware_1 = require("../middlewares/auth.middleware");
 const role_middleware_1 = require("../middlewares/role.middleware");
 const router = (0, express_1.Router)();
+// ─── Guest routes (unauthenticated) ──────────────────────────────────────────
+// POST /api/orders/guest            → place a new guest order draft
+router.post('/guest', order_controller_1.createGuestOrder);
+// POST /api/orders/guest/drafts/:draftId/finalize → finalize guest draft
+router.post('/guest/drafts/:draftId/finalize', order_controller_1.finalizeGuestOrderDraft);
+// POST /api/orders/guest/drafts/:draftId/cancel → cancel an existing guest draft
+router.post('/guest/drafts/:draftId/cancel', order_controller_1.cancelGuestOrderDraft);
 // ─── Customer routes (authenticated) ─────────────────────────────────────────
 // POST /api/orders            → place a new order
 router.post('/', auth_middleware_1.authenticate, order_controller_1.createOrder);

@@ -10,7 +10,7 @@ export interface CreateOrderItemInput {
 }
 
 export interface CreateOrderInput {
-  customerId: string;
+  customerId?: string;
   items: CreateOrderItemInput[];
   shippingAddress: {
     fullName: string;

@@ -26,6 +26,8 @@ const chat_route_1 = __importDefault(require("./routes/chat.route"));
 const admin_chat_route_1 = __importDefault(require("./routes/admin.chat.route"));
 const socket_1 = require("./socket");
 const chat_socket_1 = require("./socket/chat.socket");
+const cart_route_1 = __importDefault(require("./routes/cart.route"));
+const favorite_route_1 = __importDefault(require("./routes/favorite.route"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = env_1.env.port;
@@ -41,21 +43,24 @@ const allowedOrigins = [
     'http://127.0.0.1:5173',
     FRONTEND_URL,
     FRONTEND_URL_2
+].filter(Boolean);
+const allowedOriginPatterns = [
+    /^https:\/\/pht-fashion-frontend[a-zA-Z0-9-]*\.vercel\.app$/,
 ];
 app.use((0, cors_1.default)({
     origin: (origin, callback) => {
-        // Allow requests with no origin (mobile apps, curl, Postman)
         if (!origin)
             return callback(null, true);
-        if (allowedOrigins.includes(origin)) {
+        if (allowedOrigins.includes(origin))
             return callback(null, true);
-        }
+        if (allowedOriginPatterns.some((p) => p.test(origin)))
+            return callback(null, true);
         return callback(new Error(`CORS blocked: ${origin}`));
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,
-    exposedHeaders: ['Content-Disposition']
+    exposedHeaders: ['Content-Disposition'],
 }));
 // Connect to database inside bootstrap
 // Health check route
@@ -78,6 +83,8 @@ app.use('/api/payments', payment_route_1.default);
 app.use('/api/pending-payments', payment_route_2.default);
 app.use('/api/chats', chat_route_1.default);
 app.use('/api/admin/chats', admin_chat_route_1.default);
+app.use('/api/cart', cart_route_1.default);
+app.use('/api/favorites', favorite_route_1.default);
 const startServer = async () => {
     await (0, mongo_config_1.default)();
     await (0, redis_util_1.connectRedis)();

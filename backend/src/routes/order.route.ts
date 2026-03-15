@@ -2,8 +2,11 @@ import { Router } from 'express';
 import {
   cancelMyOrder,
   cancelOrderDraft,
+  cancelGuestOrderDraft,
   createOrder,
+  createGuestOrder,
   finalizeOrderDraft,
+  finalizeGuestOrderDraft,
   getMyOrders,
   getOrder,
   adminGetAllOrders,
@@ -15,6 +18,17 @@ import { authenticate } from '../middlewares/auth.middleware';
 import { requireAdminEmail } from '../middlewares/role.middleware';
 
 const router = Router();
+
+// ─── Guest routes (unauthenticated) ──────────────────────────────────────────
+
+// POST /api/orders/guest            → place a new guest order draft
+router.post('/guest', createGuestOrder);
+
+// POST /api/orders/guest/drafts/:draftId/finalize → finalize guest draft
+router.post('/guest/drafts/:draftId/finalize', finalizeGuestOrderDraft);
+
+// POST /api/orders/guest/drafts/:draftId/cancel → cancel an existing guest draft
+router.post('/guest/drafts/:draftId/cancel', cancelGuestOrderDraft);
 
 // ─── Customer routes (authenticated) ─────────────────────────────────────────
 

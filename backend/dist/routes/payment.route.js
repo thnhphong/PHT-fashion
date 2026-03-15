@@ -8,6 +8,8 @@ const router = (0, express_1.Router)();
 router.get('/pending', auth_middleware_1.authenticate, payment_controller_1.getMyPendingPayments);
 // POST /api/payments/paypal/create-order/:draftId  → initiate PayPal checkout
 router.post('/paypal/create-order/:draftId', auth_middleware_1.authenticate, payment_controller_1.payWithPayPal);
+// POST /api/payments/guest/paypal/create-order/:draftId  → initiate guest PayPal checkout
+router.post('/guest/paypal/create-order/:draftId', payment_controller_1.payWithPayPal);
 // POST /api/payments/paypal/resume/:draftId         → resume an existing pending PayPal payment
 router.post('/paypal/resume/:draftId', auth_middleware_1.authenticate, payment_controller_1.resumePayPalPayment);
 // GET  /api/payments/paypal/success                 → PayPal redirect callback (public)
@@ -16,6 +18,8 @@ router.get('/paypal/success', payment_controller_1.payPalSuccess);
 router.get('/paypal/cancel', payment_controller_1.payPalCancel);
 // POST /api/payments/vnpay/create-order/:draftId    → initiate VNPay checkout
 router.post('/vnpay/create-order/:draftId', auth_middleware_1.authenticate, payment_controller_1.payWithVNPay);
+// POST /api/payments/guest/vnpay/create-order/:draftId    → initiate guest VNPay checkout
+router.post('/guest/vnpay/create-order/:draftId', payment_controller_1.payWithVNPay);
 // POST /api/payments/vnpay/resume/:draftId          → resume an existing pending VNPay payment
 router.post('/vnpay/resume/:draftId', auth_middleware_1.authenticate, payment_controller_1.resumeVNPayPayment);
 // GET  /api/payments/vnpay/return                   → VNPay redirect callback (public)

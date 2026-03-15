@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useCart, type CartItem } from '../context/CartContext';
 import { apiUrl } from '../utils/api';
-import { refreshAccessToken } from '../utils/auth';
+import { refreshAccessToken, isAuthenticated } from '../utils/auth';
 import { formatSizeLabel } from '../utils/sizeUtils';
 import { ChevronDown, MapPin, Truck, CreditCard, Tag, ShieldCheck } from 'lucide-react';
 import PendingPaymentBanner from '../components/PendingPaymentBanner';
@@ -42,11 +42,12 @@ export default function Checkout() {
   const idempotencyKeyRef = useRef(crypto.randomUUID());
 
   // Guard — redirect if not logged in
-  useEffect(() => {
-    if (!localStorage.getItem('accessToken')) {
-      navigate('/login', { state: { from: '/checkout', ...location.state } });
-    }
-  }, [navigate, location.state]);
+  // We actually want to allow guests, so we remove the redirect
+  // useEffect(() => {
+  //   if (!localStorage.getItem('accessToken')) {
+  //     navigate('/login', { state: { from: '/checkout', ...location.state } });
+  //   }
+  // }, [navigate, location.state]);
 
   // ── Form state ──────────────────────────────────────────────────────────────
   const [form, setForm] = useState({
@@ -133,7 +134,10 @@ export default function Checkout() {
     }
 
     let bearerToken = localStorage.getItem('accessToken');
-    if (!bearerToken) {
+    const isAuth = isAuthenticated();
+
+    // If authenticated but no token for some reason, redirect to login
+    if (isAuth && !bearerToken) {
       navigate('/login', { state: { from: '/checkout' } });
       return;
     }
@@ -165,17 +169,22 @@ export default function Checkout() {
       idempotencyKey: idempotencyKeyRef.current,
     };
 
-    const attemptRequest = (token: string) =>
-      fetch(apiUrl('/orders'), {
+    const attemptRequest = (token?: string | null) => {
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const endpoint = isAuth ? '/orders' : '/orders/guest';
+      return fetch(apiUrl(endpoint), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers,
         body: JSON.stringify(payload),
       });
+    };
 
     try {
       let response = await attemptRequest(bearerToken);
 
-      if (response.status === 401) {
+      if (response.status === 401 && isAuth) {
         const refreshed = await refreshAccessToken();
         if (!refreshed) {
           navigate('/login', { state: { from: '/checkout' } });
@@ -194,17 +203,25 @@ export default function Checkout() {
       const draftId = responseData?.draftId;
       if (!draftId) throw new Error('Unable to create draft order');
 
-      const cancelDraft = () =>
-        fetch(apiUrl(`/orders/drafts/${draftId}/cancel`), {
+      const cancelDraft = () => {
+        const headers: HeadersInit = {};
+        if (bearerToken) headers.Authorization = `Bearer ${bearerToken}`;
+        const endpoint = isAuth ? `/orders/drafts/${draftId}/cancel` : `/orders/guest/drafts/${draftId}/cancel`;
+
+        return fetch(apiUrl(endpoint), {
           method: 'POST',
-          headers: { Authorization: `Bearer ${bearerToken}` },
+          headers,
         }).catch(() => null);
+      };
 
       // PayPal flow
       if (paymentMethod === 'paypal') {
+        const headers: HeadersInit = {};
+        if (bearerToken) headers.Authorization = `Bearer ${bearerToken}`;
+
         const ppRes = await fetch(apiUrl(`/payments/paypal/create-order/${draftId}`), {
           method: 'POST',
-          headers: { Authorization: `Bearer ${bearerToken}` },
+          headers,
         });
         if (!ppRes.ok) { await cancelDraft(); throw new Error('Failed to communicate with PayPal'); }
         const ppData = await ppRes.json();
@@ -214,9 +231,12 @@ export default function Checkout() {
       }
       // VNPay flow
       if (paymentMethod === 'vnpay'){
+        const headers: HeadersInit = {};
+        if (bearerToken) headers.Authorization = `Bearer ${bearerToken}`;
+
         const vnpayRes = await fetch(apiUrl(`/payments/vnpay/create-order/${draftId}`), {
           method: 'POST',
-          headers: { Authorization: `Bearer ${bearerToken}` },
+          headers,
         });
         if (!vnpayRes.ok) { await cancelDraft(); throw new Error('Failed to communicate with VNPay'); }
         const vnpayData = await vnpayRes.json();
@@ -226,9 +246,13 @@ export default function Checkout() {
       }
 
       // Standard flow — finalize
-      const finalizeRes = await fetch(apiUrl(`/orders/drafts/${draftId}/finalize`), {
+      const finalizeHeaders: HeadersInit = {};
+      if (bearerToken) finalizeHeaders.Authorization = `Bearer ${bearerToken}`;
+      const finalizeEndpoint = isAuth ? `/orders/drafts/${draftId}/finalize` : `/orders/guest/drafts/${draftId}/finalize`;
+
+      const finalizeRes = await fetch(apiUrl(finalizeEndpoint), {
         method: 'POST',
-        headers: { Authorization: `Bearer ${bearerToken}` },
+        headers: finalizeHeaders,
       });
       if (!finalizeRes.ok) {
         const errData = await finalizeRes.json().catch(() => null);
@@ -252,7 +276,7 @@ export default function Checkout() {
   };
 
   // ─── Render ─────────────────────────────────────────────────────────────────
-  if (!localStorage.getItem('accessToken')) return null;
+  // if (!localStorage.getItem('accessToken')) return null; // Allowing guests, so we remove this guard
 
   return (
     <div className="min-h-screen bg-gray-100 py-6 px-2 sm:px-4">

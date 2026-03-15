@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adminCancelOrder = exports.adminUpdateOrderStatus = exports.adminGetOrder = exports.adminGetAllOrders = exports.cancelMyOrder = exports.getOrder = exports.getMyOrders = exports.cancelOrderDraft = exports.finalizeOrderDraft = exports.createOrder = void 0;
+exports.adminCancelOrder = exports.adminUpdateOrderStatus = exports.adminGetOrder = exports.adminGetAllOrders = exports.cancelMyOrder = exports.getOrder = exports.getMyOrders = exports.cancelOrderDraft = exports.cancelGuestOrderDraft = exports.finalizeOrderDraft = exports.finalizeGuestOrderDraft = exports.createGuestOrder = exports.createOrder = void 0;
 const order_service_1 = require("../services/order.service");
 const draftOrder_service_1 = require("../services/draftOrder.service");
 const SHIPPING_ADDRESS_REQUIRED_FIELDS = [
@@ -62,6 +62,66 @@ const createOrder = async (req, res) => {
     }
 };
 exports.createOrder = createOrder;
+const createGuestOrder = async (req, res) => {
+    try {
+        const { items, shippingAddress, shippingMethod, paymentMethod, couponCode, idempotencyKey } = req.body;
+        if (!items || !Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ message: 'Order must contain at least one item' });
+        }
+        if (!shippingAddress) {
+            return res.status(400).json({ message: 'Shipping address is required' });
+        }
+        ensureShippingAddressComplete(shippingAddress);
+        const draft = await (0, draftOrder_service_1.createDraftOrder)({
+            items,
+            shippingAddress,
+            shippingMethod,
+            paymentMethod,
+            couponCode,
+            idempotencyKey,
+        });
+        return res.status(201).json({
+            message: 'Guest order draft created',
+            draftId: draft.draftId,
+            expiresAt: draft.expiresAt,
+            totals: draft.totals,
+        });
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            return res.status(400).json({ message: error.message });
+        }
+        console.error('Create guest order error:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+exports.createGuestOrder = createGuestOrder;
+const finalizeGuestOrderDraft = async (req, res) => {
+    try {
+        const { draftId } = req.params;
+        const draft = await (0, draftOrder_service_1.getDraft)(draftId);
+        if (!draft) {
+            return res.status(404).json({ message: 'Draft not found' });
+        }
+        if (draft.customerId) {
+            return res.status(401).json({ message: 'Must be logged in to finalize this draft' });
+        }
+        const result = await (0, draftOrder_service_1.finalizeDraftOrder)(draftId);
+        return res.status(201).json({
+            message: 'Guest order finalized',
+            order: result.order,
+            items: result.orderItems,
+        });
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            return res.status(400).json({ message: error.message });
+        }
+        console.error('Finalize guest draft error:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+exports.finalizeGuestOrderDraft = finalizeGuestOrderDraft;
 const finalizeOrderDraft = async (req, res) => {
     try {
         const customerId = req.user?.sub;
@@ -89,6 +149,28 @@ const finalizeOrderDraft = async (req, res) => {
     }
 };
 exports.finalizeOrderDraft = finalizeOrderDraft;
+const cancelGuestOrderDraft = async (req, res) => {
+    try {
+        const { draftId } = req.params;
+        const draft = await (0, draftOrder_service_1.getDraft)(draftId);
+        if (!draft) {
+            return res.status(404).json({ message: 'Draft not found' });
+        }
+        if (draft.customerId) {
+            return res.status(401).json({ message: 'Cannot cancel an authenticated draft from this endpoint' });
+        }
+        await (0, draftOrder_service_1.cancelDraftOrder)(draftId);
+        return res.status(200).json({ message: 'Guest draft cancelled successfully' });
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            return res.status(400).json({ message: error.message });
+        }
+        console.error('Cancel guest draft error:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+exports.cancelGuestOrderDraft = cancelGuestOrderDraft;
 const cancelOrderDraft = async (req, res) => {
     try {
         const customerId = req.user?.sub;
