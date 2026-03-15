@@ -24,13 +24,12 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const { getTotalItems, clearCart } = useCart();
-  const { favorites, clearLocalFavorites } = useFavorite();
+  const { getTotalItems, syncCartToDbOnLogout } = useCart();
+  const { favorites, syncFavoritesToDbOnLogout } = useFavorite();
 
   const handleLogout = async () => {
-    // Clear cart and favorites from local storage / state
-    await clearCart();
-    clearLocalFavorites();
+    await syncCartToDbOnLogout();
+    await syncFavoritesToDbOnLogout();
     logOut();
   };
 

@@ -15,17 +15,19 @@ const populateFavorites = (query) => query.populate({
     ],
 });
 const getFavorites = async (userId) => {
-    let fav = await populateFavorites(Favorite_1.default.findOne({ userId }));
+    const userObjId = new mongoose_1.Types.ObjectId(userId);
+    let fav = await populateFavorites(Favorite_1.default.findOne({ userId: userObjId }));
     if (!fav) {
-        fav = await Favorite_1.default.create({ userId, productIds: [] });
+        fav = await Favorite_1.default.create({ userId: userObjId, productIds: [] });
     }
     return fav;
 };
 exports.getFavorites = getFavorites;
 const addFavorite = async (userId, productId) => {
-    let fav = await Favorite_1.default.findOne({ userId });
+    const userObjId = new mongoose_1.Types.ObjectId(userId);
+    let fav = await Favorite_1.default.findOne({ userId: userObjId });
     if (!fav) {
-        fav = new Favorite_1.default({ userId, productIds: [] });
+        fav = new Favorite_1.default({ userId: userObjId, productIds: [] });
     }
     const pid = new mongoose_1.Types.ObjectId(productId);
     if (!fav.productIds.some((id) => id.equals(pid))) {
@@ -36,7 +38,8 @@ const addFavorite = async (userId, productId) => {
 };
 exports.addFavorite = addFavorite;
 const removeFavorite = async (userId, productId) => {
-    const fav = await Favorite_1.default.findOne({ userId });
+    const userObjId = new mongoose_1.Types.ObjectId(userId);
+    const fav = await Favorite_1.default.findOne({ userId: userObjId });
     if (!fav)
         throw new Error('Favorites not found');
     fav.productIds = fav.productIds.filter((id) => id.toString() !== productId);
@@ -45,9 +48,10 @@ const removeFavorite = async (userId, productId) => {
 };
 exports.removeFavorite = removeFavorite;
 const mergeFavorites = async (userId, productIds) => {
-    let fav = await Favorite_1.default.findOne({ userId });
+    const userObjId = new mongoose_1.Types.ObjectId(userId);
+    let fav = await Favorite_1.default.findOne({ userId: userObjId });
     if (!fav) {
-        fav = new Favorite_1.default({ userId, productIds: [] });
+        fav = new Favorite_1.default({ userId: userObjId, productIds: [] });
     }
     for (const productId of productIds) {
         const pid = new mongoose_1.Types.ObjectId(productId);
