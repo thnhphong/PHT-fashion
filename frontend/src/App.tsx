@@ -10,6 +10,8 @@ import AdminCategory from './pages/admin/AdminCategory';
 import AdminSupplier from './pages/admin/AdminSupplier';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProductForm from './pages/admin/AdminProductForm';
+import AdminOrder from './pages/admin/AdminOrder';
+import AdminCustomer from './pages/admin/AdminCustomer';
 import ProductDetail from './pages/ProductDetail';
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import Search from './pages/Search';
@@ -78,6 +80,8 @@ function App() {
               <Route path="products/:id/edit" element={<AdminProductForm />} />
               <Route path="categories" element={<AdminCategory />} />
               <Route path="suppliers" element={<AdminSupplier />} />
+              <Route path="orders" element={<AdminOrder />} />
+              <Route path="customers" element={<AdminCustomer />} />
               <Route path="coupons" element={<AdminCoupon />} />
             </Route>
             </Routes>

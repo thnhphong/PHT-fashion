@@ -73,6 +73,15 @@ const createProduct = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Unable to create product', error });
   }
 };
+const getAllProducts = async (req: Request, res: Response) => {
+  try {
+    const products = await productService.getAllProductsWithoutPagination();
+    return res.json({ data: products });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Unable to fetch products', error });
+  }
+};
 
 const getProducts = async (req: Request, res: Response) => {
   try {
@@ -162,4 +171,4 @@ const deleteProduct = async (req: Request, res: Response) => {
   }
 };
 
-export { createProduct, getProducts, getFeaturedProducts, getProductById, updateProduct, deleteProduct };
+export { createProduct, getProducts, getAllProducts, getFeaturedProducts, getProductById, updateProduct, deleteProduct };

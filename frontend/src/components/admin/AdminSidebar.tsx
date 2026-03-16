@@ -34,7 +34,7 @@ export const AdminSidebar = ({ collapsed, setCollapsed }: { collapsed: boolean; 
     )}>
       <div className="flex h-16 items-center justify-between px-6 border-b border-slate-800">
         {!collapsed && (
-          <span className="text-xl font-bold text-white tracking-tight">PHT<span className="text-indigo-400">Fashion</span></span>
+          <span className="text-xl font-bold text-white tracking-tight">PHT<span className="text-orange-400">Fashion</span></span>
         )}
         <button 
           onClick={() => setCollapsed(!collapsed)}
@@ -53,7 +53,7 @@ export const AdminSidebar = ({ collapsed, setCollapsed }: { collapsed: boolean; 
             className={({ isActive }) => cn(
               "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 group",
               isActive 
-                ? "bg-indigo-600/10 text-indigo-400 shadow-sm" 
+                ? "bg-orange-600/10 text-orange-400 shadow-sm" 
                 : "hover:bg-slate-800 hover:text-white"
             )}
           >
@@ -73,7 +73,7 @@ export const AdminSidebar = ({ collapsed, setCollapsed }: { collapsed: boolean; 
 
       <div className="absolute bottom-0 w-full p-4 border-t border-slate-800">
         <div className={cn("flex items-center gap-3 px-2 py-2 rounded-lg bg-slate-800/50", collapsed && "justify-center")}>
-          <div className="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-xs">
+          <div className="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-xs">
             AD
           </div>
           {!collapsed && (

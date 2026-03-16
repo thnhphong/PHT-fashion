@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createUser, findUserByEmail, findUserById, getAllUsers, updateUser, deleteUser } from '../services/user.service';
+import { createUser, findUserByEmail, findUserById, getAllUsers, getAllUsersWithStats, updateUser, deleteUser } from '../services/user.service';
 import bcrypt from 'bcryptjs';
 
 export const registerUser = async (req: Request, res: Response) => {
@@ -62,7 +62,7 @@ export const getUser = async (req: Request, res: Response) => {
 
 export const getUsers = async (req: Request, res: Response) => {
   try {
-    const users = await getAllUsers();
+    const users = await getAllUsersWithStats();
     return res.status(200).json(users);
   } catch (error) {
     console.error('Get users error:', error);

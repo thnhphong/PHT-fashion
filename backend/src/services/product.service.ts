@@ -6,16 +6,20 @@ const createProduct = async (payload: Partial<IProduct>) => {
   return Product.create(payload);
 };
 
+//list all products(not limit anymore)
+const getAllProductsWithoutPagination = async () => {
+  return Product.find().populate('categoryId', 'name').populate('supplierId', 'name');
+};
+
 const getProducts = async (params: PaginationParams): Promise<PaginationResult<IProduct>> => {
+  const total = await Product.countDocuments();
   const page = params.page ?? 1;
-  const limit = params.limit ?? 10;
+  const limit = params.limit === -1 || params.limit === 0 ? total : (params.limit ?? 10);
   const sort = params.sort ?? 'created_at';
   const order = params.order ?? 'desc';
 
   const skip = (page - 1) * limit;
   const sortOrder = order === 'asc' ? 1 : -1;
-
-  const total = await Product.countDocuments();
 
   const data = await Product.find()
     .sort({ [sort]: sortOrder } as any)
@@ -65,6 +69,7 @@ const deleteProductById = async (id: string) => {
 export default {
   createProduct,
   getProducts,
+  getAllProductsWithoutPagination,
   getFeaturedProducts,
   getProductById,
   updateProductById,

@@ -19,7 +19,7 @@ const AdminProduct = () => {
     setError('');
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await axios.get(apiUrl('/admin/products'), {
+      const response = await axios.get(apiUrl('/admin/products/all'), {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const data = response.data.data ?? response.data;
@@ -112,7 +112,7 @@ const AdminProduct = () => {
     <div className="flex items-center justify-end gap-2">
       <button 
         onClick={() => navigate(`/admin/products/${p._id}/edit`, { state: { product: p } })}
-        className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 transition-all"
+        className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-orange-600 transition-all"
         title="Edit product"
       >
         <Edit2 className="h-4 w-4" />
@@ -144,7 +144,7 @@ const AdminProduct = () => {
           </button>
           <button 
             onClick={() => navigate('/admin/products/create')}
-            className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all hover:-translate-y-0.5"
+            className="flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-200 hover:bg-orange-700 transition-all hover:-translate-y-0.5"
           >
             <Plus className="h-4 w-4" />
             Create New

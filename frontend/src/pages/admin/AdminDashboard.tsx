@@ -18,7 +18,7 @@ const AdminDashboard = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${apiUrl('/admin/products')}`);
+      const response = await axios.get(`${apiUrl('/admin/products/all')}`);
       const data = response.data.data ?? response.data;
       setProducts(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -98,7 +98,7 @@ const AdminDashboard = () => {
           </button>
           <button
             onClick={() => navigate('/admin/products/create')}
-            className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all hover:-translate-y-0.5"
+            className="flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-200 hover:bg-orange-700 transition-all hover:-translate-y-0.5"
           >
             <Plus className="h-4 w-4" />
             Add Product
@@ -147,7 +147,7 @@ const AdminDashboard = () => {
             <h2 className="text-xl font-bold text-slate-900 italic tracking-tight">Recent Products</h2>
             <button
               onClick={() => navigate('/admin/products')}
-              className="text-xs font-bold text-indigo-600 hover:text-indigo-700 uppercase tracking-widest"
+              className="text-xs font-bold text-orange-600 hover:text-orange-700 uppercase tracking-widest"
             >
               View All
             </button>
@@ -165,7 +165,7 @@ const AdminDashboard = () => {
             <div className="space-y-6">
               {[
                 { label: 'Inventory Level', value: 85, color: 'bg-emerald-500' },
-                { label: 'Order Completion', value: 92, color: 'bg-indigo-500' },
+                { label: 'Order Completion', value: 92, color: 'bg-orange-500' },
                 { label: 'Customer Satisfaction', value: 78, color: 'bg-amber-500' },
               ].map((item) => (
                 <div key={item.label} className="space-y-2">

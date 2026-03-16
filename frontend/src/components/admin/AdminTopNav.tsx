@@ -17,7 +17,7 @@ export const AdminTopNav = ({ onMenuClick }: { onMenuClick?: () => void }) => {
           <input
             type="text"
             placeholder="Search everything... (CMD + K)"
-            className="w-72 rounded-full bg-slate-100 py-2 pl-10 pr-4 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20"
+            className="w-72 rounded-full bg-slate-100 py-2 pl-10 pr-4 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-orange-500/20"
           />
         </div>
       </div>
@@ -34,10 +34,10 @@ export const AdminTopNav = ({ onMenuClick }: { onMenuClick?: () => void }) => {
 
         <div className="flex items-center gap-3 cursor-pointer group">
           <div className="flex flex-col items-end">
-            <span className="text-sm font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">To Thanh Phong</span>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-500">Super Admin</span>
+            <span className="text-sm font-semibold text-slate-900 group-hover:text-orange-600 transition-colors">To Thanh Phong</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-orange-500">Super Admin</span>
           </div>
-          <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200 group-hover:border-indigo-200 transition-all">
+          <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200 group-hover:border-orange-200 transition-all">
             <User className="h-5 w-5" />
           </div>
         </div>

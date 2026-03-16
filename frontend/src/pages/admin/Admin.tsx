@@ -7,7 +7,7 @@ const Admin = () => {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans selection:bg-indigo-100 selection:text-indigo-900">
+    <div className="min-h-screen bg-slate-50 font-sans selection:bg-orange-100 selection:text-orange-900">
       <AdminSidebar collapsed={collapsed} setCollapsed={setCollapsed} />
       
       <main className={`transition-all duration-300 ease-in-out ${collapsed ? "pl-20" : "pl-72"}`}>

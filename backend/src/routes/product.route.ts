@@ -7,6 +7,7 @@ import {
   getProducts,
   getFeaturedProducts,
   updateProduct,
+  getAllProducts,
 } from '../controllers/product.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { requireAdminEmail } from '../middlewares/role.middleware';
@@ -26,6 +27,7 @@ const imageFields = [
 
 // Public routes
 router.get('/', getProducts);
+router.get('/all', getAllProducts);
 router.get('/featured', getFeaturedProducts);
 router.get('/:id', getProductById);
 
