@@ -3,18 +3,11 @@ import couponService from '../services/coupon.service';
 //add count to the coupon
 export const createCouponController = async (req: Request, res: Response) => {
   try {
-    const { name, code, discount, count, expiration_date } = req.body;
-    if (!name || !code || !discount || !count || !expiration_date) {
-      return res.status(400).json({ message: 'Missing required coupon fields' });
-    }
-    if (count < 0 || count > 100) {
-      return res.status(400).json({ message: 'Count must be between 0 and 100' });
-    }
-    const coupon = await couponService.createCoupon({ name, code, discount, count, expiration_date });
+    const coupon = await couponService.createCoupon(req.body);
     return res.status(201).json({ message: 'Coupon created successfully', coupon });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Coupon creation error:', error);
-    return res.status(500).json({ message: 'Unable to create coupon', error });
+    return res.status(400).json({ message: error.message || 'Unable to create coupon' });
   }
 };
 

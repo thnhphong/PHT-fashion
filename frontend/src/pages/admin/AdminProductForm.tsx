@@ -16,7 +16,8 @@ import {
   Image as ImageIcon,
   Save,
   Clock,
-  LayoutDashboard
+  LayoutDashboard,
+  RefreshCw
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -31,11 +32,13 @@ const initialFormState = {
   categoryId: '',
   supplierId: '',
   stock: '',
+  hasVariants: false,
 };
 
 type SizeEntry = {
   size: string;
   stock: string;
+  price?: string;
 };
 
 type LocationState = { product?: Product };
@@ -54,7 +57,7 @@ const AdminProductForm = () => {
   const [suppliers, setSuppliers] = useState<{ _id: string; name: string }[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(locationState?.product ?? null);
   const [sizeEntries, setSizeEntries] = useState<SizeEntry[]>([]);
-  const [sizeDraft, setSizeDraft] = useState<SizeEntry>({ size: '', stock: '' });
+  const [sizeDraft, setSizeDraft] = useState<SizeEntry>({ size: '', stock: '', price: '' });
   const [error, setError] = useState('');
   const [fetchingProduct, setFetchingProduct] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -90,14 +93,16 @@ const AdminProductForm = () => {
       categoryId: (product.categoryId as Category)?._id ?? '',
       supplierId: (product.supplierId as Supplier)?._id ?? '',
       stock: product.stock !== undefined ? String(product.stock) : '',
+      hasVariants: product.hasVariants ?? false,
     });
     setSizeEntries(
       product.sizes?.map((entry) => ({
         size: entry.size,
         stock: entry.stock !== undefined ? String(entry.stock) : '',
+        price: entry.price !== undefined ? String(entry.price) : '',
       })) ?? []
     );
-    setSizeDraft({ size: '', stock: '' });
+    setSizeDraft({ size: '', stock: '', price: '' });
     setFiles(imageFields.reduce((acc, field) => ({ ...acc, [field]: null }), {} as Record<string, File | null>));
     setAddedStock(0);
   };
@@ -201,13 +206,13 @@ const AdminProductForm = () => {
       const existingIndex = prev.findIndex((e) => e.size === size);
       if (existingIndex >= 0) {
         const updated = [...prev];
-        updated[existingIndex] = { size, stock: String(stock) };
+        updated[existingIndex] = { size, stock: String(stock), price: sizeDraft.price };
         return updated;
       }
-      return [...prev, { size, stock: String(stock) }];
+      return [...prev, { size, stock: String(stock), price: sizeDraft.price }];
     });
 
-    setSizeDraft({ size: '', stock: '' });
+    setSizeDraft({ size: '', stock: '', price: '' });
   };
 
 
@@ -252,6 +257,7 @@ const AdminProductForm = () => {
       .map((entry) => ({
         size: entry.size,
         stock: Number(entry.stock) || 0,
+        price: entry.price ? Number(entry.price) : undefined,
       }));
     formData.append('sizes', JSON.stringify(serialized));
 
@@ -426,6 +432,22 @@ const AdminProductForm = () => {
                   />
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Inventory Mode</label>
+                <div className="flex items-center gap-3 p-3 bg-slate-50/50 rounded-xl border border-slate-200">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(form.hasVariants)}
+                    onChange={(e) => handleChange('hasVariants', String(e.target.checked))}
+                    id="hasVariants"
+                    className="h-4 w-4 text-orange-600 rounded focus:ring-orange-500"
+                  />
+                  <label htmlFor="hasVariants" className="text-xs font-bold text-slate-700 cursor-pointer">
+                    Enable Size-Based Pricing (Variants)
+                  </label>
+                </div>
+              </div>
             </div>
 
             <div className="mt-8 space-y-2">
@@ -474,13 +496,13 @@ const AdminProductForm = () => {
                 </div>
 
                 <div className="space-y-2 flex-1 min-w-[140px]">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Quantity</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Variant Price (Opt.)</label>
                   <input
-                    value={sizeDraft.stock}
-                    onChange={(event) => handleSizeDraftChange('stock', event.target.value)}
+                    value={sizeDraft.price}
+                    onChange={(event) => handleSizeDraftChange('price', event.target.value)}
                     type="number"
                     min="0"
-                    placeholder="0"
+                    placeholder="Same as base"
                     className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold outline-none focus:border-orange-500 shadow-sm"
                   />
                 </div>
@@ -507,16 +529,23 @@ const AdminProductForm = () => {
                         <div className="flex items-center gap-3">
                           <span className="h-8 w-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold">{entry.size}</span>
                           <div className="flex flex-col">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-tighter">Availability</span>
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                value={entry.stock}
-                                onChange={(event) => updateSizeStock(entry.size, event.target.value)}
-                                type="number"
-                                min="0"
-                                className="w-16 bg-transparent text-sm font-bold text-slate-900 outline-none focus:text-orange-600"
-                              />
-                              <span className="text-[9px] text-slate-400 uppercase">Units</span>
+                            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-tighter">Availability & Price</span>
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  value={entry.stock}
+                                  onChange={(event) => updateSizeStock(entry.size, event.target.value)}
+                                  type="number"
+                                  min="0"
+                                  className="w-12 bg-transparent text-sm font-bold text-slate-900 outline-none focus:text-orange-600"
+                                />
+                                <span className="text-[9px] text-slate-400 uppercase">Units</span>
+                              </div>
+                              {entry.price && (
+                                <div className="flex items-center gap-1 border-l border-slate-100 pl-3">
+                                  <span className="text-sm font-bold text-indigo-600">{new Intl.NumberFormat('vi-VN').format(Number(entry.price))}đ</span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>

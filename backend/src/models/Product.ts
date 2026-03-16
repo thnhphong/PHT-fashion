@@ -3,6 +3,7 @@ import { Schema, model, Document, Types } from 'mongoose';
 export interface IProductSize {
   size: string;
   stock: number;
+  price?: number;
 }
 
 export interface IProduct extends Document {
@@ -18,6 +19,7 @@ export interface IProduct extends Document {
   thumbnail_img_3?: string;
   thumbnail_img_4?: string;
   sizes: IProductSize[];
+  hasVariants: boolean;
   created_at: Date;
 }
 
@@ -31,6 +33,10 @@ const ProductSizeSchema = new Schema<IProductSize>(
     stock: {
       type: Number,
       required: true,
+      min: 0,
+    },
+    price: {
+      type: Number,
       min: 0,
     },
   },
@@ -94,6 +100,10 @@ const ProductSchema = new Schema<IProduct>(
       type: [ProductSizeSchema],
       default: defaultSizes,
     },
+    hasVariants: {
+      type: Boolean,
+      default: false,
+    },
     created_at: {
       type: Date,
       default: Date.now,
@@ -108,6 +118,13 @@ const ProductSchema = new Schema<IProduct>(
 ProductSchema.index({ name: 'text', description: 'text' });
 // Index for category search combined with text search
 ProductSchema.index({ categoryId: 1 });
+
+ProductSchema.pre('save', function (next) {
+  if (this.sizes && this.sizes.length > 0) {
+    this.stock = this.sizes.reduce((total, s) => total + s.stock, 0);
+  }
+  next();
+});
 
 export default model<IProduct>('Product', ProductSchema);
 

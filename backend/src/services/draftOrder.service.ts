@@ -13,7 +13,7 @@ import {
   SHIPPING_COSTS,
   TAX_RATE,
 } from './order.constants';
-import { getCouponByCode, validateAndConsumeCoupon } from './coupon.service';
+import { getCouponByCode, validateAndConsumeCoupon, isCouponApplicable } from './coupon.service';
 
 
 // ─── Redis key helpers ────────────────────────────────────────────────────────
@@ -237,11 +237,21 @@ export const createDraftOrder = async (payload: CreateOrderInput) => {
       if (!product) {
         throw new Error(`Product ${item.productId} is missing from the reservation map`);
       }
+
+      // Variant Pricing: check if this size has a specific price, else fallback to global.
+      let unit_price = product.price;
+      if (item.productSize) {
+        const sizeVariant = product.sizes?.find((s) => s.size === item.productSize);
+        if (sizeVariant?.price) {
+          unit_price = sizeVariant.price;
+        }
+      }
+
       return {
         productId: item.productId,
         productSize: item.productSize,
         quantity: item.quantity,
-        unit_price: product.price,
+        unit_price,
       };
     });
 
@@ -253,20 +263,35 @@ export const createDraftOrder = async (payload: CreateOrderInput) => {
 
     let discountAmount = 0;
     if (payload.couponCode) {
-      const coupon = await getCouponByCode(payload.couponCode);
+      const coupon: any = await getCouponByCode(payload.couponCode);
       if (!coupon) {
         throw new Error(`Coupon "${payload.couponCode}" not found`);
       }
       if (new Date(coupon.expiration_date) < new Date()) {
         throw new Error(`Coupon "${payload.couponCode}" has expired`);
       }
-      if (coupon.count <= 0) {
+      if (coupon.usage_limit <= 0) {
         throw new Error(`Coupon "${payload.couponCode}" has no remaining uses`);
       }
-      discountAmount = Math.min(
-        subtotal * (coupon.discount / 100),
-        subtotal,
-      );
+
+      // Prepare items for applicability check
+      const cartItemsForCheck = normalizedItems.map(item => ({
+        productId: item.productId,
+        categoryId: productMap.get(item.productId)?.categoryId?.toString()
+      }));
+
+      if (!isCouponApplicable(coupon, cartItemsForCheck)) {
+        throw new Error(`Coupon "${payload.couponCode}" does not apply to any items in your cart`);
+      }
+
+      if (coupon.discount_type === 'percentage') {
+        discountAmount = Math.min(
+          subtotal * (coupon.discount_value / 100),
+          subtotal,
+        );
+      } else {
+        discountAmount = Math.min(coupon.discount_value, subtotal);
+      }
     }
 
     const taxableAmount = subtotal - discountAmount;

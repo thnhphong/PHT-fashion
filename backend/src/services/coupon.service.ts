@@ -9,7 +9,10 @@ import Coupon, { type ICoupon } from '../models/Coupon';
  * is deferred to order finalization via `validateAndConsumeCoupon`.
  */
 export const getCouponByCode = async (code: string) => {
-  return Coupon.findOne({ code: code.toUpperCase() }).lean();
+  return Coupon.findOne({ code: code.toUpperCase() })
+    .populate('productIds', 'name')
+    .populate('categoryIds', 'name')
+    .lean();
 };
 
 export const listCoupons = async () => {
@@ -18,21 +21,13 @@ export const listCoupons = async () => {
 
 // ─── Write helpers ────────────────────────────────────────────────────────────
 
-export const createCoupon = async (payload: {
-  name: string;
-  code: string;
-  discount: number;
-  count: number;
-  expiration_date: Date;
-}) => {
-  if (payload.count < 0 || payload.count > 100) {
-    throw new Error('Count must be between 0 and 100');
-  }
-  const existingCoupon = await Coupon.findOne({ code: payload.code.toUpperCase() });
+export const createCoupon = async (payload: any) => {
+  const code = payload.code.toUpperCase();
+  const existingCoupon = await Coupon.findOne({ code });
   if (existingCoupon) {
     throw new Error('Coupon code already exists');
   }
-  const coupon = new Coupon(payload);
+  const coupon = new Coupon({ ...payload, code });
   return coupon.save();
 };
 
@@ -73,11 +68,11 @@ export const validateAndConsumeCoupon = async (
   const filter = {
     code: code.toUpperCase(),
     expiration_date: { $gte: now }, // not yet expired
-    count: { $gt: 0 },             // still has remaining uses
+    usage_limit: { $gt: 0 },         // still has remaining uses
   };
 
   const update = {
-    $inc: { count: -1 }, // atomically consume one use
+    $inc: { usage_limit: -1 }, // atomically consume one use
   };
 
   return Coupon.findOneAndUpdate(filter, update, {
@@ -102,9 +97,33 @@ export const restoreCouponCount = async (
 ): Promise<void> => {
   await Coupon.findOneAndUpdate(
     { code: couponCode.toUpperCase() },
-    { $inc: { count: 1 } },
+    { $inc: { usage_limit: 1 } },
     { ...(session ? { session } : {}) },
   );
+};
+
+/**
+ * Validates if a coupon applies to a given set of cart items.
+ */
+export const isCouponApplicable = (
+  coupon: ICoupon,
+  cartItems: Array<{ productId: string; categoryId?: string }>
+): boolean => {
+  if (coupon.scope === 'all') return true;
+
+  if (coupon.scope === 'product') {
+    return cartItems.some((item) =>
+      coupon.productIds?.some((pid) => pid.toString() === item.productId.toString())
+    );
+  }
+
+  if (coupon.scope === 'category') {
+    return cartItems.some((item) =>
+      coupon.categoryIds?. some((cid) => cid.toString() === item.categoryId?.toString())
+    );
+  }
+
+  return false;
 };
 
 export default {

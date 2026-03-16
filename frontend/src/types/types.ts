@@ -16,6 +16,7 @@ export interface Supplier {
 export interface ProductSize {
   size: string;
   stock: number;
+  price?: number;
 }
 
 export interface Product {
@@ -32,6 +33,7 @@ export interface Product {
   thumbnail_img_3?: string;
   thumbnail_img_4?: string;
   sizes: ProductSize[];
+  hasVariants?: boolean;
   created_at: string;
 }
 

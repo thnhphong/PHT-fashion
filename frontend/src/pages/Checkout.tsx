@@ -64,7 +64,7 @@ export default function Checkout() {
   const [shippingMethod, setShippingMethod] = useState(SHIPPING_METHODS[0].id);
   const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHODS[0].id);
   const [couponCode, setCouponCode] = useState('');
-  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponData, setCouponData] = useState<any>(null);
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState('');
   const [couponApplied, setCouponApplied] = useState(false);
@@ -93,10 +93,17 @@ export default function Checkout() {
     [itemsForCheckout]
   );
   const shippingPrice = SHIPPING_METHODS.find((m) => m.id === shippingMethod)?.price ?? 0;
-  const discountAmount = useMemo(
-    () => Math.round(subtotal * (couponDiscount / 100)),
-    [subtotal, couponDiscount]
-  );
+  
+  const discountAmount = useMemo(() => {
+    if (!couponApplied || !couponData) return 0;
+    
+    if (couponData.discount_type === 'percentage') {
+      return Math.round(subtotal * (couponData.discount_value / 100));
+    } else {
+      return Math.min(couponData.discount_value, subtotal);
+    }
+  }, [subtotal, couponApplied, couponData]);
+
   const grandTotal = subtotal + shippingPrice - discountAmount;
 
   const handleApplyCoupon = async () => {
@@ -108,8 +115,30 @@ export default function Checkout() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message ?? 'Invalid coupon');
       const coupon = data.coupon;
-      if (new Date(coupon.expiration_date) < new Date()) throw new Error('Coupon expired');
-      setCouponDiscount(coupon.discount);
+      
+      const now = new Date();
+      if (new Date(coupon.expiration_date) < now) throw new Error('Coupon expired');
+      if (coupon.usage_limit <= 0) throw new Error('Coupon fully redeemed');
+
+      // Check scoping
+      if (coupon.scope === 'product') {
+        const hasMatch = itemsForCheckout.some(item => 
+          coupon.productIds?.some((pid: any) => pid === item._id || pid._id === item._id)
+        );
+        if (!hasMatch) throw new Error('Coupon does not apply to items in your cart');
+      } else if (coupon.scope === 'category') {
+        // Note: frontend CartItem might not have categoryId, we might need to fetch it or assume 'all' if missing
+        // For now, if categoryId is missing in frontend item, we let backend handle the strict check
+        // If we have it, we check:
+        const hasMatch = itemsForCheckout.some(item => {
+           const itemCatId = (item as any).categoryId?._id || (item as any).categoryId;
+           return coupon.categoryIds?.some((cid: any) => cid === itemCatId || cid._id === itemCatId);
+        });
+        // If frontend doesn't have category info, we might skip this guard or just warn
+        // Most robust: let backend handle scoping if data is missing, but here we try to be helpful
+      }
+
+      setCouponData(coupon);
       setCouponApplied(true);
     } catch (err) {
       setCouponError(err instanceof Error ? err.message : 'Invalid coupon');
@@ -471,7 +500,7 @@ export default function Checkout() {
               <div className="flex gap-2">
                 <input
                   value={couponCode}
-                  onChange={(e) => { setCouponCode(e.target.value); setCouponApplied(false); setCouponError(''); setCouponDiscount(0); }}
+                  onChange={(e) => { setCouponCode(e.target.value); setCouponApplied(false); setCouponError(''); setCouponData(null); }}
                   placeholder="Enter coupon code"
                   disabled={couponApplied}
                   className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400 disabled:bg-gray-50"
@@ -485,7 +514,13 @@ export default function Checkout() {
                 </button>
               </div>
               {couponError && <p className="text-xs text-red-500 mt-1.5">{couponError}</p>}
-              {couponApplied && <p className="text-xs text-green-600 mt-1.5">Coupon applied — {couponDiscount}% off!</p>}
+              {couponApplied && couponData && (
+                <p className="text-xs text-green-600 mt-1.5">
+                  Coupon applied — {couponData.discount_type === 'percentage' 
+                    ? `${couponData.discount_value}%` 
+                    : `${new Intl.NumberFormat('vi-VN').format(couponData.discount_value)}đ`} off!
+                </p>
+              )}
             </section>
 
             {/* 4. Payment */}
@@ -559,7 +594,7 @@ export default function Checkout() {
                 </div>
                 {couponApplied && discountAmount > 0 && (
                   <div className="flex justify-between text-green-600">
-                    <span>Discount ({couponDiscount}%)</span>
+                    <span>Discount{couponData?.discount_type === 'percentage' ? ` (${couponData.discount_value}%)` : ''}</span>
                     <span>-{formatPrice(discountAmount)}</span>
                   </div>
                 )}

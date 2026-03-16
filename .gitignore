@@ -11,6 +11,7 @@ frontend/node_modules
 
 .cursor 
 .claude
+.kilocode
 .shared
 ApiEndpoints.txt 
 Response.txt
