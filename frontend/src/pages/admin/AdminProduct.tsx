@@ -1,15 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import type { Category, Product } from '../../types/types';
 import { apiUrl } from '../../utils/api';
-import { Button } from '../../components/ui/button';
-
-
-const formatPrice = (value?: number) =>
-  value
-    ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
-    : '—';
+import { AdminDataTable } from '../../components/admin/AdminDataTable';
+import { StatusBadge } from '../../components/admin/StatusBadge';
+import { Plus, RefreshCw, Edit2, Trash2, Package } from 'lucide-react';
 
 const AdminProduct = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -26,7 +22,8 @@ const AdminProduct = () => {
       const response = await axios.get(apiUrl('/admin/products'), {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      setProducts(response.data.data ?? response.data);
+      const data = response.data.data ?? response.data;
+      setProducts(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
       setError('Unable to load products');
@@ -40,88 +37,138 @@ const AdminProduct = () => {
   }, []);
 
   const handleDelete = async (productId: string) => {
-    if (!confirm('Delete product?')) return;
+    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) return;
     try {
       const token = localStorage.getItem('accessToken');
       await axios.delete(apiUrl(`/admin/products/${productId}`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      setSuccess('Product deleted');
+      setSuccess('Product deleted successfully');
       fetchProducts();
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error(err);
       setError('Unable to delete product');
     }
   };
 
-  const totalProducts = useMemo(() => products.length, [products]);
+  const productColumns = [
+    { 
+      header: 'Product', 
+      accessor: (p: Product) => (
+        <div className="flex items-center gap-4">
+          {p.img_url ? (
+            <img src={p.img_url} alt={p.name} className="h-12 w-12 rounded-xl object-cover border border-slate-100 shadow-sm" />
+          ) : (
+            <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-100">
+              <Package className="h-6 w-6 text-slate-400" />
+            </div>
+          )}
+          <div className="flex flex-col">
+            <span className="font-bold text-slate-900 leading-tight">{p.name}</span>
+            <span className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">{(p.categoryId as Category)?.name || 'Uncategorized'}</span>
+          </div>
+        </div>
+      )
+    },
+    { 
+      header: 'Price', 
+      accessor: (p: Product) => (
+        <div className="flex flex-col text-slate-900">
+          <span className="font-bold">{p.price?.toLocaleString()} VND</span>
+          <span className="text-[10px] text-slate-400 font-medium italic">Incl. taxes</span>
+        </div>
+      )
+    },
+    { 
+      header: 'Inventory', 
+      accessor: (p: Product) => (
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <span>Stock</span>
+            <span className={p.stock < 10 ? 'text-amber-500' : 'text-slate-600'}>{p.stock} units</span>
+          </div>
+          <div className="h-1.5 w-24 rounded-full bg-slate-100 overflow-hidden">
+            <div 
+              className={`h-full rounded-full transition-all duration-500 ${p.stock < 10 ? 'bg-amber-500' : 'bg-emerald-500'}`} 
+              style={{ width: `${Math.min((p.stock / 50) * 100, 100)}%` }}
+            />
+          </div>
+        </div>
+      )
+    },
+    { 
+      header: 'Status', 
+      accessor: (p: Product) => (
+        <StatusBadge 
+          status={p.stock === 0 ? 'danger' : p.stock < 10 ? 'warning' : 'success'} 
+          label={p.stock === 0 ? 'Out of Stock' : p.stock < 10 ? 'Low Stock' : 'Active'} 
+        />
+      )
+    }
+  ];
+
+  const renderActions = (p: Product) => (
+    <div className="flex items-center justify-end gap-2">
+      <button 
+        onClick={() => navigate(`/admin/products/${p._id}/edit`, { state: { product: p } })}
+        className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-indigo-600 transition-all"
+        title="Edit product"
+      >
+        <Edit2 className="h-4 w-4" />
+      </button>
+      <button 
+        onClick={() => handleDelete(p._id)}
+        className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-all"
+        title="Delete product"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+    </div>
+  );
 
   return (
     <div className="space-y-8">
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-2">
-          <p className="text-xs uppercase tracking-[0.6em] text-orange-500">Products</p>
-          <div className="flex flex-col gap-1">
-            <h1 className="text-3xl font-semibold text-gray-900">Product catalog</h1>
-            <p className="text-sm text-gray-500">{totalProducts} active products</p>
-          </div>
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 italic">Product Catalog</h1>
+          <p className="text-slate-500 italic">Manage your store's inventory and product details from here.</p>
         </div>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Button onClick={() => navigate('/admin/products/create')} variant="outline">
-            Add product
-          </Button>
-          <Button onClick={fetchProducts} variant="ghost">
-            Refresh
-          </Button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={fetchProducts}
+            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all"
+          >
+            <RefreshCw className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+            Sync
+          </button>
+          <button 
+            onClick={() => navigate('/admin/products/create')}
+            className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all hover:-translate-y-0.5"
+          >
+            <Plus className="h-4 w-4" />
+            Create New
+          </button>
         </div>
-        {(error || success) && (
-          <p className={`mt-3 text-xs uppercase ${error ? 'text-red-500' : 'text-emerald-500'}`}>
-            {error || success}
-          </p>
-        )}
-      </section>
+      </header>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Inventory</h2>
-        {loading ? (
-          <p className="text-sm text-gray-500">Loading products...</p>
-        ) : (
-          <div className="space-y-4">
-            {products.map((product) => (
-              //add img in product item
-              <article
-                key={product._id}
-                className="flex flex-col gap-4 rounded-2xl border border-gray-100 p-4 shadow-sm md:flex-row md:items-center"
-              >
-                <div className="flex flex-row gap-2 text-left">
-                  <img src={product.img_url} alt={product.name} className="w-16 h-16 object-cover" />
-                  <div className="flex flex-col gap-1">
-                    <p className="text-xs uppercase tracking-[0.4em] text-gray-400">
-                      {(product.categoryId as Category)?.name || 'Uncategorized'}
-                    </p>
-                    <h3 className="text-md font-semibold text-gray-900 line-clamp-2 max-w-[18rem] break-words sm:max-w-full">
-                      {product.name}
-                    </h3>
-                    <p className="text-sm text-gray-500">{formatPrice(product.price)}</p>
-                  </div>
-                </div>
-                {/* action buttons on the right of the product item */}
-                <div className="flex justify-end gap-2 md:ml-auto">
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate(`/admin/products/${product._id}/edit`, { state: { product } })}
-                  >
-                    Edit
-                  </Button>
-                  <Button className="bg-orange-500 text-white" onClick={() => handleDelete(product._id)}>
-                    Delete
-                  </Button>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
+      {(error || success) && (
+        <div className={`rounded-xl border p-4 text-xs font-bold uppercase tracking-widest ${
+          error ? 'border-rose-100 bg-rose-50 text-rose-600' : 'border-emerald-100 bg-emerald-50 text-emerald-600'
+        }`}>
+          {error || success}
+        </div>
+      )}
+
+      <AdminDataTable 
+        columns={productColumns} 
+        data={products} 
+        loading={loading}
+        actions={renderActions}
+        title="Inventory Matrix"
+        description="A list of all products in your store including their current stock and price."
+        searchPlaceholder="Find products..."
+      />
     </div>
   );
 };
