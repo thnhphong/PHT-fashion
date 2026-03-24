@@ -8,15 +8,24 @@ import {
   changePassword as changePasswordService,
 } from "../services/auth.service";
 import { createUser, findUserByEmail, updateUser } from "../services/user.service";
-import { REFRESH_TOKEN_EXPIRY_MS } from "../config/jwt";
+import { REFRESH_TOKEN_EXPIRY_MS, ACCESS_TOKEN_EXPIRY_MS } from "../config/jwt";
 import { env } from "../config/env";
 import bcrypt from "bcryptjs";
 
-// Cookie options for refresh token
+// Cookie options for access token (shorter expiry, root path, readable by JS)
+const getAccessTokenCookieOptions = () => ({
+  httpOnly: false,
+  secure: env.nodeEnv === "production",
+  sameSite: "lax" as const,
+  maxAge: ACCESS_TOKEN_EXPIRY_MS,
+  path: "/",
+});
+
+// Cookie options for refresh token (longer expiry, /api/auth path)
 const getRefreshTokenCookieOptions = () => ({
   httpOnly: true,
   secure: env.nodeEnv === "production",
-  sameSite: "strict" as const,
+  sameSite: "lax" as const,
   maxAge: REFRESH_TOKEN_EXPIRY_MS,
   path: "/api/auth",
 });
@@ -114,7 +123,8 @@ export const login = async (req: Request, res: Response) => {
     // Generate JWT tokens (refresh token is saved to DB inside loginUser)
     const { accessToken, refreshToken } = await loginUser(user);
 
-    // Set refresh token as httpOnly cookie
+    // Set both tokens as httpOnly cookies
+    res.cookie("accessToken", accessToken, getAccessTokenCookieOptions());
     res.cookie("refreshToken", refreshToken, getRefreshTokenCookieOptions());
 
     // Remove password from response
@@ -129,10 +139,9 @@ export const login = async (req: Request, res: Response) => {
       created_at: user.created_at,
     };
 
-    // Only return accessToken in response body (refreshToken is in cookie)
+    // Only return user in response body (tokens are in httpOnly cookies)
     return res.status(200).json({
       message: "Login successful",
-      accessToken,
       user: userResponse,
     });
   } catch (error) {
@@ -154,7 +163,8 @@ export const refreshToken = async (req: Request, res: Response) => {
     const { accessToken, refreshToken: newRefreshToken } =
       await refreshUserToken(oldRefreshToken);
 
-    // Set new refresh token cookie
+    // Set both new cookies
+    res.cookie("accessToken", accessToken, getAccessTokenCookieOptions());
     res.cookie(
       "refreshToken",
       newRefreshToken,
@@ -163,7 +173,6 @@ export const refreshToken = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       message: "Token refreshed successfully",
-      accessToken,
     });
   } catch (error) {
     console.error("Refresh token error:", error);
@@ -172,8 +181,9 @@ export const refreshToken = async (req: Request, res: Response) => {
       (error.message === "Invalid or expired refresh token" ||
         error.message === "Refresh token has been revoked")
     ) {
-      // Clear invalid cookie
-      res.clearCookie("refreshToken", { path: "/api/auth" });
+      // Clear invalid cookies
+      res.clearCookie("accessToken", { path: "/", sameSite: "lax" });
+      res.clearCookie("refreshToken", { path: "/api/auth", sameSite: "lax" });
       return res.status(401).json({ message: error.message });
     }
     return res.status(500).json({ message: "Internal server error" });
@@ -189,8 +199,9 @@ export const logout = async (req: Request, res: Response) => {
       await logoutUser(refreshTokenValue);
     }
 
-    // Clear cookie
-    res.clearCookie("refreshToken", { path: "/api/auth" });
+    // Clear both cookies
+    res.clearCookie("accessToken", { path: "/", sameSite: "lax" });
+    res.clearCookie("refreshToken", { path: "/api/auth", sameSite: "lax" });
 
     return res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {

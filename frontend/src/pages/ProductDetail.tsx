@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { apiUrl } from '../utils/api';
-import Navbar from '../components/layout/Navbar';
+import { formatPrice } from '../utils/formatPrice';
 import { useCart } from '../context/CartContext';
 import { useChat } from '../context/ChatContext';
 
 import {
-  formatSizeLabel,
   ONE_SIZE_VALUE,
   shouldShowSizeSelection,
 } from '../utils/sizeUtils';
@@ -46,6 +46,7 @@ interface IProduct {
 }
 
 const ProductDetail = () => {
+  const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [product, setProduct] = useState<IProduct | null>(null);
@@ -88,7 +89,7 @@ const ProductDetail = () => {
       }
     } catch (err) {
       console.error('Error fetching product:', err);
-      setError('Unable to load product details. Please try again.');
+      setError(t('product.errorLoading'));
     }
   };
 
@@ -105,7 +106,7 @@ const ProductDetail = () => {
   const handleAddToCart = () => {
     if (!product) return;
     if (showSizeSelection && !selectedSize) {
-      alert('Please select a size');
+      alert(t('product.pleaseSelectSize'));
       return;
     }
     addToCart(product, selectedSize, quantity);
@@ -116,7 +117,7 @@ const ProductDetail = () => {
   const handleBuyNow = () => {
     if (!product) return;
     if (showSizeSelection && !selectedSize) {
-      alert('Please select a size');
+      alert(t('product.pleaseSelectSize'));
       return;
     }
     addToCart(product, selectedSize, quantity);  
@@ -133,14 +134,13 @@ const ProductDetail = () => {
   if (error || !product) {
     return (
       <div>
-        <Navbar />
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center max-w-md">
             <svg className="w-24 h-24 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Product Not Found</h2>
-            <p className="text-gray-600 mb-6">{error || 'The product you are looking for does not exist.'}</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('product.notFound')}</h2>
+            <p className="text-gray-600 mb-6">{error || t('product.doesNotExist')}</p>
             <Link
               to="/"
               className="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-full font-semibold hover:bg-orange-600 transition-colors"
@@ -148,7 +148,7 @@ const ProductDetail = () => {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              Back to Home
+              {t('common.backToHome')}
             </Link>
           </div>
         </div>
@@ -167,14 +167,12 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
-
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-gray-600 mb-8">
-          <Link to="/" className="hover:text-orange-500">Home</Link>
+          <Link to="/" className="hover:text-orange-500">{t('nav.home')}</Link>
           <span>/</span>
-          <Link to="/products" className="hover:text-orange-500">Products</Link>
+          <Link to="/products" className="hover:text-orange-500">{t('nav.products')}</Link>
           <span>/</span>
           {product.categoryId && (
             <>
@@ -249,12 +247,12 @@ const ProductDetail = () => {
               )}
               {totalStock === 0 && (
                 <span className="px-4 py-1.5 bg-red-100 text-red-600 rounded-full text-sm font-semibold">
-                  Out of Stock
+                  {t('products.outOfStock')}
                 </span>
               )}
               {totalStock > 0 && totalStock < 10 && (
                 <span className="px-4 py-1.5 bg-orange-100 text-orange-600 rounded-full text-sm font-semibold">
-                  Only {totalStock} Left
+                  {t('product.onlyLeft', { count: totalStock })}
                 </span>
               )}
             </div>
@@ -281,19 +279,19 @@ const ProductDetail = () => {
 
             {/* Price */}
             <div className="flex items-baseline gap-3 justify-center">
-              <span className="text-4xl font-bold text-orange-500">{product.price.toLocaleString()} VND</span>
+              <span className="text-4xl font-bold text-orange-500">{formatPrice(product.price, i18n.language)}</span>
               {/* You can add discount price here if applicable */}
             </div>
 
             {/* Description */}
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900 text-left">Description</h3>
+              <h3 className="text-lg font-semibold text-gray-900 text-left">{t('product.description')}</h3>
               <p className="text-gray-600 leading-relaxed text-left">{product.description}</p>
             </div>
 
             {/* Size Selection */}
             <div className="space-y-3">
-              <h3 className="text-base font-semibold text-gray-900 text-left">Select Size</h3>
+              <h3 className="text-base font-semibold text-gray-900 text-left">{t('product.selectSize')}</h3>
               {showSizeSelection ? (
                 <div className="flex flex-wrap gap-2">
                   {safeSizes.map((sizeItem) => {
@@ -324,7 +322,7 @@ const ProductDetail = () => {
                 </div>
               ) : (
                 <p className="text-sm text-gray-600 text-left">
-                  {formatSizeLabel(ONE_SIZE_VALUE)} · {product.stock || 0} available
+                  {t('product.oneSizeAvailable', { count: product.stock })}
                 </p>
               )}
             </div>
@@ -332,7 +330,7 @@ const ProductDetail = () => {
             {/* Quantity Selector */}
             {totalStock > 0 && (
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-gray-900 text-left">Quantity</h3>
+                <h3 className="text-lg font-semibold text-gray-900 text-left">{t('product.quantity')}</h3>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -359,7 +357,7 @@ const ProductDetail = () => {
                     </svg>
                   </button>
                   <span className="text-sm text-gray-600 ml-2">
-                    {selectedSizeStock} available
+                    {t('product.available', { count: selectedSizeStock })}
                   </span>
                 </div>
               </div>
@@ -381,7 +379,7 @@ const ProductDetail = () => {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
-              Chat Now
+              {t('product.chatNow')}
             </button>
 
             {/* Action Buttons */}
@@ -391,14 +389,13 @@ const ProductDetail = () => {
                 disabled={totalStock === 0 || !selectedSize}
                 className="flex-1 py-2 bg-white border-2 border-orange-500 text-orange-500 rounded-full font-semibold hover:bg-orange-50 transition-colors disabled:border-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed"
               >
-                Add to Cart
+                {t('product.addToCart')}
               </button>
               <button
+                className="flex-1 bg-orange-500 text-white py-3 px-6 rounded-full font-semibold hover:bg-orange-600 transition-colors"
                 onClick={handleBuyNow}
-                disabled={totalStock === 0 || !selectedSize}
-                className="flex-1 py-4 bg-orange-500 text-white rounded-full font-semibold hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
-                Buy Now
+                {t('product.buyNow')}
               </button>
             </div>
 
@@ -411,8 +408,8 @@ const ProductDetail = () => {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">Quality</p>
-                  <p className="text-sm text-gray-600">Premium materials</p>
+                  <p className="font-semibold text-gray-900">{t('product.quality')}</p>
+                  <p className="text-sm text-gray-600">{t('product.qualityDesc')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -422,8 +419,8 @@ const ProductDetail = () => {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">Secure</p>
-                  <p className="text-sm text-gray-600">Safe payment</p>
+                  <p className="font-semibold text-gray-900">{t('product.secure')}</p>
+                  <p className="text-sm text-gray-600">{t('product.secureDesc')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -433,8 +430,8 @@ const ProductDetail = () => {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">Returns</p>
-                  <p className="text-sm text-gray-600">30-day policy</p>
+                  <p className="font-semibold text-gray-900">{t('product.returns')}</p>
+                  <p className="text-sm text-gray-600">{t('product.returnsDesc')}</p>
                 </div>
               </div>
             </div>

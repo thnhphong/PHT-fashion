@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const admin_analytics_controller_1 = require("../controllers/admin.analytics.controller");
+const adminAnalyticsRouter = (0, express_1.Router)();
+adminAnalyticsRouter.get('/overview', admin_analytics_controller_1.getAnalyticsOverview);
+adminAnalyticsRouter.get('/revenue', admin_analytics_controller_1.getRevenue);
+adminAnalyticsRouter.get('/top-products', admin_analytics_controller_1.getTopProductsAnalytics);
+adminAnalyticsRouter.get('/orders-summary', admin_analytics_controller_1.getOrderSummary);
+exports.default = adminAnalyticsRouter;

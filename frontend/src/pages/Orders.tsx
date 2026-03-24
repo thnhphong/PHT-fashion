@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../utils/api';
-import { refreshAccessToken } from '../utils/auth';
+import { refreshAccessToken, getAccessToken } from '../utils/auth';
 
 const formatPrice = (value: number) =>
   new Intl.NumberFormat('vi-VN', {
@@ -51,6 +52,7 @@ type OrderView = {
 };
 
 const Orders = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<OrderView[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,7 +62,7 @@ const Orders = () => {
     let mounted = true;
 
     const fetchOrders = async () => {
-      const token = localStorage.getItem('accessToken');
+      const token = getAccessToken();
       if (!token) {
         navigate('/login');
         return;
@@ -80,7 +82,7 @@ const Orders = () => {
           const refreshed = await refreshAccessToken();
           if (!refreshed) {
             if (mounted) {
-              setError('Session expired. Please log in again.');
+            setError(t('order.sessionExpired'));
             }
             navigate('/login');
             return;
@@ -90,7 +92,7 @@ const Orders = () => {
 
         if (!response.ok) {
           const data = await response.json().catch(() => null);
-          throw new Error(data?.message ?? 'Unable to load orders');
+          throw new Error(data?.message ?? t('order.unableToLoad'));
         }
 
         const data = (await response.json()) as OrderView[];
@@ -115,7 +117,7 @@ const Orders = () => {
     };
   }, [navigate]);
 
-  if (!localStorage.getItem('accessToken')) {
+  if (!getAccessToken()) {
     navigate('/login');
     return null;
   }
@@ -124,16 +126,16 @@ const Orders = () => {
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-5xl mx-auto space-y-6">
         <header className="space-y-2">
-          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Account</p>
-          <h1 className="text-3xl font-semibold text-gray-900">Your orders</h1>
+          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{t('common.account') || 'Account'}</p>
+          <h1 className="text-3xl font-semibold text-gray-900">{t('order.myOrders')}</h1>
           <p className="text-sm text-gray-500">
-            Track the status of every purchase you've made with PHT Fashion.
+            {t('order.trackOrders') || 'Track the status of every purchase you\'ve made with PHT Fashion.'}
           </p>
         </header>
 
         {loading && (
           <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-600">
-            Loading your orders...
+            {t('order.loading')}
           </div>
         )}
 
@@ -145,7 +147,7 @@ const Orders = () => {
 
         {!loading && !error && orders.length === 0 && (
           <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-600">
-            You have no orders yet. Create your first order to see it here.
+            {t('order.noOrders')}
           </div>
         )}
 
@@ -158,7 +160,7 @@ const Orders = () => {
             >
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Order #{order.orderNumber}</p>
+                  <p className="text-sm text-gray-500">{t('order.orderNumber')} {order.orderNumber}</p>
                   <p className="text-lg font-semibold text-gray-900">{formatDate(order.created_at)}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -175,15 +177,15 @@ const Orders = () => {
 
               <div className="mt-4 grid gap-4 md:grid-cols-3 text-sm text-gray-500">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.4em] text-gray-400">Payment</p>
+                  <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{t('order.payment')}</p>
                   <p className="font-medium text-gray-900">{formatLabel(order.payment_method)}</p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.4em] text-gray-400">Shipping</p>
+                  <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{t('order.shipping')}</p>
                   <p className="font-medium text-gray-900">{formatLabel(order.shipping_method)}</p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.4em] text-gray-400">Total</p>
+                  <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{t('order.total')}</p>
                   <p className="font-medium text-gray-900">{formatPrice(order.total_amount)}</p>
                 </div>
               </div>
@@ -198,10 +200,10 @@ const Orders = () => {
                     <div key={`${order._id}-${index}`} className="flex items-center justify-between text-gray-700">
                       <div>
                         <p className="font-semibold text-gray-900">
-                          {productName ?? 'Product'}
+                          {productName ?? t('order.product')}
                         </p>
                         <p className="text-xs text-gray-500">
-                          Size {item.productSize} · Qty {item.quantity}
+                          {t('order.size')} {item.productSize} · {t('order.qty')} {item.quantity}
                         </p>
                       </div>
                       <p className="font-semibold">{formatPrice(productPrice * item.quantity)}</p>
@@ -214,7 +216,7 @@ const Orders = () => {
 
         {!loading && !error && orders.length > 0 && (
           <p className="text-sm text-gray-500">
-            If you need help with an order, reply to the confirmation email or contact support.
+            {t('order.helpText') || 'If you need help with an order, reply to the confirmation email or contact support.'}
           </p>
         )}
       </div>

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteUserById = exports.updateUserById = exports.getUsers = exports.getUser = exports.registerUser = void 0;
+exports.updateCurrentUser = exports.getCurrentUser = exports.deleteUserById = exports.updateUserById = exports.getUsers = exports.getUser = exports.registerUser = void 0;
 const user_service_1 = require("../services/user.service");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const registerUser = async (req, res) => {
@@ -108,3 +108,43 @@ const deleteUserById = async (req, res) => {
     }
 };
 exports.deleteUserById = deleteUserById;
+const getCurrentUser = async (req, res) => {
+    try {
+        const userId = req.user?.sub;
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+        const user = await (0, user_service_1.findUserById)(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        return res.status(200).json(user);
+    }
+    catch (error) {
+        console.error('Get current user error:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+exports.getCurrentUser = getCurrentUser;
+const updateCurrentUser = async (req, res) => {
+    try {
+        const userId = req.user?.sub;
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+        const { name, phone, address, avatar } = req.body;
+        const updatedUser = await (0, user_service_1.updateUser)(userId, { name, phone, address, avatar });
+        if (!updatedUser) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        return res.status(200).json({
+            message: 'Profile updated successfully',
+            user: updatedUser,
+        });
+    }
+    catch (error) {
+        console.error('Update current user error:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+exports.updateCurrentUser = updateCurrentUser;

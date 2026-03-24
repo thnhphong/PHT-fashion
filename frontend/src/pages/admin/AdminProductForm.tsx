@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { apiUrl } from '../../utils/api';
+import { useTranslation } from 'react-i18next';
 import type { Category, Product, Supplier } from '../../types/types';
 
 
@@ -26,6 +27,7 @@ type SizeEntry = {
 type LocationState = { product?: Product };
 
 const AdminProductForm = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -92,7 +94,7 @@ const AdminProductForm = () => {
       applyProduct(response.data);
     } catch (err) {
       console.error(err);
-      setError('Unable to load product');
+      setError(t('admin.loadFailed'));
     } finally {
       setFetchingProduct(false);
     }
@@ -104,7 +106,7 @@ const AdminProductForm = () => {
       setCategories(response.data);
     } catch (err) {
       console.error(err);
-      setError('Unable to load categories');
+      setError(t('admin.loadFailed'));
     }
   };
 
@@ -114,7 +116,7 @@ const AdminProductForm = () => {
       setSuppliers(response.data);
     } catch (err) {
       console.error(err);
-      setError('Unable to load suppliers');
+      setError(t('admin.loadFailed'));
     }
   };
 
@@ -174,7 +176,7 @@ const AdminProductForm = () => {
     const usedStock = getTotalSizeStock(sizeEntries);
 
     if (usedStock + stock > totalStock) {
-      setError('Total size stock exceeds product stock');
+      setError(t('admin.stockLimitExceeded'));
       return;
     }
 
@@ -206,7 +208,7 @@ const AdminProductForm = () => {
     }, 0);
 
     if (newTotal > totalStock) {
-      setError('Total size stock exceeds product stock');
+      setError(t('admin.stockLimitExceeded'));
       return;
     }
 
@@ -265,11 +267,11 @@ const AdminProductForm = () => {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       }
-      const message = isUpdate ? 'Product updated' : 'Product created';
+      const message = isUpdate ? t('admin.updateSuccess') : t('admin.saveSuccess');
       navigate('/admin/products', { state: { message }, replace: true });
     } catch (err) {
       console.error(err);
-      setError('Unable to save product');
+      setError(t('admin.saveFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -280,12 +282,12 @@ const AdminProductForm = () => {
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex flex-col gap-3">
           <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase text-gray-400 tracking-[0.4em]">Admin dashboard</p>
-            <h1 className="text-3xl font-bold">{isEditing ? 'Update product' : 'Create new product'}</h1>
+            <p className="text-sm uppercase text-gray-400 tracking-[0.4em]">{t('admin.dashboard')}</p>
+            <h1 className="text-3xl font-bold">{isEditing ? t('admin.updateProduct') : t('admin.createNewProduct')}</h1>
             <p className="text-gray-400 text-sm">
               {isEditing
-                ? 'Edit the details of an existing product.'
-                : 'Add a new product with images, sizes, and associations.'}
+                ? t('admin.editProductDescription')
+                : t('admin.addProductDescription')}
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -294,7 +296,7 @@ const AdminProductForm = () => {
               onClick={() => navigate('/admin/products')}
               className="rounded-full border border-gray-200 px-5 py-2 text-xs uppercase tracking-[0.3em] text-gray-900 transition hover:border-gray-200"
             >
-              Back to catalog
+              {t('admin.backToCatalog')}
             </button>
           </div>
           {error && <p className="text-xs uppercase text-red-500">{error}</p>}
@@ -303,24 +305,24 @@ const AdminProductForm = () => {
         <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
           <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-xs uppercase text-gray-400">Name</label>
+              <label className="text-xs uppercase text-gray-400">{t('profile.name')}</label>
               <input
                 value={form.name}
                 onChange={(event) => handleChange('name', event.target.value)}
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-500 focus:outline-none"
-                placeholder="Product name"
+                placeholder={t('admin.productName')}
                 required
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs uppercase text-gray-400">Category</label>
+              <label className="text-xs uppercase text-gray-400">{t('admin.categories')}</label>
               <select
                 value={form.categoryId}
                 onChange={(event) => handleChange('categoryId', event.target.value)}
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900"
                 required
               >
-                <option value="">Select category</option>
+                <option value="">{t('admin.selectCategory')}</option>
                 {categories.map((category) => (
                   <option key={category._id} value={category._id}>
                     {category.name}
@@ -329,7 +331,7 @@ const AdminProductForm = () => {
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-xs uppercase text-gray-400">Price</label>
+              <label className="text-xs uppercase text-gray-400">{t('products.price')}</label>
               <input
                 value={form.price}
                 onChange={(event) => handleChange('price', event.target.value)}
@@ -337,19 +339,19 @@ const AdminProductForm = () => {
                 min="0"
                 step="0.01"
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:border-orange-500 focus:outline-none"
-                placeholder="Price in USD"
+                placeholder={`${t('products.price')} (USD)`}
                 required
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs uppercase text-gray-400">Supplier</label>
+              <label className="text-xs uppercase text-gray-400">{t('admin.suppliers')}</label>
               <select
                 value={form.supplierId}
                 onChange={(event) => handleChange('supplierId', event.target.value)}
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900"
                 required
               >
-                <option value="">Select supplier</option>
+                <option value="">{t('admin.selectSupplier')}</option>
                 {suppliers.map((supplier) => (
                   <option key={supplier._id} value={supplier._id}>
                     {supplier.name}
@@ -358,7 +360,7 @@ const AdminProductForm = () => {
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-xs uppercase text-gray-400">Stock count</label>
+              <label className="text-xs uppercase text-gray-400">{t('admin.stockCount')}</label>
               <input
                 value={form.stock}
                 onChange={(event) => handleChange('stock', event.target.value)}
@@ -370,14 +372,14 @@ const AdminProductForm = () => {
 
             {showSizes && (
               <div className="col-span-full space-y-3">
-                <label className="text-xs uppercase text-gray-400">Sizes &amp; stock</label>
+                <label className="text-xs uppercase text-gray-400">{t('admin.sizesAndStock')}</label>
                 <div className="flex flex-wrap gap-3">
                   <select
                     value={sizeDraft.size}
                     onChange={(event) => handleSizeDraftChange('size', event.target.value)}
                     className="rounded-2xl border border-gray-200 bg-white px-4 py-2 text-xs uppercase tracking-[0.3em] text-gray-900"
                   >
-                    <option value="">Choose size</option>
+                    <option value="">{t('admin.chooseSize')}</option>
                     {sizeOptions.map((size) => (
                       <option key={size} value={size}>
                         {size}
@@ -390,7 +392,7 @@ const AdminProductForm = () => {
                     onChange={(event) => handleSizeDraftChange('stock', event.target.value)}
                     type="number"
                     min="0"
-                    placeholder="Stock per size"
+                    placeholder={t('admin.stockPerSize')}
                     className="rounded-2xl border border-gray-200 bg-white px-4 py-2 text-xs text-gray-900 focus:border-orange-500 focus:outline-none"
                   />
 
@@ -400,12 +402,12 @@ const AdminProductForm = () => {
                     disabled={!sizeDraft.size || sizeDraft.stock === ''}
                     className="rounded-full border border-emerald-400 px-4 py-2 text-xs uppercase tracking-[0.3em] text-emerald-300 transition hover:border-emerald-300 disabled:border-gray-200 disabled:text-gray-500"
                   >
-                    Add size
+                    {t('admin.addSize')}
                   </button>
                 </div>
                 <div className="space-y-2">
                   {sizeEntries.length === 0 && (
-                    <p className="text-xs uppercase text-gray-500">No sizes added yet.</p>
+                    <p className="text-xs uppercase text-gray-500">{t('admin.noSizesPlaceholder')}</p>
                   )}
                   {sizeEntries.map((entry) => (
                     <div key={entry.size} className="flex flex-wrap items-center gap-3">
@@ -423,7 +425,7 @@ const AdminProductForm = () => {
                         onClick={() => removeSizeEntry(entry.size)}
                         className="text-xs uppercase tracking-[0.3em] text-red-500 underline-offset-4 hover:text-red-200"
                       >
-                        Remove
+                        {t('admin.delete')}
                       </button>
                     </div>
                   ))}
@@ -431,12 +433,12 @@ const AdminProductForm = () => {
               </div>
             )}
             <div className="col-span-full space-y-2">
-              <label className="text-xs uppercase text-gray-400">Description</label>
+              <label className="text-xs uppercase text-gray-400">{t('admin.description')}</label>
               <textarea
                 value={form.description}
                 onChange={(event) => handleChange('description', event.target.value)}
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:border-orange-500 focus:outline-none"
-                placeholder="Product description"
+                placeholder={t('admin.shortDescription')}
                 rows={3}
                 required
               />
@@ -461,7 +463,7 @@ const AdminProductForm = () => {
                 disabled={submitting || fetchingProduct}
                 className="w-full rounded-2xl bg-gradient-to-r from-orange-500 via-orange-500 to-orange-500 px-4 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-lg shadow-orange-500/40 transition hover:opacity-95 disabled:opacity-60"
               >
-                {submitting ? 'Saving...' : 'Save product'}
+                {submitting ? t('admin.saving') : t('admin.saveProduct')}
               </button>
             </div>
           </form>

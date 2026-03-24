@@ -1,25 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useCart, type CartItem } from '../context/CartContext';
 import { apiUrl } from '../utils/api';
-import { refreshAccessToken, isAuthenticated } from '../utils/auth';
+import { refreshAccessToken, isAuthenticated, getAccessToken } from '../utils/auth';
 import { formatSizeLabel } from '../utils/sizeUtils';
 import { ChevronDown, MapPin, Truck, CreditCard, Tag, ShieldCheck } from 'lucide-react';
 import PendingPaymentBanner from '../components/PendingPaymentBanner';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const SHIPPING_METHODS = [
-  { id: 'standard', label: 'Standard Shipping', detail: '5–7 days', price: 0 },
-  { id: 'express', label: 'Express Shipping', detail: '2–3 days', price: 30000 },
-  { id: 'next_day', label: 'Next Day Delivery', detail: '1 day', price: 50000 },
+const getShippingMethods = (t: (key: string) => string) => [
+  { id: 'standard', label: t('checkout.standardShipping'), detail: t('checkout.standardDetail'), price: 0 },
+  { id: 'express', label: t('checkout.expressShipping'), detail: t('checkout.expressDetail'), price: 30000 },
+  { id: 'next_day', label: t('checkout.nextDayShipping'), detail: t('checkout.nextDayDetail'), price: 50000 },
 ];
 
-const PAYMENT_METHODS = [
-  { id: 'cash_on_delivery', label: 'Cash on Delivery' },
-  { id: 'paypal', label: 'PayPal' },
-  { id: 'credit_card', label: 'Credit Card' },
-  { id: 'vnpay', label: 'VNPay' },
+const getPaymentMethods = (t: (key: string) => string) => [
+  { id: 'cash_on_delivery', label: t('checkout.cashOnDelivery') },
+  { id: 'paypal', label: t('checkout.paypal') },
+  { id: 'credit_card', label: t('checkout.creditCard') },
+  { id: 'vnpay', label: t('checkout.vnpay') },
 ];
 
 const BASE_PROVINCE_API = 'https://provinces.open-api.vn/api/?depth=1';
@@ -30,9 +31,13 @@ const formatPrice = (value: number) =>
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function Checkout() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { cart, removeFromCart, clearCart } = useCart();
+
+  const SHIPPING_METHODS = useMemo(() => getShippingMethods(t), [t]);
+  const PAYMENT_METHODS = useMemo(() => getPaymentMethods(t), [t]);
 
   const locationState = location.state as { selectedItems?: CartItem[] } | null;
   const itemsForCheckout: CartItem[] =
@@ -84,9 +89,9 @@ export default function Checkout() {
       .catch(console.error);
 
     const params = new URLSearchParams(window.location.search);
-    if (params.get('error') === 'payment_cancelled') setOrderError('Payment was cancelled.');
-    if (params.get('error') === 'payment_failed') setOrderError('Payment failed or was not approved.');
-  }, []);
+    if (params.get('error') === 'payment_cancelled') setOrderError(t('checkout.paymentCancelled'));
+    if (params.get('error') === 'payment_failed') setOrderError(t('checkout.paymentFailed'));
+  }, [t]);
 
   const subtotal = useMemo(
     () => itemsForCheckout.reduce((sum, item) => sum + item.price * item.quantity, 0),
@@ -133,7 +138,7 @@ export default function Checkout() {
       return;
     }
 
-    let bearerToken = localStorage.getItem('accessToken');
+    let bearerToken = getAccessToken();
     const isAuth = isAuthenticated();
 
     // If authenticated but no token for some reason, redirect to login
@@ -297,12 +302,12 @@ export default function Checkout() {
             <section className="bg-white rounded-xl shadow-sm p-5">
               <div className="flex items-center gap-2 mb-4">
                 <MapPin className="text-orange-500" size={18} />
-                <h2 className="text-base font-semibold text-orange-500">Shipping Address</h2>
+                <h2 className="text-base font-semibold text-orange-500">{t('checkout.shippingAddress')}</h2>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Full Name *</label>
+                  <label className="text-xs text-gray-500 mb-1 block">{t('checkout.fullName')}</label>
                   <input
                     value={form.name}
                     onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
@@ -311,7 +316,7 @@ export default function Checkout() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Phone *</label>
+                  <label className="text-xs text-gray-500 mb-1 block">{t('checkout.phone')}</label>
                   <input
                     value={form.phone}
                     onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
@@ -320,7 +325,7 @@ export default function Checkout() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Email</label>
+                  <label className="text-xs text-gray-500 mb-1 block">{t('checkout.email')}</label>
                   <input
                     value={form.email}
                     onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
@@ -330,14 +335,14 @@ export default function Checkout() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">City / Province *</label>
+                  <label className="text-xs text-gray-500 mb-1 block">{t('checkout.cityProvince')}</label>
                   <div className="relative">
                     <select
                       value={selectedCity}
                       onChange={(e) => setSelectedCity(e.target.value)}
                       className="w-full appearance-none border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400 bg-white pr-8"
                     >
-                      <option value="">Choose city</option>
+                      <option value="">{t('checkout.chooseCity')}</option>
                       {cities.map((c) => (
                         <option key={c.code} value={c.name}>{c.name}</option>
                       ))}
@@ -346,7 +351,7 @@ export default function Checkout() {
                   </div>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="text-xs text-gray-500 mb-1 block">Street Address *</label>
+                  <label className="text-xs text-gray-500 mb-1 block">{t('checkout.streetAddress')}</label>
                   <input
                     value={form.street}
                     onChange={(e) => setForm((p) => ({ ...p, street: e.target.value }))}
@@ -355,16 +360,16 @@ export default function Checkout() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Apartment / Suite</label>
+                  <label className="text-xs text-gray-500 mb-1 block">{t('checkout.apartmentSuite')}</label>
                   <input
                     value={form.apartment}
                     onChange={(e) => setForm((p) => ({ ...p, apartment: e.target.value }))}
-                    placeholder="Apt 4B (optional)"
+                    placeholder={t('checkout.apartmentPlaceholder')}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Country</label>
+                  <label className="text-xs text-gray-500 mb-1 block">{t('checkout.country')}</label>
                   <input
                     value={form.country}
                     onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))}
@@ -378,12 +383,12 @@ export default function Checkout() {
             <section className="bg-white rounded-xl shadow-sm p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-semibold text-gray-800">
-                  Products <span className="text-gray-400 font-normal text-sm">({itemsForCheckout.length})</span>
+                  {t('checkout.products')} <span className="text-gray-400 font-normal text-sm">({itemsForCheckout.length})</span>
                 </h2>
                 <div className="grid grid-cols-3 gap-8 text-xs text-gray-400 uppercase tracking-wide pr-2 hidden sm:grid">
-                  <span className="text-right">Unit Price</span>
-                  <span className="text-center">Qty</span>
-                  <span className="text-right">Subtotal</span>
+                  <span className="text-right">{t('checkout.unitPrice')}</span>
+                  <span className="text-center">{t('checkout.qty')}</span>
+                  <span className="text-right">{t('checkout.subtotal')}</span>
                 </div>
               </div>
 
@@ -393,7 +398,7 @@ export default function Checkout() {
                     <img src={item.img_url} alt={item.name} className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border border-gray-100" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 line-clamp-2">{item.name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">Size: {formatSizeLabel(item.selectedSize)}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{t('checkout.size')}: {formatSizeLabel(item.selectedSize)}</p>
                       {/* Mobile price */}
                       <p className="text-sm font-semibold text-orange-500 mt-1 sm:hidden">
                         {formatPrice(item.price * item.quantity)}
@@ -411,11 +416,11 @@ export default function Checkout() {
 
               {/* Note */}
               <div className="mt-4 flex items-center gap-3">
-                <span className="text-xs text-gray-400 whitespace-nowrap">Note to seller:</span>
+                <span className="text-xs text-gray-400 whitespace-nowrap">{t('checkout.noteToSeller')}</span>
                 <input
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  placeholder="Leave a note (optional)"
+                  placeholder={t('checkout.notePlaceholder')}
                   className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-orange-400"
                 />
               </div>
@@ -424,7 +429,7 @@ export default function Checkout() {
               <div className="mt-4 pt-4 border-t border-gray-100">
                 <div className="flex items-center gap-2 mb-3">
                   <Truck size={15} className="text-gray-400" />
-                  <span className="text-sm font-medium text-gray-700">Shipping method</span>
+                  <span className="text-sm font-medium text-gray-700">{t('checkout.shippingMethod')}</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {SHIPPING_METHODS.map((m) => (
@@ -447,7 +452,7 @@ export default function Checkout() {
                         <span className="font-medium">{m.label}</span>
                         <span className="text-xs ml-1.5 text-gray-400">{m.detail}</span>
                         <span className="text-xs ml-1.5 font-semibold">
-                          {m.price === 0 ? 'Free' : formatPrice(m.price)}
+                          {m.price === 0 ? t('checkout.free') : formatPrice(m.price)}
                         </span>
                       </span>
                     </label>
@@ -457,7 +462,7 @@ export default function Checkout() {
 
               {/* Subtotal row */}
               <div className="mt-3 flex justify-end text-sm text-gray-500">
-                Order total:&nbsp;
+                {t('checkout.orderTotal')}&nbsp;
                 <span className="font-semibold text-orange-500 ml-1">{formatPrice(subtotal + shippingPrice)}</span>
               </div>
             </section>
@@ -466,13 +471,13 @@ export default function Checkout() {
             <section className="bg-white rounded-xl shadow-sm p-5">
               <div className="flex items-center gap-2 mb-3">
                 <Tag size={15} className="text-orange-500" />
-                <h2 className="text-sm font-semibold text-gray-800">PHT Voucher</h2>
+                <h2 className="text-sm font-semibold text-gray-800">{t('checkout.phtVoucher')}</h2>
               </div>
               <div className="flex gap-2">
                 <input
                   value={couponCode}
                   onChange={(e) => { setCouponCode(e.target.value); setCouponApplied(false); setCouponError(''); setCouponDiscount(0); }}
-                  placeholder="Enter coupon code"
+                  placeholder={t('checkout.enterCouponCode')}
                   disabled={couponApplied}
                   className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400 disabled:bg-gray-50"
                 />
@@ -481,20 +486,20 @@ export default function Checkout() {
                   disabled={couponLoading || couponApplied || !couponCode.trim()}
                   className="px-4 py-2 rounded-lg text-sm font-semibold text-orange-500 border border-orange-400 hover:bg-orange-50 disabled:opacity-50 transition-colors whitespace-nowrap"
                 >
-                  {couponLoading ? '...' : couponApplied ? '✓ Applied' : 'Apply'}
+                  {couponLoading ? '...' : couponApplied ? `✓ ${t('checkout.applied')}` : t('checkout.apply')}
                 </button>
               </div>
               {couponError && <p className="text-xs text-red-500 mt-1.5">{couponError}</p>}
-              {couponApplied && <p className="text-xs text-green-600 mt-1.5">Coupon applied — {couponDiscount}% off!</p>}
+              {couponApplied && <p className="text-xs text-green-600 mt-1.5">{t('checkout.couponApplied', { discount: couponDiscount })}</p>}
             </section>
 
             {/* 4. Payment */}
             <section className="bg-white rounded-xl shadow-sm p-5">
               <div className="flex items-center gap-2 mb-3">
                 <CreditCard size={15} className="text-gray-500" />
-                <h2 className="text-sm font-semibold text-gray-800">Payment Method</h2>
+                <h2 className="text-sm font-semibold text-gray-800">{t('checkout.paymentMethod')}</h2>
                 <span className="ml-auto text-xs text-gray-400 flex items-center gap-1">
-                  <ShieldCheck size={12} /> Pay on delivery
+                  <ShieldCheck size={12} /> {t('checkout.payOnDelivery')}
                 </span>
               </div>
               <div className="space-y-2">
@@ -527,7 +532,7 @@ export default function Checkout() {
           {/* ── RIGHT COLUMN — Order Summary ── */}
           <div className="space-y-4">
             <div className="bg-white rounded-xl shadow-sm p-5 sticky top-4">
-              <h2 className="text-base font-semibold text-gray-800 mb-4">Order Summary</h2>
+              <h2 className="text-base font-semibold text-gray-800 mb-4">{t('checkout.orderSummary')}</h2>
 
               {/* Item thumbnails */}
               <div className="space-y-2.5 mb-4 max-h-48 overflow-y-auto">
@@ -541,7 +546,7 @@ export default function Checkout() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-gray-700 line-clamp-2 font-medium">{item.name}</p>
-                      <p className="text-xs text-gray-400">Size: {formatSizeLabel(item.selectedSize)}</p>
+                      <p className="text-xs text-gray-400">{t('checkout.size')}: {formatSizeLabel(item.selectedSize)}</p>
                     </div>
                     <p className="text-xs font-semibold text-gray-800 flex-shrink-0">{formatPrice(item.price * item.quantity)}</p>
                   </div>
@@ -550,21 +555,21 @@ export default function Checkout() {
 
               <div className="border-t border-gray-100 pt-3 space-y-2 text-sm">
                 <div className="flex justify-between text-gray-500">
-                  <span>Subtotal</span>
+                  <span>{t('checkout.subtotal')}</span>
                   <span>{formatPrice(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-gray-500">
-                  <span>Shipping</span>
-                  <span>{shippingPrice === 0 ? <span className="text-green-600 font-medium">Free</span> : formatPrice(shippingPrice)}</span>
+                  <span>{t('checkout.shipping')}</span>
+                  <span>{shippingPrice === 0 ? <span className="text-green-600 font-medium">{t('checkout.free')}</span> : formatPrice(shippingPrice)}</span>
                 </div>
                 {couponApplied && discountAmount > 0 && (
                   <div className="flex justify-between text-green-600">
-                    <span>Discount ({couponDiscount}%)</span>
+                    <span>{t('checkout.discount')} ({couponDiscount}%)</span>
                     <span>-{formatPrice(discountAmount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-base font-bold text-gray-900 pt-2 border-t border-gray-100">
-                  <span>Total</span>
+                  <span>{t('checkout.total')}</span>
                   <span className="text-orange-500">{formatPrice(grandTotal)}</span>
                 </div>
               </div>
@@ -591,16 +596,16 @@ export default function Checkout() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Placing Order...
+                    {t('checkout.placingOrder')}
                   </span>
                 ) : (
-                  'Place Order'
+                  t('checkout.placeOrder')
                 )}
               </button>
 
               <p className="text-[11px] text-gray-400 text-center mt-2">
-                By placing your order, you agree to our{' '}
-                <a href="#" className="underline">Terms & Conditions</a>
+                {t('checkout.agreeTerms')}{' '}
+                <a href="#" className="underline">{t('checkout.termsConditions')}</a>
               </p>
             </div>
           </div>

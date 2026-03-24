@@ -1,7 +1,9 @@
 import axios from 'axios';
+import { getAccessToken } from '../../utils/auth';
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { apiUrl } from '../../utils/api';
+import { useTranslation } from 'react-i18next';
 
 type Supplier = {
   _id: string;
@@ -11,6 +13,7 @@ type Supplier = {
 };
 
 const AdminSupplier = () => {
+  const { t } = useTranslation();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -22,14 +25,14 @@ const AdminSupplier = () => {
 
   const fetchSuppliers = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = getAccessToken();
       const response = await axios.get<Supplier[]>(apiUrl('/admin/suppliers'), {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       setSuppliers(response.data);
     } catch (err) {
       console.error(err);
-      setError('Unable to load suppliers');
+      setError(t('admin.loadFailed'));
     }
   };
 
@@ -58,42 +61,42 @@ const AdminSupplier = () => {
 
     try {
       if (selectedSupplier) {
-        const token = localStorage.getItem('accessToken');
+        const token = getAccessToken();
         await axios.put(
           apiUrl(`/admin/suppliers/${selectedSupplier._id}`),
           form,
           { headers: token ? { Authorization: `Bearer ${token}` } : {} }
         );
-        setSuccess('Supplier updated');
+        setSuccess(t('admin.updateSuccess'));
       } else {
-        const token = localStorage.getItem('accessToken');
+        const token = getAccessToken();
         await axios.post(apiUrl('/admin/suppliers'), form, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
-        setSuccess('Supplier created');
+        setSuccess(t('admin.saveSuccess'));
       }
       resetForm();
       fetchSuppliers();
     } catch (err) {
       console.error(err);
-      setError('Unable to save supplier');
+      setError(t('admin.saveFailed'));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (supplierId: string) => {
-    if (!confirm('Delete this supplier?')) return;
+    if (!confirm(t('admin.deleteConfirm'))) return;
     try {
-        const token = localStorage.getItem('accessToken');
+        const token = getAccessToken();
         await axios.delete(apiUrl(`/admin/suppliers/${supplierId}`), {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
-      setSuccess('Supplier deleted');
+      setSuccess(t('admin.deleteSuccess'));
       fetchSuppliers();
     } catch (err) {
       console.error(err);
-      setError('Unable to delete supplier');
+      setError(t('admin.deleteFailed'));
     }
   };
 
@@ -107,31 +110,31 @@ const AdminSupplier = () => {
     <div className="min-h-screen bg-white text-gray-900 px-4 py-10">
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex flex-col gap-2">
-          <p className="text-sm uppercase text-gray-400 tracking-[0.4em]">Admin dashboard</p>
-          <h1 className="text-3xl font-bold">Supplier catalog ({totalSuppliers})</h1>
-          <p className="text-gray-400 text-sm">Upload and manage suppliers.</p>
+          <p className="text-sm uppercase text-gray-400 tracking-[0.4em]">{t('admin.dashboard')}</p>
+          <h1 className="text-3xl font-bold">{t('admin.supplierCatalog', { count: totalSuppliers })}</h1>
+          <p className="text-gray-400 text-sm">{t('admin.manageSuppliersText')}</p>
         </header>
 
         <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold mb-3">{selectedSupplier ? 'Update supplier' : 'Create new supplier'}</h2>
+          <h2 className="text-xl font-semibold mb-3">{selectedSupplier ? t('admin.updateSupplier') : t('admin.createNewSupplier')}</h2>
           <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-xs uppercase text-gray-400">Name</label>
+              <label className="text-xs uppercase text-gray-400">{t('profile.name')}</label>
               <input
                 value={form.name}
                 onChange={(event) => handleChange('name', event.target.value)}
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-500 focus:outline-none"
-                placeholder="Supplier name"
+                placeholder={t('admin.supplierName')}
                 required
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs uppercase text-gray-400">Description</label>
+              <label className="text-xs uppercase text-gray-400">{t('admin.description')}</label>
               <input
                 value={form.description}
                 onChange={(event) => handleChange('description', event.target.value)}
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:border-orange-500 focus:outline-none"
-                placeholder="Short description"
+                placeholder={t('admin.shortDescription')}
               />
             </div>
             <div className="col-span-full">
@@ -140,7 +143,7 @@ const AdminSupplier = () => {
                 disabled={loading}
                 className="w-full rounded-2xl bg-gradient-to-r from-orange-500 via-orange-500 to-orange-500 px-4 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-lg shadow-orange-500/40 transition hover:opacity-95 disabled:opacity-60"
               >
-                {loading ? 'Saving...' : selectedSupplier ? 'Update supplier' : 'Create supplier'}
+                {loading ? t('admin.saving') : selectedSupplier ? t('admin.updateSupplier') : t('admin.suppliers')}
               </button>
             </div>
             {(error || success) && (
@@ -155,13 +158,13 @@ const AdminSupplier = () => {
               onClick={resetForm}
               className="mt-4 text-xs uppercase tracking-[0.4em] text-gray-400 underline"
             >
-              Cancel edit
+              {t('admin.cancelEdit')}
             </button>
           )}
         </section>
 
         <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Suppliers</h2>
+          <h2 className="text-xl font-semibold mb-4">{t('admin.suppliers')}</h2>
           <div className="space-y-3">
             {suppliers.map((supplier) => (
               <article
@@ -177,13 +180,13 @@ const AdminSupplier = () => {
                     onClick={() => handleEdit(supplier)}
                     className="rounded-full border border-gray-200 px-4 py-2 text-xs uppercase tracking-[0.3em] text-gray-900"
                   >
-                    Edit
+                    {t('admin.edit')}
                   </button>
                   <button
                     onClick={() => handleDelete(supplier._id)}
                     className="rounded-full border border-red-500 px-4 py-2 text-xs uppercase tracking-[0.3em] text-red-500"
                   >
-                    Delete
+                    {t('admin.delete')}
                   </button>
                 </div>
               </article>

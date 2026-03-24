@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useCart } from '../context/CartContext';
 import { CheckCircle } from 'lucide-react';
 
 export default function CheckoutSuccess() {
+    const { t } = useTranslation();
     const [searchParams] = useSearchParams();
     const orderId = searchParams.get('orderId');
     const { clearCart } = useCart();
@@ -21,14 +23,14 @@ export default function CheckoutSuccess() {
                         <CheckCircle className="h-12 w-12 text-green-600" />
                     </div>
                     <h2 className="mt-6 text-3xl font-extrabold text-gray-900 tracking-tight">
-                        Order Complete!
+                        {t('checkoutSuccess.orderComplete')}
                     </h2>
                     <p className="mt-4 text-sm text-gray-500 max-w-sm mx-auto">
-                        Thank you for your purchase. We've received your order and we are getting it ready to be shipped.
+                        {t('checkoutSuccess.thankYou')}
                     </p>
                     {orderId && (
                         <div className="mt-6 p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                            <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">Order Reference</p>
+                            <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">{t('checkoutSuccess.orderRef')}</p>
                             <p className="text-sm font-medium text-gray-900 font-mono">{orderId}</p>
                         </div>
                     )}
@@ -38,13 +40,13 @@ export default function CheckoutSuccess() {
                         to="/orders"
                         className="w-full sm:w-auto inline-flex justify-center items-center px-6 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200"
                     >
-                        View My Orders
+                        {t('checkoutSuccess.viewOrders')}
                     </Link>
                     <Link
                         to="/"
                         className="w-full sm:w-auto inline-flex justify-center items-center px-6 py-3 border border-transparent shadow-sm text-sm font-medium rounded-full text-white bg-black hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors duration-200"
                     >
-                        Continue Shopping
+                        {t('checkoutSuccess.continueShopping')}
                     </Link>
                 </div>
             </div>

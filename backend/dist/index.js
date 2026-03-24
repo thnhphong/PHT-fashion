@@ -40,7 +40,9 @@ app.use((0, cookie_parser_1.default)());
 // CORS configuration
 const allowedOrigins = [
     'http://localhost:5173',
+    'http://localhost:5175',
     'http://127.0.0.1:5173',
+    'http://127.0.0.1:5175',
     FRONTEND_URL,
     FRONTEND_URL_2
 ].filter(Boolean);

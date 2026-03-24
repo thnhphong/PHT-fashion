@@ -2,7 +2,9 @@ import axios from 'axios';
 import { useState, useEffect } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../utils/api';
+import { getAccessToken, getUserFromToken } from '../utils/auth';
 import carousel1 from '../assets/images/carousel_login_1.jpeg';
 import carousel2 from '../assets/images/carousel_login_2.jpeg';
 import carousel3 from '../assets/images/carousel_login_3.jpeg';
@@ -11,6 +13,7 @@ import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useFavorite } from '../context/useFavorite';
 import ConflictDialog from '../components/common/ConflictDialog';
+import { setLoginFlag } from '../utils/auth';
 
 type LoginForm = {
   email: string;
@@ -22,25 +25,26 @@ const INITIAL_FORM: LoginForm = {
   password: '',
 };
 
-const carouselSlides = [
-  {
-    image: carousel1,
-    title: "Welcome Back to PHT Fashion",
-    tagline: "Where street culture meets high fashion",
-  },
-  {
-    image: carousel2,
-    title: "Express Your True Self",
-    tagline: "Bold styles for the fearless generation",
-  },
-  {
-    image: carousel3,
-    title: "Redefine Your Wardrobe",
-    tagline: "Confidence starts with what you wear",
-  },
-];
-
 const Login = () => {
+  const { t } = useTranslation();
+
+  const getCarouselSlides = () => [
+    {
+      image: carousel1,
+      title: t('auth.loginCarouselTitle1'),
+      tagline: t('auth.loginCarouselTagline1'),
+    },
+    {
+      image: carousel2,
+      title: t('auth.loginCarouselTitle2'),
+      tagline: t('auth.loginCarouselTagline2'),
+    },
+    {
+      image: carousel3,
+      title: t('auth.loginCarouselTitle3'),
+      tagline: t('auth.loginCarouselTagline3'),
+    },
+  ];
   const [currentSlide, setCurrentSlide] = useState(0);
   const [form, setForm] = useState<LoginForm>(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
@@ -60,11 +64,12 @@ const Login = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
   useEffect(() => {
+    const slides = getCarouselSlides();
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [t]);
 
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -75,21 +80,13 @@ const Login = () => {
 
     try {
       const normalizedEmail = form.email.trim().toLowerCase();
-      const response = await axios.post(apiUrl('/auth/login'), {
+      const res = await axios.post(apiUrl('/auth/login'), {
         email: normalizedEmail,
         password: form.password,
       }, { withCredentials: true });
 
-      // Store access token in localStorage (refresh token is in httpOnly cookie)
-      localStorage.setItem('accessToken', response.data.accessToken);
-      window.dispatchEvent(new CustomEvent('auth-token-set'));
-      const adminEmails = new Set([
-        'thnhphong4869@gmail.com',
-        'nguyenchithanh2213@gmail.com',
-      ]);
-      const isAdmin = adminEmails.has(normalizedEmail) && form.password === 'admin123';
-      localStorage.setItem('userRole', isAdmin ? 'admin' : 'customer');
-      localStorage.setItem('userName', normalizedEmail);
+      // Set login flag (tokens are now in cookies, handled by backend)
+      setLoginFlag();
 
       try {
         const savedCart = localStorage.getItem('pht_cart');
@@ -100,8 +97,9 @@ const Login = () => {
 
         if (guestCart.length > 0) {
           // Check DB cart to see if we need a conflict dialog
+          const token = getAccessToken();
           const cartRes = await axios.get(apiUrl('/cart'), {
-            headers: { Authorization: `Bearer ${response.data.accessToken}` }
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
           });
           const dbCart = cartRes.data?.items || [];
 
@@ -119,9 +117,13 @@ const Login = () => {
         console.error('Failed to merge guest data on login', err);
       }
 
-      setSuccessMessage('Login successful! Redirecting...');
-      // Redirect to intended page or home
-      navigate(from, { state: location.state });
+      setSuccessMessage(t('auth.loginSuccessRedirecting'));
+      // Redirect admin to admin page, others to intended page or home
+      if (getUserFromToken()?.role === 'admin') {
+        navigate('/admin/analytics', { replace: true });
+      } else {
+        navigate(from, { state: location.state });
+      }
       setForm(INITIAL_FORM);
 
       // Redirect to dashboard or home after 1 second
@@ -159,22 +161,26 @@ const Login = () => {
       console.error(e);
     }
     setSuccessMessage('Login successful! Redirecting...');
-    navigate(from, { state: location.state });
+    if (getUserFromToken()?.role === 'admin') {
+      navigate('/admin', { replace: true });
+    } else {
+      navigate(from, { state: location.state });
+    }
     setLoading(false);
   };
 
   const handleStartFresh = async () => {
     setShowConflictDialog(false);
     setLoading(true);
-    // Just clear local storage and guest session, start fresh with DB cart
     localStorage.removeItem('pht_cart');
     localStorage.removeItem('pht_guest_session_at');
-    // For cart context to refresh correctly, window reload or context refetch works.
-    // Since we are redirecting, the next page will likely re-mount and context will fetch automatically
     setSuccessMessage('Login successful! Redirecting...');
-    navigate(from, { state: location.state });
-    // Force a reload to let the cart context initialize with DB data
-    window.location.href = from === '/login' ? '/' : from;
+    if (getUserFromToken()?.role === 'admin') {
+      navigate('/admin', { replace: true });
+    } else {
+      navigate(from, { state: location.state });
+      window.location.href = from === '/login' ? '/' : from;
+    }
   };
 
   return (
@@ -191,7 +197,7 @@ const Login = () => {
             className="absolute inset-0"
           >
             <img
-              src={carouselSlides[currentSlide].image}
+              src={getCarouselSlides()[currentSlide].image}
               alt="Fashion"
               className="w-full h-full object-contain"
             />
@@ -206,7 +212,7 @@ const Login = () => {
             animate={{ opacity: 1, y: 0 }}
             className="font-display text-2xl md:text-4xl text-white mb-2"
           >
-            {carouselSlides[currentSlide].title}
+            {getCarouselSlides()[currentSlide].title}
           </motion.h2>
           <motion.p
             key={`tag-${currentSlide}`}
@@ -215,12 +221,12 @@ const Login = () => {
             transition={{ delay: 0.2 }}
             className="text-white/70 text-sm md:text-base"
           >
-            {carouselSlides[currentSlide].tagline}
+            {getCarouselSlides()[currentSlide].tagline}
           </motion.p>
 
           {/* Navigation dots */}
           <div className="flex gap-2 mt-4">
-            {carouselSlides.map((_, i) => (
+            {getCarouselSlides().map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrentSlide(i)}
@@ -257,15 +263,15 @@ const Login = () => {
             </div>
 
             <a href="/" className="pt-4 text-black rounded-full inline-block text-center">
-              <p className="font-bold">Home</p>
+              <p className="font-bold">{t('common.home')}</p>
             </a>
 
             {/* Header */}
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Welcome Back to PHT!
+                {t('auth.welcomeBackTitle')}
               </h1>
-              <p className="text-gray-500 text-sm">Sign in your account</p>
+              <p className="text-gray-500 text-sm">{t('auth.signInAccount')}</p>
             </div>
 
             {/* Form */}
@@ -273,7 +279,7 @@ const Login = () => {
               {/* Email Input */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2 text-left">
-                  Your Email*
+                  {t('auth.email')}*
                 </label>
                 <input
                   id="email"
@@ -281,7 +287,7 @@ const Login = () => {
                   type="email"
                   value={form.email}
                   onChange={handleChange}
-                  placeholder="info.madhu786@gmail.com"
+                  placeholder={t('auth.enterEmail')}
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                 />
@@ -290,7 +296,7 @@ const Login = () => {
               {/* Password Input */}
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2 text-left">
-                  Password*
+                  {t('auth.password')}*
                 </label>
                 <div className="relative">
                   <input
@@ -332,10 +338,10 @@ const Login = () => {
                     onChange={(e) => setRememberMe(e.target.checked)}
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
-                  <span className="ml-2 text-sm text-gray-700">Remember Me</span>
+                  <span className="ml-2 text-sm text-gray-700">{t('auth.rememberMe')}</span>
                 </label>
                 <a href="/forgot-password" className="text-sm text-gray-500 hover:text-gray-700">
-                  Forgot Password?
+                  {t('auth.forgotPassword')}
                 </a>
               </div>
 
@@ -345,7 +351,7 @@ const Login = () => {
                 disabled={loading}
                 className="w-full py-3 bg-black text-white rounded-full font-medium hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                {loading ? 'Logging in...' : 'Login'}
+                {loading ? t('auth.loggingIn') : t('auth.loginBtn')}
               </button>
 
               {/* Error & Success Messages */}
@@ -366,7 +372,7 @@ const Login = () => {
                   <div className="w-full border-t border-gray-200"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-500">Instant Login</span>
+                  <span className="px-4 bg-white text-gray-500">{t('auth.instantLogin')}</span>
                 </div>
               </div>
 
@@ -382,7 +388,7 @@ const Login = () => {
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                   </svg>
-                  <span className="text-sm font-medium text-gray-700">Continue with Google</span>
+                  <span className="text-sm font-medium text-gray-700">{t('auth.google')}</span>
                 </button>
 
                 <button
@@ -392,16 +398,16 @@ const Login = () => {
                   <svg className="w-5 h-5" fill="#1877F2" viewBox="0 0 24 24">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                   </svg>
-                  <span className="text-sm font-medium text-gray-700">Continue with Facebook</span>
+                  <span className="text-sm font-medium text-gray-700">{t('auth.facebook')}</span>
                 </button>
               </div>
             </form>
 
             {/* Sign Up Link */}
             <p className="text-center mt-8 text-sm text-gray-600">
-              Don't have any account?{' '}
+              {t('auth.dontHaveAccount')}{' '}
               <a href="/signup" className="text-blue-600 font-medium hover:underline">
-                Register
+                {t('auth.register')}
               </a>
             </p>
           </div>

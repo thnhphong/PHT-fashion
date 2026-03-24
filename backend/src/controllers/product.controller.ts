@@ -2,9 +2,9 @@
 import type { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import { IProduct } from '../models/Product';
-import productService from '../services/product.service';
 import { uploadImage } from '../config/cloudinary';
 import { parsePaginationParams } from '../utils/pagination';
+import productService from '../services/product.service';
 
 type UploadedFile = { path: string };
 type UploadedFileRecord = Record<string, UploadedFile[]>;
@@ -162,4 +162,15 @@ const deleteProduct = async (req: Request, res: Response) => {
   }
 };
 
-export { createProduct, getProducts, getFeaturedProducts, getProductById, updateProduct, deleteProduct };
+const getBestSellers = async (req: Request, res: Response) => {
+  try {
+    const paginationParams = parsePaginationParams(req.query);
+    const result = await productService.getBestSellers(paginationParams);
+    return res.json(result);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Unable to fetch best sellers', error });
+  }
+};
+
+export { createProduct, getProducts, getFeaturedProducts, getProductById, updateProduct, deleteProduct, getBestSellers };

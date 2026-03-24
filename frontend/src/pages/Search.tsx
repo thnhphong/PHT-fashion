@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { apiUrl } from '../utils/api';
 import { Star } from 'lucide-react';
@@ -9,6 +10,7 @@ const formatPrice = (value: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 
 const Search = () => {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const query = searchParams.get('q') || '';
@@ -78,16 +80,16 @@ const Search = () => {
       <div className="max-w-6xl mx-auto space-y-8 px-4 sm:px-6 lg:px-8">
         <header className="space-y-4">
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.6em]">
-            <span className="text-[#FF1744]">Search</span>
+            <span className="text-[#FF1744]">{t('common.search')}</span>
             <span className="text-gray-400">/</span>
-            <span className="font-semibold text-[#1a1a1a]">Results</span>
+            <span className="font-semibold text-[#1a1a1a]">{t('products.searchResults')}</span>
           </div>
           <div className="space-y-2">
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
-              {query ? `Search results for "${query}"` : 'Search products'}
+              {query ? t('products.searchResultsFor', { query }) : t('search.searchProducts')}
             </h1>
             <p className="text-sm text-gray-600">
-              {totalProducts} {totalProducts === 1 ? 'product' : 'products'} found
+              {totalProducts} {totalProducts === 1 ? t('products.productFound') : t('products.productsFound')}
             </p>
           </div>
           <form onSubmit={handleSearchSubmit} className="flex gap-2">
@@ -95,14 +97,14 @@ const Search = () => {
               type="text"
               value={localQuery}
               onChange={(event) => setLocalQuery(event.target.value)}
-              placeholder="Search by name, brand, color..."
+              placeholder={t('search.placeholder')}
               className="flex-1 rounded-full border border-gray-200 bg-white px-4 py-2 shadow-sm focus:border-orange-500 focus:outline-none"
             />
             <button
               type="submit"
               className="rounded-full bg-[#1a1a1a] px-6 py-2 text-sm font-semibold text-white transition hover:bg-black"
             >
-              Search
+              {t('common.search')}
             </button>
           </form>
         </header>
@@ -186,8 +188,8 @@ const Search = () => {
           </div>
         ) : (
           <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center shadow-sm">
-            <p className="text-lg font-semibold text-gray-900">No products found</p>
-            <p className="text-sm text-gray-500">Try another search term to discover what you need.</p>
+            <p className="text-lg font-semibold text-gray-900">{t('products.noProducts')}</p>
+            <p className="text-sm text-gray-500">{t('search.tryAnotherTerm')}</p>
           </div>
         )}
       </div>

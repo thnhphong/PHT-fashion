@@ -1,9 +1,12 @@
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import heroModel from '../../assets/images/hero-model.jpg'
 import ExploreNow from "../buttons/ExploreNow"
 import ViewLookBook from "../buttons/ViewLookBook"
 
 const HeroSection = () => {
+  const { t } = useTranslation()
+
   return (
     <div className="flex justify-between items-center w-full h-screen px-20 mt-12">
       <div className="max-w-2xl text-left">
@@ -14,7 +17,7 @@ const HeroSection = () => {
             transition={{ delay: 0.3, duration: 0.6 }}
             className="font-display text-5xl sm:text-6xl lg:text-7xl xl:text-8xl leading-none"
           >
-            The Ultimate
+            {t('hero.theUltimate')}
           </motion.h1>
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
@@ -22,7 +25,7 @@ const HeroSection = () => {
             transition={{ delay: 0.4, duration: 0.6 }}
             className="font-serif text-red-500 italic text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-primary"
           >
-            Fashion Playground
+            {t('hero.fashionPlayground')}
           </motion.h1>
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
@@ -30,7 +33,7 @@ const HeroSection = () => {
             transition={{ delay: 0.5, duration: 0.6 }}
             className="font-display text-5xl sm:text-6xl lg:text-7xl xl:text-8xl leading-none"
           >
-            for Fashion Lovers
+            {t('hero.forFashionLovers')}
           </motion.h1>
           </div>
         <motion.p
@@ -39,11 +42,11 @@ const HeroSection = () => {
           transition={{ delay: 0.6 }}
           className="text-lg text-muted-foreground max-w-md"
         >
-        Discover a diverse range of clothing styles that lets you express your individuality and embrace confidence.
+        {t('hero.discover')}
         </motion.p>
         <div className="flex gap-4 mt-2">
-          <ExploreNow text="Explore Now"/>
-          <ViewLookBook text="View Lookbook"/>
+          <ExploreNow text={t('hero.exploreNow')}/>
+          <ViewLookBook text={t('hero.viewLookbook')}/>
         </div>
         <motion.div
           initial={{ opacity: 0 }}
@@ -54,15 +57,15 @@ const HeroSection = () => {
         <div className="flex gap-6 mt-10">
           <div className="flex flex-col">
             <h1 className="text-4xl font-bold text-orange-500">200+</h1>
-            <p className="text-sm text-gray-500">Collections</p>
+            <p className="text-sm text-gray-500">{t('hero.collections')}</p>
           </div>
           <div className="flex flex-col">
             <h1 className="text-4xl font-bold text-orange-500">50K+</h1>
-            <p className="text-sm text-gray-500">Happy Customers</p>
+            <p className="text-sm text-gray-500">{t('hero.happyCustomers')}</p>
           </div>
           <div className="flex flex-col">
             <h1 className="text-4xl font-bold text-orange-500">4.9</h1>
-            <p className="text-sm text-gray-500">Rating</p>
+            <p className="text-sm text-gray-500">{t('hero.rating')}</p>
           </div>
         </div>
         </motion.div>

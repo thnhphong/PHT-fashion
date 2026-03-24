@@ -11,7 +11,9 @@ export interface SocketUser {
 export const initSocket = (httpServer: HttpServer): Server => {
   const origins = [
     'http://localhost:5173',
+    'http://localhost:5175',
     'http://127.0.0.1:5173',
+    'http://127.0.0.1:5175',
     process.env.FRONTEND_URL,
     process.env.FRONTEND_URL_2,
   ].filter((o): o is string => Boolean(o));
@@ -20,6 +22,7 @@ export const initSocket = (httpServer: HttpServer): Server => {
     cors: {
       origin: origins.length > 0 ? origins : true,
       methods: ['GET', 'POST'],
+      credentials: true,
     },
   });
 

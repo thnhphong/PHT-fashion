@@ -47,6 +47,9 @@ export const verifyRefreshToken = (token: string): AuthTokenPayload => {
   return verify(token, refreshTokenSecret) as AuthTokenPayload;
 };
 
+// Access token expiry in milliseconds (15 minutes) — used for cookie maxAge
+export const ACCESS_TOKEN_EXPIRY_MS = 15 * 60 * 1000;
+
 // Refresh token expiry in milliseconds (7 days) — used for cookie maxAge and DB expiresAt
 export const REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
 
