@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import type { Product } from '../../types/types';
 import { Button } from './button';
 import { Heart } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useFavorite } from '../../context/useFavorite';
 
 interface ProductCardProps {
@@ -12,11 +13,12 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product }: ProductCardProps) => {
+  const { t, i18n } = useTranslation();
   const { favorites, addFavorite, removeFavorite } = useFavorite();
   const isFavorite = favorites.includes(product._id);
  
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
+    return new Intl.NumberFormat(i18n.language, {
       style: 'currency',
       currency: 'VND',
     }).format(price);
@@ -55,12 +57,12 @@ const ProductCard = ({ product }: ProductCardProps) => {
         {/* Badge */}
         {product.stock === 0 && (
           <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 text-xs font-medium rounded">
-            Sold Out
+            {t('products.outOfStock')}
           </div>
         )}
         {product.stock > 0 && product.stock < 10 && (
           <div className="absolute top-2 left-2 bg-orange-500 text-white px-2 py-1 text-xs font-medium rounded">
-            Low Stock
+            {t('products.lowStock')}
           </div>
         )}
       </div>
@@ -80,7 +82,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         {/* Price */}
         <div className="flex gap-4 items-center justify-between">
           <div className="flex flex-col text-left">
-            <p className="text-xs text-gray-600">Stock: {product.stock}</p>
+            <p className="text-xs text-gray-600">{t('products.stock')}: {product.stock}</p>
             <p className="text-lg font-bold text-orange-500">{formatPrice(product.price)}</p>
           </div>
           <div className="flex items-center gap-2"> 

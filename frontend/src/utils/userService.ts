@@ -19,7 +19,7 @@ export const fetchCurrentUser = async (): Promise<User | null> => {
     const token = getAccessToken();
     if (!token) return null;
 
-    const response = await axios.get<User>(apiUrl('/auth/me'), {
+    const response = await axios.get<User>(apiUrl('/users/me'), {
       headers: {
         Authorization: `Bearer ${token}`,
       },

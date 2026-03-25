@@ -41,10 +41,11 @@ const getCart = async (req, res) => {
         if (!userId)
             return res.status(401).json({ message: 'Unauthorized' });
         const cart = await cartService.getCart(userId);
-        return res.json(cart);
+        return res.json(cart ?? { items: [] });
     }
     catch (error) {
-        return res.status(500).json({ message: error.message || 'Internal server error' });
+        const msg = error instanceof Error ? error.message : 'Internal server error';
+        return res.status(500).json({ message: msg });
     }
 };
 exports.getCart = getCart;

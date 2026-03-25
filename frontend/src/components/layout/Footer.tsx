@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
   Instagram,
   Facebook,
@@ -10,33 +11,6 @@ import {
 } from "lucide-react";
 import { Button } from "../ui/button";
 
-const footerLinks = {
-  about: [
-    { name: "Our Story", href: "#" },
-    { name: "Careers", href: "#" },
-    { name: "Press", href: "#" },
-    { name: "Sustainability", href: "#" },
-  ],
-  quickLinks: [
-    { name: "New Arrivals", href: "#" },
-    { name: "Best Sellers", href: "#" },
-    { name: "Sale", href: "#" },
-    { name: "Lookbook", href: "#" },
-  ],
-  categories: [
-    { name: "T-Shirts", href: "#" },
-    { name: "Hoodies", href: "#" },
-    { name: "Pants", href: "#" },
-    { name: "Accessories", href: "#" },
-  ],
-  support: [
-    { name: "FAQ", href: "#" },
-    { name: "Shipping", href: "#" },
-    { name: "Returns", href: "#" },
-    { name: "Size Guide", href: "#" },
-  ],
-};
-
 const socialLinks = [
   { icon: Instagram, href: "#", label: "Instagram" },
   { icon: Facebook, href: "#", label: "Facebook" },
@@ -44,6 +18,35 @@ const socialLinks = [
 ];
 
 const Footer = () => {
+  const { t } = useTranslation();
+
+  const footerLinks = {
+    about: [
+      { name: t("footer.ourStory"), href: "#" },
+      { name: t("footer.careers"), href: "#" },
+      { name: t("footer.press"), href: "#" },
+      { name: t("footer.sustainability"), href: "#" },
+    ],
+    quickLinks: [
+      { name: t("footer.newArrivals"), href: "#" },
+      { name: t("footer.bestSellers"), href: "/products?type=best-sellers" },
+      { name: t("footer.sale"), href: "#" },
+      { name: t("footer.lookbook"), href: "#" },
+    ],
+    categories: [
+      { name: t("footer.tShirts"), href: "#" },
+      { name: t("footer.hoodies"), href: "#" },
+      { name: t("footer.pants"), href: "#" },
+      { name: t("footer.accessories"), href: "#" },
+    ],
+    support: [
+      { name: t("footer.faq"), href: "#" },
+      { name: t("footer.shipping"), href: "#" },
+      { name: t("footer.returns"), href: "#" },
+      { name: t("footer.sizeGuide"), href: "#" },
+    ],
+  };
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -61,8 +64,7 @@ const Footer = () => {
               </span>
             </a>
             <p className="text-muted-foreground text-sm mb-6 max-w-xs">
-              The ultimate fashion playground for Gen Z. Bold styles,
-              premium quality, unbeatable vibes.
+              {t("footer.brandDescription")}
             </p>
 
             {/* Social Links */}
@@ -82,7 +84,7 @@ const Footer = () => {
 
           {/* Links Columns */}
           <div>
-            <h4 className="font-display text-lg mb-4">About</h4>
+            <h4 className="font-display text-lg mb-4">{t("footer.about")}</h4>
             <ul className="space-y-3">
               {footerLinks.about.map((link) => (
                 <li key={link.name}>
@@ -98,7 +100,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="font-display text-lg mb-4">Quick Links</h4>
+            <h4 className="font-display text-lg mb-4">{t("footer.quickLinks")}</h4>
             <ul className="space-y-3">
               {footerLinks.quickLinks.map((link) => (
                 <li key={link.name}>
@@ -114,7 +116,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="font-display text-lg mb-4">Categories</h4>
+            <h4 className="font-display text-lg mb-4">{t("footer.categories")}</h4>
             <ul className="space-y-3">
               {footerLinks.categories.map((link) => (
                 <li key={link.name}>
@@ -130,7 +132,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="font-display text-lg mb-4">Contact</h4>
+            <h4 className="font-display text-lg mb-4">{t("footer.contact")}</h4>
             <ul className="space-y-3">
               <li className="flex items-start gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
@@ -153,10 +155,10 @@ const Footer = () => {
       <div className="border-t border-border">
         <div className="container-custom py-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex flex-col md:flex-row items-center gap-4 text-sm text-muted-foreground">
-            <p>© 2024 PHT Fashion. All rights reserved.</p>
+            <p>© 2024 PHT Fashion. {t("footer.copyright")}.</p>
             <div className="flex gap-4">
-              <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-primary transition-colors">{t("footer.privacy")}</a>
+              <a href="#" className="hover:text-primary transition-colors">{t("footer.terms")}</a>
             </div>
           </div>
 

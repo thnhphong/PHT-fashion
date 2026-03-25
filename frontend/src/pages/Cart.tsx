@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Trash2, Plus, Minus, ArrowLeft } from 'lucide-react';
 import { formatSizeLabel, shouldShowSizeSelection } from '../utils/sizeUtils';
+import { isAuthenticated } from '../utils/auth';
+import { formatPrice } from '../utils/formatPrice';
 import SearchInput from '../components/common/SearchInput';
 import { useLocation } from 'react-router-dom';
 
 
 
 export default function Cart() {
+  const { t, i18n } = useTranslation();
   const {
     cart,
     updateQuantity,
@@ -80,7 +84,7 @@ export default function Cart() {
 
   const handleRemoveSelected = () => {
     if (!selectedItems.length) return;
-    if (!window.confirm('Remove selected items from cart?')) return;
+    if (!window.confirm(t('cart.confirmRemove'))) return;
     selectedItems.forEach((item) =>
       removeFromCart(item._id, item.selectedSize)
     );
@@ -89,8 +93,7 @@ export default function Cart() {
   const handleProceedToCheckout = () => {
     if (!selectedItems.length) return;
 
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
+    if (!isAuthenticated()) {
       navigate('/login', {
         state: { from: '/checkout', selectedItems },
       });
@@ -120,17 +123,16 @@ export default function Cart() {
             </svg>
           </div>
           <h2 className="mb-3 text-2xl font-semibold tracking-tight text-slate-900">
-            Your cart is empty
+            {t('cart.empty')}
           </h2>
           <p className="mx-auto mb-8 max-w-md text-sm text-slate-600">
-            Explore our latest collections and add your favorite pieces to see them
-            appear here in a beautiful overview.
+            {t('cart.emptyDesc')}
           </p>
           <Link
             to="/products"
             className="inline-flex cursor-pointer items-center justify-center rounded-full bg-orange-500 px-7 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
           >
-            Start shopping
+            {t('cart.startShopping')}
           </Link>
         </div>
       </div>
@@ -146,13 +148,13 @@ export default function Cart() {
         <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">
-              Cart
+              {t('common.cart')}
             </p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-              Your bag, curated in bento
+              {t('cart.yourBag')}
             </h1>
             <p className="mt-1 text-sm text-slate-600">
-              {totalItems} {totalItems === 1 ? 'item' : 'items'} ready to check out.
+              {totalItems} {totalItems === 1 ? t('cart.item') : t('cart.items')} {t('cart.readyToCheckout')}
             </p>
           </div>
 
@@ -162,12 +164,12 @@ export default function Cart() {
           <SearchInput />
           <button
             onClick={() => {
-              if (window.confirm('Clear entire cart?')) clearCart();
+              if (window.confirm(t('cart.confirmClear'))) clearCart();
             }}
             className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-red-100 bg-white/80 px-4 py-2 text-xs font-medium text-red-600 shadow-sm transition-colors duration-200 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
           >
             <Trash2 size={14} />
-            Clear cart
+            {t('cart.clearCart')}
           </button>
         </div>
 
@@ -179,10 +181,10 @@ export default function Cart() {
               <div className="mb-4 flex items-center justify-between gap-4">
                 <div className="flex items-baseline gap-2">
                   <h2 className="text-base font-semibold text-slate-900 sm:text-lg">
-                    Cart items
+                    {t('cart.cartItems')}
                   </h2>
                   <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-                    {displayedTotalItems} {displayedTotalItems === 1 ? 'item' : 'items'} ready to check out.
+                    {displayedTotalItems} {displayedTotalItems === 1 ? t('cart.item') : t('cart.items')} {t('cart.readyToCheckout')}
                   </span>
                 </div>
               </div>
@@ -195,11 +197,11 @@ export default function Cart() {
                     checked={allSelected}
                     onChange={toggleSelectAll}
                   />
-                  <span className="text-left">Product</span>
+                  <span className="text-left">{t('cart.product')}</span>
                 </div>
-                <span className="text-center">Quantity</span>
-                <span className="text-right">Total</span>
-                <span className="text-right">Action</span> 
+                <span className="text-center">{t('cart.quantity')}</span>
+                <span className="text-right">{t('cart.total')}</span>
+                <span className="text-right">{t('cart.action')}</span> 
               </div>
 
               <div className="divide-y divide-slate-100">
@@ -233,7 +235,7 @@ export default function Cart() {
                           {item.name}
                         </h3>
                         <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                          <span>Size</span>
+                          <span>{t('cart.size')}</span>
                             {Array.isArray(item.sizes) && item.sizes.length > 0 && shouldShowSizeSelection(item.categoryName, item.sizes) ? (
                               <select
                                 value={item.selectedSize}
@@ -255,7 +257,7 @@ export default function Cart() {
                                     {formatSizeLabel(size.size)}
                                     {size.stock > 0
                                       ? ` (${size.stock})`
-                                      : ' - Out of stock'}
+                                      : ` - ${t('product.outOfStock')}`}
                                   </option>
                                 ))}
                               </select>
@@ -332,19 +334,19 @@ export default function Cart() {
                     <div className="mt-1 flex items-center justify-between sm:mt-0 sm:justify-end">
                       <div className="text-right">
                         <p className="text-sm font-semibold text-orange-600">
-                          {(item.price * item.quantity).toLocaleString()} VND
+                          {formatPrice(item.price * item.quantity, i18n.language)}
                         </p>
                         <p className="text-[11px] text-slate-500">
-                          {item.price.toLocaleString()} VND / item
+                          {formatPrice(item.price, i18n.language)} / {t('cart.item')}
                         </p>
                       </div>
                     </div>
                       <button
                       onClick={() => removeFromCart(item._id, item.selectedSize)}
                       className="inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-slate-400 transition-colors duration-200 hover:text-red-500 justify-end"
-                      title="Remove item"
+                      title={t('cart.remove')}
                     >
-                      Remove
+                      {t('cart.remove')}
                     </button> 
                   </div>
                   );
@@ -356,27 +358,25 @@ export default function Cart() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-3xl border border-slate-200/70 bg-white/80 p-4 shadow-sm shadow-slate-200/70 backdrop-blur-xl">
                 <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Delivery
+                  {t('cart.delivery')}
                 </p>
                 <h3 className="text-sm font-semibold text-slate-900">
-                  Free shipping unlocks at checkout
+                  {t('cart.freeShippingUnlock')}
                 </h3>
                 <p className="mt-1 text-xs text-slate-600">
-                  Shipping fees are calculated based on your address and applied in
-                  the next step.
+                  {t('cart.shippingFeesInfo')}
                 </p>
               </div>
 
               <div className="rounded-3xl border border-dashed border-orange-200 bg-gradient-to-br from-orange-50/80 via-white to-amber-50/80 p-4 shadow-sm shadow-orange-100/70 backdrop-blur-xl">
                 <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">
-                  Voucher
+                  {t('cart.voucher')}
                 </p>
                 <h3 className="text-sm font-semibold text-slate-900">
-                  Apply coupons at checkout
+                  {t('cart.applyCoupons')}
                 </h3>
                 <p className="mt-1 text-xs text-slate-600">
-                  You can enter promo codes and view available shop vouchers in
-                  the payment step.
+                  {t('cart.promoCodesInfo')}
                 </p>
               </div>
             </div>
@@ -397,8 +397,8 @@ export default function Cart() {
                 onChange={toggleSelectAll}
               />
               <span>
-                Select all ({cart.length}{' '}
-                {cart.length === 1 ? 'item' : 'items'})
+                {t('cart.selectAll')} ({cart.length}{' '}
+                {cart.length === 1 ? t('cart.item') : t('cart.items')})
               </span>
             </label>
             <button
@@ -406,7 +406,7 @@ export default function Cart() {
               onClick={handleRemoveSelected}
               className="text-red-500 hover:text-red-600 font-medium"
             >
-              Remove selected
+              {t('cart.removeSelected')}
             </button>
             <button
               type="button"
@@ -414,17 +414,17 @@ export default function Cart() {
               className="hidden text-slate-500 hover:text-slate-700 sm:inline-flex items-center gap-1"
             >
               <ArrowLeft size={14} />
-              Continue shopping
+              {t('cart.continueShopping')}
             </button>
           </div>
 
           <div className="flex flex-wrap items-center gap-4">
             <div className="text-right">
               <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                Total ({displayedTotalItems} {displayedTotalItems === 1 ? 'item' : 'items'})
+                {t('cart.total')} ({displayedTotalItems} {displayedTotalItems === 1 ? t('cart.item') : t('cart.items')})
               </p>
               <p className="text-lg font-semibold text-orange-600 sm:text-xl">
-                {displayedSubtotal.toLocaleString()} VND
+                {formatPrice(displayedSubtotal, i18n.language)}
               </p>
             </div>
             <button
@@ -433,7 +433,7 @@ export default function Cart() {
               disabled={!selectedItems.length}
               className="inline-flex min-w-[160px] cursor-pointer items-center justify-center rounded-full bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-orange-200 transition-colors duration-200 hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Proceed to checkout
+              {t('cart.proceedToCheckout')}
             </button>
           </div>
         </div>

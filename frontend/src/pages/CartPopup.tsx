@@ -1,10 +1,12 @@
-// src/components/cart/CartPopup.tsx
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
-import { X, Plus, Minus } from 'lucide-react';
+import { X, Plus, Minus, ShoppingBag } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { formatPrice } from '../utils/formatPrice';
 import { formatSizeLabel } from '../utils/sizeUtils';
 
 export default function CartPopup() {
+  const { t, i18n } = useTranslation();
   const {
     cart,
     showCartPopup,
@@ -28,8 +30,9 @@ export default function CartPopup() {
       {/* Popup */}
       <div className="fixed right-4 bottom-4 sm:right-8 sm:bottom-8 w-[80%] max-w-sm sm:max-w-md bg-white rounded-xl shadow-2xl z-50 overflow-hidden border border-gray-200 backdrop-blur-sm">
         <div className="p-5 border-b flex items-center justify-between bg-gradient-to-r from-orange-50 to-white">
-          <h3 className="font-semibold text-lg text-gray-900">
-            Cart ({getTotalItems()})
+          <h3 className="font-semibold text-lg text-gray-900 flex items-center gap-2">
+            <ShoppingBag size={18} className="text-orange-500" />
+            {t('common.cart')} ({getTotalItems()})
           </h3>
           <button
             onClick={() => setShowCartPopup(false)}
@@ -54,7 +57,7 @@ export default function CartPopup() {
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-gray-900 line-clamp-2">{item.name}</h4>
                 <p className="text-sm text-gray-600 mt-0.5">
-                  Size: {formatSizeLabel(item.selectedSize)} · {item.price.toLocaleString()} VND
+                  {t('cart.size')}: {formatSizeLabel(item.selectedSize)} · {formatPrice(item.price, i18n.language)}
                 </p>
 
                 <div className="flex items-center gap-4 mt-2">
@@ -78,9 +81,9 @@ export default function CartPopup() {
 
                   <button
                     onClick={() => removeFromCart(item._id, item.selectedSize)}
-                    className="text-red-600 hover:text-red-800 text-sm font-medium"
+                    className="text-red-600 hover:text-red-800 text-sm font-medium transition-colors"
                   >
-                    Remove
+                    {t('cart.remove')}
                   </button>
                 </div>
               </div>
@@ -90,9 +93,9 @@ export default function CartPopup() {
 
         <div className="p-5 border-t bg-gray-50">
           <div className="flex justify-between items-center mb-4">
-            <span className="font-semibold text-gray-900">Total:</span>
+            <span className="font-semibold text-gray-900">{t('cart.total')}:</span>
             <span className="text-xl font-bold text-orange-600">
-              {getCartTotal().toLocaleString()} VND
+              {formatPrice(getCartTotal(), i18n.language)}
             </span>
           </div>
 
@@ -102,13 +105,14 @@ export default function CartPopup() {
               onClick={() => setShowCartPopup(false)}
               className="py-2 px-4 border border-orange-500 text-orange-600 rounded-lg font-medium text-center hover:bg-orange-50 transition-colors"
             >
-              View Cart
+              {t('cart.viewCart')}
             </Link>
             <Link
               to="/checkout"
+              onClick={() => setShowCartPopup(false)}
               className="py-2 px-4 bg-orange-500 text-white rounded-lg font-semibold text-center hover:bg-orange-600 transition-colors"
             >
-              Checkout
+              {t('cart.checkout')}
             </Link>
           </div>
         </div>

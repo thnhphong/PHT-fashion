@@ -1,0 +1,17 @@
+--- src/routes/product.route.ts
++++ src/routes/product.route.ts
+@@ -1,5 +1,5 @@
+ import { Router } from 'express';
+-import { createProduct, getProducts, getProductById, updateProduct, deleteProduct, getProductFilters } from '../controllers/product.controller';
++import { createProduct, getProducts, getProductById, updateProduct, deleteProduct, getBrandsAndCategories } from '../controllers/product.controller';
+ import { authenticate, authorize } from '../middlewares/auth.middleware';
+ 
+ const router = Router();
+@@ -15,7 +15,7 @@
+ router.put('/:id', authenticate, authorize(['admin']), updateProduct);
+ router.delete('/:id', authenticate, authorize(['admin']), deleteProduct);
+ 
+-router.get('/filters', getProductFilters);
++router.get('/filters/all', getBrandsAndCategories);
+ 
+ export default router;

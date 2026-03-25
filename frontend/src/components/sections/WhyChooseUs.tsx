@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
   Award,
   RefreshCw,
@@ -8,46 +9,48 @@ import {
   Leaf
 } from "lucide-react";
 
-const features = [
-  {
-    icon: Award,
-    title: "Top-Notch Craftsmanship",
-    description: "Every piece is carefully crafted with attention to detail and premium materials.",
-    bgClass: "bg-background",
-  },
-  {
-    icon: RefreshCw,
-    title: "Easy Return & Exchange",
-    description: "Hassle-free 30-day returns. If it doesn't fit, we've got you covered.",
-    bgClass: "bg-muted/30",
-  },
-  {
-    icon: Tag,
-    title: "Affordable, Meets Quality",
-    description: "Premium streetwear without the premium price tag. Style for everyone.",
-    bgClass: "bg-background",
-  },
-  {
-    icon: Shield,
-    title: "Satisfaction Guaranteed",
-    description: "We stand behind every product. Your satisfaction is our priority.",
-    bgClass: "bg-muted/30",
-  },
-  {
-    icon: Lightbulb,
-    title: "Innovative Designs",
-    description: "Fresh drops every month. Stay ahead with our cutting-edge styles.",
-    bgClass: "bg-background",
-  },
-  {
-    icon: Leaf,
-    title: "Eco-Friendly & Versatile",
-    description: "Sustainable fashion that's good for you and the planet.",
-    bgClass: "bg-muted/30",
-  },
-];
-
 const WhyChooseUs = () => {
+  const { t } = useTranslation();
+
+  const features = [
+    {
+      icon: Award,
+      title: t('whyChooseUs.craftsmanship'),
+      description: t('whyChooseUs.craftsmanshipDesc'),
+      bgClass: "bg-background",
+    },
+    {
+      icon: RefreshCw,
+      title: t('whyChooseUs.easyReturns'),
+      description: t('whyChooseUs.easyReturnsDesc'),
+      bgClass: "bg-muted/30",
+    },
+    {
+      icon: Tag,
+      title: t('whyChooseUs.affordable'),
+      description: t('whyChooseUs.affordableDesc'),
+      bgClass: "bg-background",
+    },
+    {
+      icon: Shield,
+      title: t('whyChooseUs.guaranteed'),
+      description: t('whyChooseUs.guaranteedDesc'),
+      bgClass: "bg-muted/30",
+    },
+    {
+      icon: Lightbulb,
+      title: t('whyChooseUs.innovative'),
+      description: t('whyChooseUs.innovativeDesc'),
+      bgClass: "bg-background",
+    },
+    {
+      icon: Leaf,
+      title: t('whyChooseUs.ecoFriendly'),
+      description: t('whyChooseUs.ecoFriendlyDesc'),
+      bgClass: "bg-muted/30",
+    },
+  ];
+
   return (
     <section className="section-padding bg-background">
       <div className="container-custom">
@@ -59,14 +62,13 @@ const WhyChooseUs = () => {
           className="text-center mb-12"
         >
           <span className="text-primary font-medium text-sm uppercase tracking-wider">
-            Why PHT Fashion?
+            {t('whyChooseUs.subtitle')}
           </span>
           <h2 className="font-display text-4xl md:text-5xl lg:text-6xl mt-2">
-            Why Choose Us
+            {t('whyChooseUs.title')}
           </h2>
           <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
-            We're not just selling clothes – we're building a community of
-            confident, style-conscious individuals.
+            {t('whyChooseUs.community')}
           </p>
         </motion.div>
 

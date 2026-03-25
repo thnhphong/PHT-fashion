@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { apiUrl } from '../utils/api';
 import { Button } from '../components/ui/button';
@@ -13,6 +14,7 @@ const formatPrice = (price: number) =>
   }).format(price);
 
 export default function Favorite() {
+  const { t } = useTranslation();
   const { favorites, removeFavorite } = useFavorite();
   const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([]);
   useEffect(() => {
@@ -46,10 +48,10 @@ export default function Favorite() {
 
   const getCategoryName = (product: Product) => {
     if (!product?.categoryId) {
-      return 'Category';
+      return t('common.category');
     }
     if (typeof product.categoryId === 'string') {
-      return 'Category';
+      return t('common.category');
     }
     return product.categoryId.name;
   };
@@ -58,23 +60,23 @@ export default function Favorite() {
     <section className="min-h-screen bg-gray-50 py-16">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-10">
-          <h1 className="text-3xl font-bold text-gray-900">Favorites</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('favorite.title')}</h1>
           <Link
             to="/"
             className="text-sm font-medium text-orange-500 hover:text-orange-600 underline-offset-2 underline"
           >
-            Continue browsing
+            {t('favorite.continueBrowsing')}
           </Link>
         </div>
 
         {favoriteProducts.length === 0 ? (
           <div className="rounded-xl bg-white border border-gray-100 shadow-sm p-10 text-center">
             <p className="text-lg text-gray-600 mb-4">
-              You haven&apos;t marked any products as favorites yet.
+              {t('favorite.empty')}
             </p>
             <Link to="/">
               <Button variant="outline" size="lg" className="mx-auto">
-                Browse products
+                {t('favorite.browseProducts')}
               </Button>
             </Link>
           </div>
@@ -113,10 +115,10 @@ export default function Favorite() {
                     size="sm"
                     onClick={() => removeFavorite(product._id)}
                   >
-                    Remove
+                    {t('favorite.remove')}
                   </Button>
                   <Button asChild variant="outline" size="sm" className="flex-1">
-                    <Link to={`/product-detail/${product._id}`}>View</Link>
+                    <Link to={`/product-detail/${product._id}`}>{t('common.view')}</Link>
                   </Button>
                 </div>
               </article>

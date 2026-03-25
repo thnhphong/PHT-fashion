@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyAuthToken = exports.signAuthToken = exports.REFRESH_TOKEN_EXPIRY_MS = exports.verifyRefreshToken = exports.verifyToken = exports.signResetPasswordToken = exports.signRefreshToken = exports.signAccessToken = void 0;
+exports.verifyAuthToken = exports.signAuthToken = exports.REFRESH_TOKEN_EXPIRY_MS = exports.ACCESS_TOKEN_EXPIRY_MS = exports.verifyRefreshToken = exports.verifyToken = exports.signResetPasswordToken = exports.signRefreshToken = exports.signAccessToken = void 0;
 const jsonwebtoken_1 = require("jsonwebtoken");
 const env_1 = require("./env");
 const jwtSecret = env_1.env.jwtSecret;
@@ -39,6 +39,8 @@ const verifyRefreshToken = (token) => {
     return (0, jsonwebtoken_1.verify)(token, refreshTokenSecret);
 };
 exports.verifyRefreshToken = verifyRefreshToken;
+// Access token expiry in milliseconds (15 minutes) — used for cookie maxAge
+exports.ACCESS_TOKEN_EXPIRY_MS = 15 * 60 * 1000;
 // Refresh token expiry in milliseconds (7 days) — used for cookie maxAge and DB expiresAt
 exports.REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
 // Kept for backward compatibility

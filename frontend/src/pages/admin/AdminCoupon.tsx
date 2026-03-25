@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
+import { getAccessToken } from '../../utils/auth';
 import { Button } from '../../components/ui/button';
 import { apiUrl } from '../../utils/api';
+import { useTranslation } from 'react-i18next';
 
 type Coupon = {
   _id: string;
@@ -12,8 +14,8 @@ type Coupon = {
   created_at?: string;
 };
 
-const formatDate = (value: string) =>
-  new Intl.DateTimeFormat('vi-VN', {
+const formatDate = (value: string, locale: string) =>
+  new Intl.DateTimeFormat(locale === 'vi' ? 'vi-VN' : 'en-US', {
     dateStyle: 'long',
   }).format(new Date(value));
 
@@ -26,6 +28,7 @@ const INITIAL_FORM = {
 };
 
 export default function AdminCoupon() {
+  const { t, i18n } = useTranslation();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [form, setForm] = useState(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
@@ -36,9 +39,9 @@ export default function AdminCoupon() {
   const loadCoupons = async () => {
     setLoading(true);
     setError('');
-    const token = localStorage.getItem('accessToken');
+    const token = getAccessToken();
     if (!token) {
-      setError('Missing admin session');
+      setError(t('common.error'));
       setLoading(false);
       return;
     }
@@ -50,7 +53,7 @@ export default function AdminCoupon() {
       setCoupons(data.coupons ?? []);
     } catch (err) {
       console.error(err);
-      setError('Unable to load coupons');
+      setError(t('admin.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -65,9 +68,9 @@ export default function AdminCoupon() {
     setSubmitting(true);
     setError('');
     setSuccess('');
-    const token = localStorage.getItem('accessToken');
+    const token = getAccessToken();
     if (!token) {
-      setError('Missing admin session');
+      setError(t('common.error'));
       setSubmitting(false);
       return;
     }
@@ -88,14 +91,14 @@ export default function AdminCoupon() {
       });
       const body = await response.json();
       if (!response.ok) {
-        throw new Error(body.message ?? 'Unable to create coupon');
+        throw new Error(body.message ?? t('admin.saveFailed'));
       }
-      setSuccess('Coupon created');
+      setSuccess(t('admin.saveSuccess'));
       setForm(INITIAL_FORM);
       loadCoupons();
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : 'Unable to create coupon');
+      setError(err instanceof Error ? err.message : t('admin.saveFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -108,22 +111,22 @@ export default function AdminCoupon() {
       <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.6em] text-orange-500">Coupons</p>
-            <h2 className="text-2xl font-semibold">Manage discount codes</h2>
+            <p className="text-xs uppercase tracking-[0.6em] text-orange-500">{t('admin.coupons')}</p>
+            <h2 className="text-2xl font-semibold">{t('admin.manageDiscountCodes')}</h2>
           </div>
-          <p className="text-sm text-gray-500">{subtotal} active coupons</p>
+          <p className="text-sm text-gray-500">{t('admin.activeCoupons', { count: subtotal })}</p>
         </div>
         <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
           <input
             required
-            placeholder="Name"
+            placeholder={t('profile.name')}
             value={form.name}
             onChange={(event) => setForm({ ...form, name: event.target.value })}
             className="rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500"
           />
           <input
             required
-            placeholder="Code (uppercase)"
+            placeholder={t('checkout.couponCode')}
             value={form.code}
             onChange={(event) => setForm({ ...form, code: event.target.value })}
             className="rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500"
@@ -133,7 +136,7 @@ export default function AdminCoupon() {
             type="number"
             min={0}
             max={100}
-            placeholder="Discount (%)"
+            placeholder={`${t('admin.discount')} (%)`}
             value={form.discount}
             onChange={(event) => setForm({ ...form, discount: event.target.value })}
             className="rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500"
@@ -143,7 +146,7 @@ export default function AdminCoupon() {
             type="number"
             min={0}
             max={100}
-            placeholder="Count"
+            placeholder={t('admin.count')}
             value={form.count}
             onChange={(event) => setForm({ ...form, count: event.target.value })}
             className="rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500"
@@ -157,7 +160,7 @@ export default function AdminCoupon() {
           />
           <div className="sm:col-span-2 flex justify-end">
             <Button type="submit" disabled={submitting} variant="default">
-              {submitting ? 'Saving...' : 'Create coupon'}
+              {submitting ? t('admin.saving') : t('admin.createCoupon')}
             </Button>
           </div>
           {error && (
@@ -169,20 +172,20 @@ export default function AdminCoupon() {
         </form>
       </section>
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm divide-y divide-gray-100">
-        <h3 className="text-xl font-semibold mb-4">All Coupons</h3>
+        <h3 className="text-xl font-semibold mb-4">{t('admin.allCoupons')}</h3>
         {loading ? (
-          <p className="text-sm text-gray-500">Loading...</p>
+          <p className="text-sm text-gray-500">{t('admin.loading')}...</p>
         ) : coupons.length === 0 ? (
-          <p className="text-sm text-gray-500">No coupons created yet.</p>
+          <p className="text-sm text-gray-500">{t('admin.noCoupons')}</p>
         ) : (
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="text-xs uppercase tracking-[0.3em] text-gray-500">
-                <th className="py-2">Name</th>
-                <th className="py-2">Code</th>
-                <th className="py-2">Discount</th>
-                <th className="py-2">Count</th>
-                <th className="py-2">Expires</th>
+                <th className="py-2">{t('admin.productName')}</th>
+                <th className="py-2">{t('checkout.couponCode')}</th>
+                <th className="py-2">{t('admin.discount')}</th>
+                <th className="py-2">{t('admin.count')}</th>
+                <th className="py-2">{t('admin.expires')}</th>
               </tr>
             </thead>
             <tbody>
@@ -192,7 +195,7 @@ export default function AdminCoupon() {
                   <td className="py-3 text-gray-500">{coupon.code}</td>
                   <td className="py-3 text-gray-900">{coupon.discount}%</td>
                   <td className="py-3 text-gray-900">{coupon.count} / 100</td>
-                  <td className="py-3 text-gray-500">{formatDate(coupon.expiration_date.toString())}</td>
+                  <td className="py-3 text-gray-500">{formatDate(coupon.expiration_date.toString(), i18n.language)}</td>
                 </tr>
               ))}
             </tbody>

@@ -21,6 +21,7 @@ const imageFields = [
 // Public routes
 router.get('/', product_controller_1.getProducts);
 router.get('/featured', product_controller_1.getFeaturedProducts);
+router.get('/best-sellers', product_controller_1.getBestSellers);
 router.get('/:id', product_controller_1.getProductById);
 // Admin routes (should be protected with auth middleware later)
 router.post('/', auth_middleware_1.authenticate, role_middleware_1.requireAdminEmail, upload.fields(imageFields), product_controller_1.createProduct);

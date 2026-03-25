@@ -40,8 +40,7 @@ const CartSchema = new mongoose_1.Schema({
 }, {
     versionKey: false,
 });
-CartSchema.pre('save', function (next) {
+CartSchema.pre('save', function () {
     this.updatedAt = new Date();
-    next();
 });
 exports.default = (0, mongoose_1.model)('Cart', CartSchema);

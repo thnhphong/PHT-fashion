@@ -1,5 +1,10 @@
 import { apiUrl } from './api';
 
+const getCookie = (name: string): string | null => {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? match[2] : null;
+};
+
 export const refreshAccessToken = async (): Promise<string | null> => {
   try {
     const response = await fetch(apiUrl('/auth/refresh-token'), {
@@ -11,14 +16,8 @@ export const refreshAccessToken = async (): Promise<string | null> => {
       return null;
     }
 
-    const data = await response.json();
-    const refreshedToken = data?.accessToken;
-    if (refreshedToken) {
-      localStorage.setItem('accessToken', refreshedToken);
-      return refreshedToken;
-    }
-
-    return null;
+    // Token is now in cookie, just return the cookie value
+    return getCookie('accessToken');
   } catch {
     return null;
   }
@@ -53,17 +52,17 @@ export const decodeToken = (token: string): JWTPayload | null => {
 };
 
 /**
- * Get access token from localStorage
+ * Get access token from cookie (httpOnly)
  */
 export const getAccessToken = (): string | null => {
-  return localStorage.getItem('accessToken');
+  return getCookie('accessToken');
 };
 
 /**
- * Get refresh token from localStorage
+ * Get refresh token from cookie (httpOnly)
  */
 export const getRefreshToken = (): string | null => {
-  return localStorage.getItem('refreshToken');
+  return getCookie('refreshToken');
 };
 
 /**
@@ -95,14 +94,20 @@ export const getUserFromToken = (): JWTPayload | null => {
 };
 
 /**
- * Clear all auth tokens from localStorage
+ * Clear all auth tokens from cookies and localStorage
  */
 export const logOut = (): void => {
+  // Clear cookies
+  document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+  document.cookie = 'refreshToken=; path=/api/auth; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+
+  // Clear localStorage
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
   localStorage.removeItem('user');
   localStorage.removeItem('userRole');
   localStorage.removeItem('userName');
+  localStorage.removeItem('isLoggedIn');
   
   // Also clear fashion related guest data
   localStorage.removeItem('pht_cart');
@@ -114,18 +119,33 @@ export const logOut = (): void => {
 };
 
 /**
- * Check if user is authenticated
+ * Check if user is authenticated (by checking login flag in localStorage)
+ * Note: Actual token is in httpOnly cookie, not accessible by JS
  */
 export const isAuthenticated = (): boolean => {
-  const token = getAccessToken();
-  return token !== null && !isTokenExpired(token);
+  return localStorage.getItem('isLoggedIn') === 'true';
+};
+
+/**
+ * Set login flag (called after successful login)
+ * This indicates user has valid tokens in cookies
+ */
+export const setLoginFlag = (): void => {
+  localStorage.setItem('isLoggedIn', 'true');
+  window.dispatchEvent(new CustomEvent('auth-token-set'));
+};
+
+/**
+ * Clear login flag (called on logout)
+ */
+export const clearLoginFlag = (): void => {
+  localStorage.removeItem('isLoggedIn');
 };
 
 /**
  * Set tokens in localStorage (called after login/register)
+ * Kept for backward compatibility but now just sets login flag
  */
-export const setTokens = (accessToken: string, refreshToken: string): void => {
-  localStorage.setItem('accessToken', accessToken);
-  localStorage.setItem('refreshToken', refreshToken);
-  window.dispatchEvent(new CustomEvent('auth-token-set'));
+export const setTokens = (_accessToken: string, _refreshToken: string): void => {
+  setLoginFlag();
 };

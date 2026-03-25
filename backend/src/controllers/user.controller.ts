@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createUser, findUserByEmail, findUserById, getAllUsers, updateUser, deleteUser } from '../services/user.service';
+import { createUser, findUserByEmail, findUserById, getAllUsers, updateUser, deleteUser, findUserByIdWithPassword } from '../services/user.service';
 import bcrypt from 'bcryptjs';
 
 export const registerUser = async (req: Request, res: Response) => {
@@ -108,6 +108,53 @@ export const deleteUserById = async (req: Request, res: Response) => {
     return res.status(200).json({ message: 'User deleted successfully' });
   } catch (error) {
     console.error('Delete user error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const getCurrentUser = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.sub;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const user = await findUserById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.error('Get current user error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const updateCurrentUser = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.sub;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { name, phone, address, avatar } = req.body;
+
+    const updatedUser = await updateUser(userId, { name, phone, address, avatar });
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    return res.status(200).json({
+      message: 'Profile updated successfully',
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error('Update current user error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 };

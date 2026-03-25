@@ -5,7 +5,7 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
-import Admin from './pages/admin/Admin';
+import AdminLayout from './pages/admin/AdminLayout';
 import AdminCategory from './pages/admin/AdminCategory';
 import AdminSupplier from './pages/admin/AdminSupplier';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -25,17 +25,26 @@ import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import AdminCoupon from './pages/admin/AdminCoupon';
 import AdminProduct from './pages/admin/AdminProduct';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminOrders from './pages/admin/AdminOrders';
+import AdminAnalytics from './pages/admin/AdminAnalytics';
 import CheckoutSuccess from './pages/CheckoutSuccess';
 import FloatingChatButton from './components/chat/FloatingChatButton';
 import ChatPopup from './components/chat/ChatPopup';
+import Profile from './pages/Profile';
+import EditProfile from './pages/EditProfile';
+import Navbar from './components/layout/Navbar';
+import Footer from './components/layout/Footer';
 
 const Layout = () => {
   return (
     <>
+      <Navbar />
       <CartPopup />
       <ChatPopup />
       <FloatingChatButton />
       <Outlet />
+      <Footer />
     </>
   );
 };
@@ -61,6 +70,8 @@ function App() {
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/search" element={<Search />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/edit" element={<EditProfile />} />
             </Route>
             <Route path="/signup" element={<Signup />} />
             <Route path="/login" element={<Login />} />
@@ -68,7 +79,7 @@ function App() {
               path="/admin/*"
               element={
                 <AdminRoute>
-                  <Admin />
+                  <AdminLayout />
                 </AdminRoute>
               }
             >
@@ -79,6 +90,9 @@ function App() {
               <Route path="categories" element={<AdminCategory />} />
               <Route path="suppliers" element={<AdminSupplier />} />
               <Route path="coupons" element={<AdminCoupon />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="orders" element={<AdminOrders />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
             </Route>
             </Routes>
           </ChatProvider>

@@ -3,11 +3,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteProduct = exports.updateProduct = exports.getProductById = exports.getFeaturedProducts = exports.getProducts = exports.createProduct = void 0;
+exports.getBestSellers = exports.deleteProduct = exports.updateProduct = exports.getProductById = exports.getFeaturedProducts = exports.getProducts = exports.createProduct = void 0;
 const mongoose_1 = require("mongoose");
-const product_service_1 = __importDefault(require("../services/product.service"));
 const cloudinary_1 = require("../config/cloudinary");
 const pagination_1 = require("../utils/pagination");
+const product_service_1 = __importDefault(require("../services/product.service"));
 const imageFields = ['img_url', 'thumbnail_img_1', 'thumbnail_img_2', 'thumbnail_img_3', 'thumbnail_img_4'];
 const uploadFirstFile = async (files, field) => {
     if (!files)
@@ -161,3 +161,15 @@ const deleteProduct = async (req, res) => {
     }
 };
 exports.deleteProduct = deleteProduct;
+const getBestSellers = async (req, res) => {
+    try {
+        const paginationParams = (0, pagination_1.parsePaginationParams)(req.query);
+        const result = await product_service_1.default.getBestSellers(paginationParams);
+        return res.json(result);
+    }
+    catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Unable to fetch best sellers', error });
+    }
+};
+exports.getBestSellers = getBestSellers;

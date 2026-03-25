@@ -6,7 +6,9 @@ const jwt_1 = require("../config/jwt");
 const initSocket = (httpServer) => {
     const origins = [
         'http://localhost:5173',
+        'http://localhost:5175',
         'http://127.0.0.1:5173',
+        'http://127.0.0.1:5175',
         process.env.FRONTEND_URL,
         process.env.FRONTEND_URL_2,
     ].filter((o) => Boolean(o));
@@ -14,6 +16,7 @@ const initSocket = (httpServer) => {
         cors: {
             origin: origins.length > 0 ? origins : true,
             methods: ['GET', 'POST'],
+            credentials: true,
         },
     });
     io.use((socket, next) => {

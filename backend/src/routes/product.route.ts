@@ -7,6 +7,7 @@ import {
   getProducts,
   getFeaturedProducts,
   updateProduct,
+  getBestSellers,
 } from '../controllers/product.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import { requireAdminEmail } from '../middlewares/role.middleware';
@@ -27,6 +28,7 @@ const imageFields = [
 // Public routes
 router.get('/', getProducts);
 router.get('/featured', getFeaturedProducts);
+router.get('/best-sellers', getBestSellers);
 router.get('/:id', getProductById);
 
 // Admin routes (should be protected with auth middleware later)

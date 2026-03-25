@@ -1,10 +1,9 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
-
-const ADMIN_ROLE = 'admin';
+import { getUserFromToken } from '../../utils/auth';
 
 const isAdmin = () => {
-  return localStorage.getItem('userRole') === ADMIN_ROLE;
+  return getUserFromToken()?.role === 'admin';
 };
 
 export const AdminRoute = ({ children }: { children: ReactNode }) => {

@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
+import { getAccessToken } from '../../utils/auth';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import type { Category, Product } from '../../types/types';
 import { apiUrl } from '../../utils/api';
 import { Button } from '../../components/ui/button';
+import { useTranslation } from 'react-i18next';
+import { formatPrice } from '../../utils/formatPrice';
 
 
-const formatPrice = (value?: number) =>
-  value
-    ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
-    : '—';
+// Price is handled by formatPrice utility imported from utils
 
 const AdminProduct = () => {
+  const { t, i18n } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
@@ -22,14 +23,14 @@ const AdminProduct = () => {
     setLoading(true);
     setError('');
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = getAccessToken();
       const response = await axios.get(apiUrl('/admin/products'), {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       setProducts(response.data.data ?? response.data);
     } catch (err) {
       console.error(err);
-      setError('Unable to load products');
+      setError(t('admin.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -40,17 +41,17 @@ const AdminProduct = () => {
   }, []);
 
   const handleDelete = async (productId: string) => {
-    if (!confirm('Delete product?')) return;
+    if (!confirm(t('admin.deleteConfirm'))) return;
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = getAccessToken();
       await axios.delete(apiUrl(`/admin/products/${productId}`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      setSuccess('Product deleted');
+      setSuccess(t('admin.deleteSuccess'));
       fetchProducts();
     } catch (err) {
       console.error(err);
-      setError('Unable to delete product');
+      setError(t('admin.deleteFailed'));
     }
   };
 
@@ -60,18 +61,18 @@ const AdminProduct = () => {
     <div className="space-y-8">
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-2">
-          <p className="text-xs uppercase tracking-[0.6em] text-orange-500">Products</p>
+          <p className="text-xs uppercase tracking-[0.6em] text-orange-500">{t('admin.products')}</p>
           <div className="flex flex-col gap-1">
-            <h1 className="text-3xl font-semibold text-gray-900">Product catalog</h1>
-            <p className="text-sm text-gray-500">{totalProducts} active products</p>
+            <h1 className="text-3xl font-semibold text-gray-900">{t('admin.productCatalogTitle')}</h1>
+            <p className="text-sm text-gray-500">{t('admin.activeProductsCount', { count: totalProducts })}</p>
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-3">
           <Button onClick={() => navigate('/admin/products/create')} variant="outline">
-            Add product
+            {t('admin.addProduct')}
           </Button>
           <Button onClick={fetchProducts} variant="ghost">
-            Refresh
+            {t('admin.refresh')}
           </Button>
         </div>
         {(error || success) && (
@@ -82,9 +83,9 @@ const AdminProduct = () => {
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Inventory</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('admin.inventory')}</h2>
         {loading ? (
-          <p className="text-sm text-gray-500">Loading products...</p>
+          <p className="text-sm text-gray-500">{t('admin.loading')}...</p>
         ) : (
           <div className="space-y-4">
             {products.map((product) => (
@@ -97,12 +98,12 @@ const AdminProduct = () => {
                   <img src={product.img_url} alt={product.name} className="w-16 h-16 object-cover" />
                   <div className="flex flex-col gap-1">
                     <p className="text-xs uppercase tracking-[0.4em] text-gray-400">
-                      {(product.categoryId as Category)?.name || 'Uncategorized'}
+                      {(product.categoryId as Category)?.name || t('admin.uncategorized')}
                     </p>
                     <h3 className="text-md font-semibold text-gray-900 line-clamp-2 max-w-[18rem] break-words sm:max-w-full">
                       {product.name}
                     </h3>
-                    <p className="text-sm text-gray-500">{formatPrice(product.price)}</p>
+                    <p className="text-sm text-gray-500">{formatPrice(product.price, i18n.language)}</p>
                   </div>
                 </div>
                 {/* action buttons on the right of the product item */}
@@ -111,10 +112,10 @@ const AdminProduct = () => {
                     variant="outline"
                     onClick={() => navigate(`/admin/products/${product._id}/edit`, { state: { product } })}
                   >
-                    Edit
+                    {t('admin.edit')}
                   </Button>
                   <Button className="bg-orange-500 text-white" onClick={() => handleDelete(product._id)}>
-                    Delete
+                    {t('admin.delete')}
                   </Button>
                 </div>
               </article>

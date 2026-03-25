@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { apiUrl } from '../utils/api';
 import { useDebounce } from '../hooks/useDebounce';
@@ -7,6 +8,7 @@ import type { Product } from '../types/types';
 import SearchInput from '../components/common/SearchInput';
 
 const Products = () => {
+  const { t, i18n } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -20,6 +22,9 @@ const Products = () => {
   const size = searchParams.get('size') || '';
   const sort = searchParams.get('sort') || 'relevance';
   const page = searchParams.get('page') || '1';
+  const type = searchParams.get('type') || 'all';
+
+  const isBestSellers = type === 'best-sellers';
 
   // Local state for inputs that need debouncing
   const [localMinPrice, setLocalMinPrice] = useState(minPrice);
@@ -77,23 +82,32 @@ const Products = () => {
       setLoading(true);
       try {
         const params = new URLSearchParams();
-        if (query) params.append('q', query);
-        if (category) params.append('category', category);
-        if (minPrice) params.append('minPrice', minPrice);
-        if (maxPrice) params.append('maxPrice', maxPrice);
-        if (supplier) params.append('supplier', supplier);
-        if (color) params.append('color', color);
-        if (size) params.append('size', size);
         params.append('sort', sort);
         params.append('page', page);
         params.append('limit', '20');
 
-        const response = await axios.get(`${apiUrl('/search')}?${params.toString()}`);
+        let response;
+        if (isBestSellers) {
+          response = await axios.get(`${apiUrl('/products/best-sellers')}?${params.toString()}`);
+          setProducts(response.data.data || []);
+          setTotalProducts(response.data.pagination?.totalItems || 0);
+          setTotalPages(response.data.pagination?.totalPages || 1);
+        } else {
+          if (query) params.append('q', query);
+          if (category) params.append('category', category);
+          if (minPrice) params.append('minPrice', minPrice);
+          if (maxPrice) params.append('maxPrice', maxPrice);
+          if (supplier) params.append('supplier', supplier);
+          if (color) params.append('color', color);
+          if (size) params.append('size', size);
 
-        if (response.data.success) {
-          setProducts(response.data.data);
-          setTotalProducts(response.data.pagination.totalProducts);
-          setTotalPages(response.data.pagination.totalPages);
+          response = await axios.get(`${apiUrl('/search')}?${params.toString()}`);
+
+          if (response.data.success) {
+            setProducts(response.data.data);
+            setTotalProducts(response.data.pagination.totalProducts);
+            setTotalPages(response.data.pagination.totalPages);
+          }
         }
       } catch (error) {
         console.error('Search error:', error);
@@ -103,7 +117,7 @@ const Products = () => {
     };
 
     fetchProducts();
-  }, [query, category, minPrice, maxPrice, supplier, color, size, sort, page]);
+  }, [query, category, minPrice, maxPrice, supplier, color, size, sort, page, type]);
 
   // Fetch filter options
   useEffect(() => {
@@ -168,6 +182,17 @@ const Products = () => {
   // Active filters count
   const activeFiltersCount = [query, category, supplier, color, size, minPrice, maxPrice].filter(Boolean).length;
 
+  const handleTypeChange = (newType: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (newType === 'all') {
+      params.delete('type');
+    } else {
+      params.set('type', newType);
+    }
+    params.set('page', '1');
+    setSearchParams(params);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-16">
       <div className="container-custom mx-auto px-4 sm:px-6 lg:px-8">
@@ -176,15 +201,39 @@ const Products = () => {
         </div>
         {/* Header */}
         <div className="mb-8">
+          {/* Tabs */}
+          <div className="flex items-center space-x-1 mb-4">
+            <button
+              onClick={() => handleTypeChange('all')}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                !isBestSellers
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {t('products.title')}
+            </button>
+            <button
+              onClick={() => handleTypeChange('best-sellers')}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                isBestSellers
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {t('product.bestSellers')}
+            </button>
+          </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {query ? `Search results for "${query}"` : 'All Products'}
+            {isBestSellers ? t('product.bestSellers') : (query ? t('products.searchResultsFor', { query }) : t('products.title'))}
           </h1>
           <p className="text-gray-600">
-            {totalProducts} {totalProducts === 1 ? 'product' : 'products'} found
+            {totalProducts} {totalProducts === 1 ? t('products.productFound') : t('products.productsFound')}
           </p>
         </div>
 
         {/* Filter & Sort Bar */}
+        {!isBestSellers && (
         <div className="bg-white rounded-lg shadow-sm p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
           <button
             onClick={() => setShowFilters(!showFilters)}
@@ -193,7 +242,7 @@ const Products = () => {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
-            <span>Filters</span>
+            <span>{t('products.filters')}</span>
             {activeFiltersCount > 0 && (
               <span className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
                 {activeFiltersCount}
@@ -202,33 +251,35 @@ const Products = () => {
           </button>
 
           <div className="flex items-center space-x-2">
-            <label className="text-sm text-gray-700">Sort by:</label>
+            <label className="text-sm text-gray-700">{t('products.sortBy')}:</label>
             <select
               value={sort}
               onChange={(e) => updateFilter('sort', e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
             >
-              <option value="relevance">Relevance</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
-              <option value="newest">Newest First</option>
-              <option value="popular">Most Popular</option>
+              <option value="relevance">{t('products.relevance')}</option>
+              <option value="price-asc">{t('products.priceLowHigh')}</option>
+              <option value="price-desc">{t('products.priceHighLow')}</option>
+              <option value="newest">{t('products.newest')}</option>
+              <option value="popular">{t('products.popular')}</option>
             </select>
           </div>
         </div>
+        )}
 
-        <div className="flex gap-6">
+        <div className={`flex gap-6 ${isBestSellers ? 'justify-center' : ''}`}>
           {/* Filters Sidebar */}
+          {!isBestSellers && (
           <div className="w-full lg:w-64 flex-shrink-0">
             <div className="bg-white rounded-lg shadow-sm p-6 sticky top-24">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+                <h3 className="text-lg font-semibold text-gray-900">{t('products.filters')}</h3>
                 {activeFiltersCount > 0 && (
                   <button
                     onClick={clearFilters}
                     className="text-sm text-orange-600 hover:text-orange-700 font-medium"
                   >
-                    Clear All
+                    {t('products.clearAll')}
                   </button>
                 )}
               </div>
@@ -236,7 +287,7 @@ const Products = () => {
               {/* Category Filter */}
               {filterOptions?.categories && filterOptions.categories.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="font-medium text-gray-900 mb-2">Category</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">{t('products.category')}</h4>
                   <div className="space-y-2">
                     {filterOptions.categories.map((cat: any) => (
                       <label key={cat._id} className="flex items-center cursor-pointer group">
@@ -259,7 +310,7 @@ const Products = () => {
               {/* Supplier Filter */}
               {filterOptions?.suppliers && filterOptions.suppliers.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="font-medium text-gray-900 mb-2">Supplier</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">{t('products.supplier')}</h4>
                   <div className="space-y-2">
                     {filterOptions.suppliers.map((sup) => (
                       <label key={sup} className="flex items-center cursor-pointer group">
@@ -282,10 +333,10 @@ const Products = () => {
               {/* Price Range Filter - WITH DEBOUNCE */}
               {filterOptions?.priceRange && (
                 <div className="mb-6">
-                  <h4 className="font-medium text-gray-900 mb-2">Price Range</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">{t('products.priceRange')}</h4>
                   <div className="space-y-3">
                     <div>
-                      <label className="text-xs text-gray-600">Min Price</label>
+                      <label className="text-xs text-gray-600">{t('products.minPrice')}</label>
                       <input
                         type="number"
                         value={localMinPrice}
@@ -301,12 +352,12 @@ const Products = () => {
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                           </svg>
-                          {' '}Filtering...
+                          {' '}{t('products.filtering')}
                         </p>
                       )}
                     </div>
                     <div>
-                      <label className="text-xs text-gray-600">Max Price</label>
+                      <label className="text-xs text-gray-600">{t('products.maxPrice')}</label>
                       <input
                         type="number"
                         value={localMaxPrice}
@@ -322,12 +373,12 @@ const Products = () => {
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                           </svg>
-                          {' '}Filtering...
+                          {' '}{t('products.filtering')}
                         </p>
                       )}
                     </div>
                     <p className="text-xs text-gray-500">
-                      Range: {filterOptions.priceRange.min} - {filterOptions.priceRange.max} VND
+                      {t('products.range')}: {filterOptions.priceRange.min} - {filterOptions.priceRange.max} VND
                     </p>
                   </div>
                 </div>
@@ -336,7 +387,7 @@ const Products = () => {
               {/* Color Filter */}
               {filterOptions?.colors && filterOptions.colors.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="font-medium text-gray-900 mb-2">Color</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">{t('products.color')}</h4>
                   <div className="flex flex-wrap gap-2">
                     {filterOptions.colors.map((c) => (
                       <button
@@ -357,7 +408,7 @@ const Products = () => {
               {/* Size Filter */}
               {filterOptions?.sizes && filterOptions.sizes.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="font-medium text-gray-900 mb-2">Size</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">{t('products.size')}</h4>
                   <div className="flex flex-wrap gap-2">
                     {filterOptions.sizes.map((s) => (
                       <button
@@ -376,9 +427,10 @@ const Products = () => {
               )}
             </div>
           </div>
+          )}
 
           {/* Products Grid */}
-          <div className="flex-1">
+          <div className={isBestSellers ? 'w-full max-w-7xl' : 'flex-1'}>
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {[...Array(8)].map((_, i) => (
@@ -408,7 +460,7 @@ const Products = () => {
                         />
                         {product.stock !== undefined && product.stock < 10 && (
                           <span className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
-                            Low Stock
+                            {t('products.lowStock')}
                           </span>
                         )}
                       </div>
@@ -423,7 +475,7 @@ const Products = () => {
                         )}
                         <div className="flex items-center justify-between">
                           <p className="text-lg font-bold text-orange-600">
-                            {product.price} VND
+                            {product.price.toLocaleString(i18n.language)} VND
                           </p>
                           <div className="flex items-center space-x-1">
                             <svg className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
@@ -445,7 +497,7 @@ const Products = () => {
                       disabled={parseInt(page) === 1}
                       className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Previous
+                      {t('products.previous')}
                     </button>
 
                     {[...Array(Math.min(5, totalPages))].map((_, i) => {
@@ -469,7 +521,7 @@ const Products = () => {
                       disabled={parseInt(page) === totalPages}
                       className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Next
+                      {t('products.next')}
                     </button>
                   </div>
                 )}
@@ -479,13 +531,13 @@ const Products = () => {
                 <svg className="w-24 h-24 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <h3 className="text-xl font-medium text-gray-900 mb-2">No products found</h3>
-                <p className="text-gray-600 mb-4">Try adjusting your filters or search query</p>
+                <h3 className="text-xl font-medium text-gray-900 mb-2">{t('products.noProducts')}</h3>
+                <p className="text-gray-600 mb-4">{t('products.adjustFilters')}</p>
                 <button
                   onClick={clearFilters}
                   className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
                 >
-                  Clear Filters
+                  {t('products.clearFilters')}
                 </button>
               </div>
             )}

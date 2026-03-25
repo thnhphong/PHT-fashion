@@ -1,8 +1,10 @@
 import axios from 'axios';
+import { getAccessToken } from '../../utils/auth';
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { apiUrl } from '../../utils/api';
 import { Button } from '../../components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 type Category = {
   _id: string;
@@ -11,6 +13,7 @@ type Category = {
 };
 
 const AdminCategory = () => {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -18,7 +21,7 @@ const AdminCategory = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [form, setForm] = useState({ name: '' });
 
-  const submitLabel = selectedCategory ? 'Update category' : 'Create category';
+  const submitLabel = selectedCategory ? t('admin.updateCategory') : t('admin.createCategory');
 
   const resetForm = () => {
     setSelectedCategory(null);
@@ -30,14 +33,14 @@ const AdminCategory = () => {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = getAccessToken();
       const response = await axios.get(`${apiUrl('/admin/categories')}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       setCategories(response.data);
     } catch (err) {
       console.error(err);
-      setError('Unable to fetch categories');
+      setError(t('admin.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -52,9 +55,9 @@ const AdminCategory = () => {
     setLoading(true);
     setError('');
     setSuccess('');
-    const token = localStorage.getItem('accessToken');
+    const token = getAccessToken();
     if (!token) {
-      setError('Missing admin session');
+      setError(t('common.error'));
       setLoading(false);
       return;
     }
@@ -63,18 +66,18 @@ const AdminCategory = () => {
         await axios.put(apiUrl(`/admin/categories/${selectedCategory._id}`), form, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setSuccess('Category updated successfully');
+        setSuccess(t('admin.updateSuccess'));
       } else {
         await axios.post(apiUrl('/admin/categories'), form, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setSuccess('Category created successfully');
+        setSuccess(t('admin.saveSuccess'));
       }
       resetForm();
       fetchCategories();
     } catch (err) {
       console.error(err);
-      setError('Unable to save category');
+      setError(t('admin.saveFailed'));
     } finally {
       setLoading(false);
     }
@@ -88,17 +91,17 @@ const AdminCategory = () => {
   };
 
   const handleDelete = async (categoryId: string) => {
-    if (!confirm('Delete this category?')) return;
+    if (!confirm(t('admin.deleteConfirm'))) return;
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = getAccessToken();
       await axios.delete(apiUrl(`/admin/categories/${categoryId}`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      setSuccess('Category deleted');
+      setSuccess(t('admin.deleteSuccess'));
       fetchCategories();
     } catch (err) {
       console.error(err);
-      setError('Unable to delete category');
+      setError(t('admin.deleteFailed'));
     }
   };
 
@@ -109,11 +112,11 @@ const AdminCategory = () => {
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.6em] text-orange-500">Categories</p>
-            <h2 className="text-2xl font-semibold text-gray-900">Manage categories ({totalCategories})</h2>
+            <p className="text-xs uppercase tracking-[0.6em] text-orange-500">{t('admin.categories')}</p>
+            <h2 className="text-2xl font-semibold text-gray-900">{t('admin.manageCategories', { count: totalCategories })}</h2>
           </div>
           <Button variant="ghost" onClick={fetchCategories}>
-            Refresh
+            {t('admin.refresh')}
           </Button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -121,15 +124,15 @@ const AdminCategory = () => {
             required
             value={form.name}
             onChange={(e) => setForm({ name: e.target.value })}
-            placeholder="Category name"
+            placeholder={t('admin.categoryName')}
             className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-orange-500"
           />
           <Button type="submit" className="bg-orange-500 text-white" disabled={loading}>
-            {loading ? 'Saving...' : submitLabel}
+            {loading ? t('admin.saving') : submitLabel}
           </Button>
           {selectedCategory && (
             <Button variant="outline" onClick={resetForm}>
-              Cancel edit
+              {t('admin.cancelEdit')}
             </Button>
           )}
           {(error || success) && (
@@ -140,9 +143,9 @@ const AdminCategory = () => {
         </form>
       </section>
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">Category list</h3>
+        <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('admin.categoryList')}</h3>
         {loading ? (
-          <p className="text-sm text-gray-500">Loading...</p>
+          <p className="text-sm text-gray-500">{t('admin.loading')}...</p>
         ) : (
           <div className="divide-y divide-gray-100">
             {categories.map((category) => (
@@ -150,10 +153,10 @@ const AdminCategory = () => {
                 <p className="font-medium text-gray-900">{category.name}</p>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => handleEdit(category)}>
-                    Edit
+                    {t('admin.edit')}
                   </Button>
                   <Button className="bg-orange-500 text-white" onClick={() => handleDelete(category._id)}>
-                    Delete
+                    {t('admin.delete')}
                   </Button>
                 </div>
               </div>

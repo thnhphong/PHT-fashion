@@ -23,6 +23,9 @@ import { initSocket } from './socket';
 import { registerChatHandlers } from './socket/chat.socket';
 import cartRoutes from './routes/cart.route';
 import favoriteRoutes from './routes/favorite.route';
+import adminUserRoutes from './routes/admin.user.route';
+import adminAnalyticsRoutes from './routes/admin.analytics.route';
+import { adminOrderRouter } from './routes/order.route';
 dotenv.config();
 
 const app: Application = express();
@@ -38,7 +41,9 @@ app.use(cookieParser());
 // CORS configuration
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://localhost:5175',
   'http://127.0.0.1:5173',
+  'http://127.0.0.1:5175',
   FRONTEND_URL,
   FRONTEND_URL_2
 ].filter(Boolean);
@@ -85,6 +90,9 @@ app.use('/api/chats', chatRoutes);
 app.use('/api/admin/chats', adminChatRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/favorites', favoriteRoutes);
+app.use('/api/admin/users', adminUserRoutes);
+app.use('/api/admin/analytics', adminAnalyticsRoutes);
+app.use('/api/admin/orders', adminOrderRouter);
 const startServer = async () => {
   await connectDB();
   await connectRedis();

@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Search, Menu, X, Heart, User } from "lucide-react";
+import { ShoppingBag, Menu, X, Heart, User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "../ui/button";
 import LoginBtn from "../buttons/LoginBtn";
 import SignupBtn from "../buttons/SignupBtn";
 import SearchInput from "../common/SearchInput";
+import { LanguageSwitcher } from "../common/LanguageSwitcher";
 import { isAuthenticated, logOut } from "../../utils/auth";
 import { LogOut } from "../buttons/LogOut";
 import { useNavigate } from "react-router-dom";
@@ -13,19 +15,20 @@ import { useFavorite } from "../../context/useFavorite";
 
 
 //put login and signup buttons in the hamburger menu
-const navLinks = [
-  { name: "All Products", href: "/products" },
-  { name: "New In", href: "#new" },
-  { name: "Best Sellers", href: "#trending" },
-  { name: "Sale", href: "#sale" },
-];
 
 const Navbar = () => {
+  const { t } = useTranslation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { getTotalItems, syncCartToDbOnLogout } = useCart();
   const { favorites, syncFavoritesToDbOnLogout } = useFavorite();
+
+  const navLinks = [
+    { name: t("nav.allProducts"), href: "/products" },
+    { name: t("nav.newIn"), href: "#new" },
+    { name: t("nav.bestSellers"), href: "/products?type=best-sellers" },
+  ];
 
   const handleLogout = async () => {
     await syncCartToDbOnLogout();
@@ -79,7 +82,7 @@ const Navbar = () => {
 
           </div>
 
-          <Button variant="ghost" size="icon" className="hidden md:flex">
+          <Button variant="ghost" size="icon" className="hidden md:flex" onClick={() => navigate(isAuthenticated() ? '/profile' : '/login')}>
             <User className="h-5 w-5" />
           </Button>
           <Button
@@ -106,8 +109,19 @@ const Navbar = () => {
               {getTotalItems()}
             </span>
           </Button>
-          {isAuthenticated() ? <LogOut handleLogout={handleLogout} /> : <LoginBtn />}
-          {!isAuthenticated() ? <SignupBtn /> : null}
+          
+          <div className="hidden md:block">
+            <LanguageSwitcher />
+          </div>
+
+          {isAuthenticated() ? (
+            <LogOut handleLogout={handleLogout} />
+          ) : (
+            <>
+              <LoginBtn />
+              <SignupBtn />
+            </>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -141,29 +155,22 @@ const Navbar = () => {
               {/* Search Form */}
               <SearchInput />
 
-              <div className="flex justify-center gap-4 pt-4 border-t border-border items-center">
-                <Button variant="ghost" size="icon">
-                  <Search className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon">
-                  <User className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    navigate('/favorite');
-                  }}
-                >
-                  <Heart className="h-5 w-5" />
-                  {favorites.length > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white font-bold">
-                      {favorites.length}
-                    </span>
+              <div className="flex flex-col gap-6 pt-6 border-t border-border items-center">
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">{t('common.language')}</span>
+                  <LanguageSwitcher />
+                </div>
+
+                <div className="flex justify-center gap-4 w-full items-center">
+                  {isAuthenticated() ? (
+                    <LogOut handleLogout={handleLogout} />
+                  ) : (
+                    <>
+                      <LoginBtn />
+                      <SignupBtn />
+                    </>
                   )}
-                </Button>
+                </div>
               </div>
             </div>
           </motion.div>
