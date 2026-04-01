@@ -35,7 +35,7 @@ export default function DateRangePicker({
             onClick={() => setPeriod(p.value)}
             className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
               period === p.value && p.value !== 'custom'
-                ? 'bg-orange-500 text-white'
+                ? 'bg-orange-560 text-white'
                 : 'border border-gray-300 text-gray-600 hover:border-orange-400 hover:text-orange-500'
             }`}
           >
