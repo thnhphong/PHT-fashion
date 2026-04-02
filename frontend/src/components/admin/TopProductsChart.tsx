@@ -69,7 +69,7 @@ export default function TopProductsChart({ data, loading }: TopProductsChartProp
           <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
           <XAxis
             type="number"
-            tickFormatter={(v) => v.toLocaleString()}
+            tickFormatter={(v: number) => v.toLocaleString()}
             tick={{ fontSize: 11, fill: '#9ca3af' }}
             tickLine={false}
             axisLine={false}

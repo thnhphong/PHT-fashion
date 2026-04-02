@@ -1,6 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard,
   Package,
   Users,
   FolderOpen,
@@ -9,9 +8,6 @@ import {
   ShoppingCart,
   ChevronRight,
   BarChart3,
-  TrendingUp,
-  Award,
-  FileText,
   LogOut,
   ChevronDown,
   Menu,
@@ -20,7 +16,6 @@ import {
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '../../components/common/LanguageSwitcher';
 import { useState } from 'react';
-import { getUserFromToken } from '../../utils/auth';
 
 function NavItem({
   to,
@@ -100,9 +95,6 @@ export default function AdminLayout() {
     if (exact) return location.pathname === to;
     return location.pathname.startsWith(to);
   };
-
-  const user = getUserFromToken();
-  const userName = user?.sub || 'Admin';
 
   const SidebarContent = () => (
     <>

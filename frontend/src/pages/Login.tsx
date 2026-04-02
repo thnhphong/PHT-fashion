@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -53,6 +53,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
+  const slides = useMemo(() => getCarouselSlides(), [t]);
   const { mergeGuestCart } = useCart();
   const { mergeGuestFavorites } = useFavorite();
   const location = useLocation();
@@ -64,12 +65,11 @@ const Login = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
   useEffect(() => {
-    const slides = getCarouselSlides();
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [t]);
+  }, [slides]);
 
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -80,7 +80,7 @@ const Login = () => {
 
     try {
       const normalizedEmail = form.email.trim().toLowerCase();
-      const res = await axios.post(apiUrl('/auth/login'), {
+      await axios.post(apiUrl('/auth/login'), {
         email: normalizedEmail,
         password: form.password,
       }, { withCredentials: true });

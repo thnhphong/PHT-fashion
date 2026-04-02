@@ -82,7 +82,7 @@ export default function RevenueChart({ data, loading }: RevenueChartProps) {
           <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
           <XAxis
             dataKey="date"
-            tickFormatter={(val) => formatDate(val, i18n.language)}
+            tickFormatter={(val: string) => formatDate(val, i18n.language)}
             tick={{ fontSize: 11, fill: '#9ca3af' }}
             tickLine={false}
             axisLine={false}
