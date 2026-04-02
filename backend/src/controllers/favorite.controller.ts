@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
+import { IFavorite } from '../models/Favorite';
 import * as favoriteService from '../services/favorite.service';
 
-const toProductIdStrings = (fav: { productIds?: unknown[] } | null | undefined): string[] =>
+const toProductIdStrings = (fav: IFavorite | null | undefined): string[] =>
   (fav?.productIds ?? []).map((p: unknown) =>
     p && typeof p === 'object' && '_id' in p ? String((p as { _id: unknown })._id) : String(p)
   ).filter(Boolean);
@@ -11,7 +12,7 @@ export const getFavorites = async (req: Request, res: Response) => {
     const userId = req.user?.sub;
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
-    const fav = await favoriteService.getFavorites(userId as string);
+    const fav = await favoriteService.getFavorites(userId);
     return res.json({ productIds: toProductIdStrings(fav) });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Internal server error';
@@ -25,7 +26,7 @@ export const addFavorite = async (req: Request, res: Response) => {
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
     const { productId } = req.params;
-    const fav = await favoriteService.addFavorite(userId as string, productId as string);
+    const fav = await favoriteService.addFavorite(userId, productId);
     return res.status(201).json({ productIds: toProductIdStrings(fav) });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Internal server error';
@@ -39,7 +40,7 @@ export const removeFavorite = async (req: Request, res: Response) => {
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
     const { productId } = req.params;
-    const fav = await favoriteService.removeFavorite(userId as string, productId as string);
+    const fav = await favoriteService.removeFavorite(userId, productId);
     return res.json({ productIds: toProductIdStrings(fav) });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === 'Favorites not found') {
@@ -55,8 +56,9 @@ export const mergeFavorites = async (req: Request, res: Response) => {
     const userId = req.user?.sub;
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
-    const { productIds = [] } = req.body;
-    const fav = await favoriteService.mergeFavorites(userId as string, Array.isArray(productIds) ? productIds : []);
+    const body = req.body as { productIds?: unknown[] };
+    const productIds = Array.isArray(body.productIds) ? (body.productIds as string[]) : [];
+    const fav = await favoriteService.mergeFavorites(userId, productIds);
     return res.json({ productIds: toProductIdStrings(fav) });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Internal server error';
