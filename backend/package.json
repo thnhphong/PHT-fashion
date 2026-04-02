@@ -11,6 +11,7 @@
   },
   "keywords": [],
   "author": "",
+  "packageManager": "pnpm@9.15.9",
   "license": "ISC",
   "dependencies": {
     "@types/multer": "^1.4.12",
