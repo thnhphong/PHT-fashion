@@ -19,14 +19,16 @@ const CategorySection = () => {
 
   useEffect(() => {
     axios.get(`${apiUrl('/products')}?limit=100`).then((response) => {
-      setProducts(response.data.data);
-    });
+      const list = Array.isArray(response.data?.data) ? response.data.data : [];
+      setProducts(list);
+    }).catch(() => setProducts([]));
   }, []);
 
   const categories = useMemo(() => {
+    const list = Array.isArray(products) ? products : [];
     const categoryMap = new Map<string, CategoryWithImage>();
     
-    products.forEach((product) => {
+    list.forEach((product) => {
       const catId = typeof product.categoryId === 'object' 
         ? product.categoryId._id 
         : product.categoryId;
