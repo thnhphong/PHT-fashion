@@ -17,10 +17,11 @@ export const initSocket = (httpServer: HttpServer): Server => {
     process.env.FRONTEND_URL,
     process.env.FRONTEND_URL_2,
   ].filter((o): o is string => Boolean(o));
+  const originPatterns = [/^https:\/\/pht-fashion-frontend[a-zA-Z0-9-]*\.vercel\.app$/];
 
   const io = new Server(httpServer, {
     cors: {
-      origin: origins.length > 0 ? origins : true,
+      origin: origins.length > 0 ? [...origins, ...originPatterns] : true,
       methods: ['GET', 'POST'],
       credentials: true,
     },
