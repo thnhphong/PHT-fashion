@@ -1,8 +1,8 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 
 export interface IFavorite extends Document {
-  userId: Schema.Types.ObjectId;
-  productIds: Schema.Types.ObjectId[];
+  userId: Types.ObjectId;
+  productIds: Types.ObjectId[];
   created_at: Date;
 }
 
@@ -31,4 +31,3 @@ const FavoriteSchema = new Schema<IFavorite>(
 );
 
 export default model<IFavorite>('Favorite', FavoriteSchema);
-

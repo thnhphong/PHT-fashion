@@ -1,7 +1,7 @@
 import Favorite from '../models/Favorite';
 import { Types } from 'mongoose';
 
-const populateFavorites = (query: { populate: (opts: object) => unknown }) =>
+const populateFavorites = (query: any) =>
   query.populate({
     path: 'productIds',
     select: 'name price img_url stock sizes categoryId supplierId',
@@ -13,9 +13,7 @@ const populateFavorites = (query: { populate: (opts: object) => unknown }) =>
 
 export const getFavorites = async (userId: string) => {
   const userObjId = new Types.ObjectId(userId);
-  let fav = await populateFavorites(
-    Favorite.findOne({ userId: userObjId }) as { populate: (opts: object) => unknown }
-  );
+  let fav = await populateFavorites(Favorite.findOne({ userId: userObjId }));
   if (!fav) {
     fav = await Favorite.create({ userId: userObjId, productIds: [] });
   }
@@ -30,12 +28,12 @@ export const addFavorite = async (userId: string, productId: string) => {
   }
 
   const pid = new Types.ObjectId(productId);
-  if (!fav.productIds.some((id: any) => id.equals(pid))) {
-    fav.productIds.push(pid as any);
+  if (!fav.productIds.some((id) => id.equals(pid))) {
+    fav.productIds.push(pid);
     await fav.save();
   }
 
-  return populateFavorites(Favorite.findById(fav._id) as { populate: (opts: object) => unknown });
+  return populateFavorites(Favorite.findById(fav._id));
 };
 
 export const removeFavorite = async (userId: string, productId: string) => {
@@ -44,11 +42,11 @@ export const removeFavorite = async (userId: string, productId: string) => {
   if (!fav) throw new Error('Favorites not found');
 
   fav.productIds = fav.productIds.filter(
-    (id: any) => id.toString() !== productId
+    (id) => id.toString() !== productId
   );
   await fav.save();
 
-  return populateFavorites(Favorite.findById(fav._id) as { populate: (opts: object) => unknown });
+  return populateFavorites(Favorite.findById(fav._id));
 };
 
 export const mergeFavorites = async (userId: string, productIds: string[]) => {
@@ -60,11 +58,11 @@ export const mergeFavorites = async (userId: string, productIds: string[]) => {
 
   for (const productId of productIds) {
     const pid = new Types.ObjectId(productId);
-    if (!fav.productIds.some((id: any) => id.equals(pid))) {
-      fav.productIds.push(pid as any);
+    if (!fav.productIds.some((id) => id.equals(pid))) {
+      fav.productIds.push(pid);
     }
   }
 
   await fav.save();
-  return populateFavorites(Favorite.findById(fav._id) as { populate: (opts: object) => unknown });
+  return populateFavorites(Favorite.findById(fav._id));
 };
