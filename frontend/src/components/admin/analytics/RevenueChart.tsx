@@ -35,9 +35,10 @@ type RevenueChartProps = {
 
 export default function RevenueChart({ data }: RevenueChartProps) {
   const { t } = useTranslation();
+  const rows = Array.isArray(data) ? data : [];
 
   const chartData = {
-    labels: data.map((item) => item.date),
+    labels: rows.map((item) => item.date),
     datasets: [
       {
         label: t('admin.revenue') || 'Doanh thu',
@@ -51,7 +52,7 @@ export default function RevenueChart({ data }: RevenueChartProps) {
       },
       {
         label: t('admin.orders') || 'Đơn hàng',
-        data: data.map((item) => item.orders),
+        data: rows.map((item) => item.orders),
         borderColor: '#6b7280',
         backgroundColor: 'transparent',
         borderDash: [5, 5],
@@ -150,7 +151,7 @@ export default function RevenueChart({ data }: RevenueChartProps) {
         {t('admin.revenue') || 'Doanh thu theo thời gian'}
       </h2>
       <div className="h-80">
-        {data.length > 0 ? (
+        {rows.length > 0 ? (
           <Line data={chartData} options={options} />
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500">

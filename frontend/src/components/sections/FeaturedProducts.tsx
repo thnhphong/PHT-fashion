@@ -38,8 +38,18 @@ const FeaturedProducts = () => {
         }
       );
 
-      setProducts(response.data.data);
-      setPagination(response.data.pagination);
+      const list = Array.isArray(response.data?.data) ? response.data.data : [];
+      setProducts(list);
+      setPagination(
+        response.data.pagination ?? {
+          currentPage: 1,
+          totalPages: 1,
+          totalItems: list.length,
+          itemsPerPage: 10,
+          hasNextPage: false,
+          hasPrevPage: false,
+        }
+      );
     } catch (err) {
       console.error('Error fetching products:', err);
       setError(t('products.errorLoading'));

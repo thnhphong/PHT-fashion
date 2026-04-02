@@ -87,7 +87,8 @@ export default function OrderStatusPieChart({
     );
   }
 
-  const chartData = Object.entries(data).map(([key, value]) => ({
+  const safe = data ?? ({} as OrderStatusData);
+  const chartData = Object.entries(safe).map(([key, value]) => ({
     name: key,
     value,
     label: LABELS[key] ?? key,

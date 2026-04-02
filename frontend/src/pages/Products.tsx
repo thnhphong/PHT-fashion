@@ -104,9 +104,10 @@ const Products = () => {
           response = await axios.get(`${apiUrl('/search')}?${params.toString()}`);
 
           if (response.data.success) {
-            setProducts(response.data.data);
-            setTotalProducts(response.data.pagination.totalProducts);
-            setTotalPages(response.data.pagination.totalPages);
+            const list = Array.isArray(response.data.data) ? response.data.data : [];
+            setProducts(list);
+            setTotalProducts(response.data.pagination?.totalProducts ?? 0);
+            setTotalPages(response.data.pagination?.totalPages ?? 1);
           }
         }
       } catch (error) {

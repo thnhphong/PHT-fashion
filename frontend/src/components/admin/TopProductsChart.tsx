@@ -37,6 +37,8 @@ const CustomTooltip = ({ active, payload }: {active?: unknown; payload?: {payloa
 };
 
 export default function TopProductsChart({ data, loading }: TopProductsChartProps) {
+  const rows = Array.isArray(data) ? data : [];
+
   if (loading) {
     return (
       <div className="flex h-64 w-full items-center justify-center">
@@ -45,7 +47,7 @@ export default function TopProductsChart({ data, loading }: TopProductsChartProp
     );
   }
 
-  if (!data.length) {
+  if (!rows.length) {
     return (
       <div className="flex h-64 w-full items-center justify-center rounded-2xl border border-gray-200 bg-gray-50">
         <p className="text-sm text-gray-400">No product data available</p>
@@ -53,7 +55,7 @@ export default function TopProductsChart({ data, loading }: TopProductsChartProp
     );
   }
 
-  const chartData = data.map((p) => ({
+  const chartData = rows.map((p) => ({
     ...p,
     displayName: truncate(p.name, 22),
   }));

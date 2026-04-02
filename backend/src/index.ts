@@ -39,13 +39,20 @@ app.use(express.json());
 app.use(cookieParser());
 
 // CORS configuration
+const extraOrigins = (process.env.ALLOWED_ORIGINS ?? '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5175',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5175',
+  'https://pht-fashion-frontend.vercel.app',
   FRONTEND_URL,
-  FRONTEND_URL_2
+  FRONTEND_URL_2,
+  ...extraOrigins,
 ].filter(Boolean);
 
 const allowedOriginPatterns = [
@@ -55,8 +62,8 @@ const allowedOriginPatterns = [
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    if (allowedOriginPatterns.some((p) => p.test(origin))) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, origin);
+    if (allowedOriginPatterns.some((p) => p.test(origin))) return callback(null, origin);
     return callback(new Error(`CORS blocked: ${origin}`));
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

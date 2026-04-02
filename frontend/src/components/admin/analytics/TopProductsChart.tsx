@@ -34,15 +34,16 @@ type TopProductsChartProps = {
 
 export default function TopProductsChart({ data }: TopProductsChartProps) {
   const { t } = useTranslation();
+  const rows = Array.isArray(data) ? data : [];
 
   const chartData = {
-    labels: data.map((item) =>
+    labels: rows.map((item) =>
       item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name
     ),
     datasets: [
       {
         label: t('admin.quantitySold') || 'Số lượng bán',
-        data: data.map((item) => item.totalQuantity),
+        data: rows.map((item) => item.totalQuantity),
         backgroundColor: 'rgba(249, 115, 22, 0.8)',
         borderColor: '#f97316',
         borderWidth: 1,
@@ -100,7 +101,7 @@ export default function TopProductsChart({ data }: TopProductsChartProps) {
         </h2>
       </div>
       <div className="h-80">
-        {data.length > 0 ? (
+        {rows.length > 0 ? (
           <Bar data={chartData} options={options} />
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500">
