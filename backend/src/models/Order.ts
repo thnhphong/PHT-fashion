@@ -29,6 +29,7 @@ export interface IOrder extends Document {
   total_amount: number;
   payment_status: PaymentStatus;
   created_at: Date;
+  __v?: number;
 }
 
 const ShippingAddressSchema = new Schema<IShippingAddress>(
@@ -149,7 +150,7 @@ const OrderSchema = new Schema<IOrder>(
     },
   },
   {
-    versionKey: false,
+    versionKey: '__v',
   }
 );
 

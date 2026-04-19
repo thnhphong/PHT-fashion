@@ -6,6 +6,7 @@ import ProductContextBanner from './ProductContextBanner';
 import ProductCardMessage from './ProductCardMessage';
 import type { MessageItem } from '../../context/ChatContext';
 import EmojiPicker, { type EmojiClickData } from 'emoji-picker-react';
+import { getAccessToken } from '../../utils/auth';
 const formatTime = (dateStr: string) =>
   new Date(dateStr).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
@@ -88,17 +89,8 @@ export default function ChatPopup() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesTopRef = useRef<HTMLDivElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
-  const token = localStorage.getItem('accessToken');
-  const userId = token
-    ? (() => {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload.sub;
-      } catch {
-        return null;
-      }
-    })()
-    : null;
+  const token = getAccessToken();
+  const userId = token ? (JSON.parse(atob(token.split('.')[1])) as { sub: string }).sub : null;
 
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 
@@ -290,7 +282,9 @@ export default function ChatPopup() {
             </div>
           )}
 
-          {/* Input */}
+
+          {/* cookie */}
+
           {!token ? (
             <div className="p-4 border-t bg-gray-50 text-center">
               <a href="/login" className="text-orange-600 hover:text-orange-700 font-medium">

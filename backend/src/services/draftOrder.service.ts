@@ -36,6 +36,19 @@ const ensureRedisClient = async () => {
   return getRedisClient();
 };
 
+// Atomically fetch and delete a draft in one Redis round-trip to avoid the
+// get-then-del race where two concurrent callers both see the same draft.
+const popDraft = async (draftId: string): Promise<DraftOrderData | null> => {
+  const client = await ensureRedisClient();
+  const payload = await client.sendCommand<string | null>(['GETDEL', getDraftKey(draftId)]);
+  if (!payload) return null;
+  try {
+    return JSON.parse(payload) as DraftOrderData;
+  } catch {
+    throw new Error('Stored draft payload is invalid');
+  }
+};
+
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
 export interface DraftedItem {
@@ -346,15 +359,10 @@ const deleteDraft = async (draftId: string) => {
  *   race (return URL + IPN) at the cost of a small restore window on failure.
  */
 export const finalizeDraftOrder = async (draftId: string) => {
-  const draft = await getDraft(draftId);
+  const draft = await popDraft(draftId);
   if (!draft) {
     throw new Error('Draft order not found or already finalized');
   }
-
-  // Remove draft from Redis first — acts as a lightweight mutex.
-  // Any concurrent finalization attempt will call getDraft() and get null,
-  // hitting the error above before reaching the expensive DB work.
-  await deleteDraft(draftId);
 
   const session = await mongoose.startSession();
 

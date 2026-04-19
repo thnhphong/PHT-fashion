@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { apiUrl, socketUrl } from '../utils/api';
+import { getAccessToken } from '../utils/auth';
 
 export interface ConversationSummary {
   _id: string;
@@ -68,7 +69,7 @@ interface ChatContextType {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-const getToken = () => localStorage.getItem('accessToken');
+const getToken = () => getAccessToken() ?? localStorage.getItem('accessToken');
 
 const getIsAdmin = () => localStorage.getItem('userRole') === 'admin';
 

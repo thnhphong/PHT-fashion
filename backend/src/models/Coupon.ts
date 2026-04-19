@@ -7,6 +7,7 @@ export interface ICoupon extends Document {
   count: number;
   expiration_date: Date;
   created_at?: Date;
+  __v?: number;
 }
 
 const CouponSchema = new Schema<ICoupon>(
@@ -18,7 +19,7 @@ const CouponSchema = new Schema<ICoupon>(
     expiration_date: { type: Date, required: true },
     created_at: { type: Date, default: Date.now },
   },
-  { versionKey: false }
+  { versionKey: '__v' }
 );
 
 export default model<ICoupon>('Coupon', CouponSchema);

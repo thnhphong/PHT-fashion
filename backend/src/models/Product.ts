@@ -19,6 +19,7 @@ export interface IProduct extends Document {
   thumbnail_img_4?: string;
   sizes: IProductSize[];
   created_at: Date;
+  __v?: number;
 }
 
 const ProductSizeSchema = new Schema<IProductSize>(
@@ -100,7 +101,7 @@ const ProductSchema = new Schema<IProduct>(
     },
   },
   {
-    versionKey: false,
+    versionKey: '__v',
   }
 );
 
