@@ -85,3 +85,12 @@ The frontend proxies `/api` requests to `http://localhost:5000` with path rewrit
 ## Deployment
 
 Frontend deployed on Vercel (SPA mode with `vercel.json` rewrites). Backend deployed separately.
+
+## Caveman Workflow
+
+This project uses **Caveman Mode** for token-efficient communication.
+
+- **Toggle**: Use `/caveman [lite|full|ultra]` or say "talk like caveman".
+- **Style**: Terse prose, no fluff, technical accuracy preserved.
+- **Rules**: Drop articles/filler. Fragments OK. Code/Technical terms exact.
+- **Auto-Clarity**: Reverts to normal prose for security warnings or complex instructions.
