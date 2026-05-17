@@ -1,0 +1,26 @@
+---
+description: Keep AI development context small and use Code Review Graph before broad reads.
+globs: **/*
+---
+
+# Token-Optimized Development
+
+Start narrow. Read `CLAUDE.md`, `.claude/COMMON_MISTAKES.md`, `.claude/QUICK_START.md`, `.claude/ARCHITECTURE_MAP.md`.
+
+Use `docs/INDEX.md` to select task-specific docs. Do not auto-load `.claude/completions/**`, `.claude/sessions/**`, `docs/archive/**`, build outputs, or generated graph data.
+
+Before reading large files or many files, use Code Review Graph if available:
+
+- Build graph: `/code-review-graph:build-graph`
+- Review current changes: `/code-review-graph:review-delta`
+- Review PR: `/code-review-graph:review-pr`
+
+If slash commands are unavailable, run or ask user to run:
+
+```bash
+code-review-graph build
+code-review-graph status
+code-review-graph update
+```
+
+Prefer `rg` and symbol queries over full-file reads. Summarize long terminal output.

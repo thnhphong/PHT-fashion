@@ -9,8 +9,6 @@ frontend/node_modules
 .DS_Store
 .pnpm-store 
 
-.cursor 
-.claude
 .shared
 ApiEndpoints.txt 
 Response.txt
@@ -18,7 +16,6 @@ uiux_promax_readme.md
 pencil-new.pen
 
 uxui_promax_promax.md
-/docs
 
 APIEndpoint.txt
 PHT-Fashion-Lovable-Prompts.md
@@ -26,3 +23,16 @@ images/
 
 
 gitpush.sh
+
+# Claude Token Optimizer: keep shared docs in git, but keep noisy history out of context.
+.claude/sessions/active/**
+.claude/sessions/archive/**
+.claude/completions/*.md
+!.claude/completions/README.md
+docs/archive/**
+
+# Code Review Graph generated local artifacts.
+.code-review-graph/**
+.crg/**
+code-review-graph.html
+.claude/settings.json.bak

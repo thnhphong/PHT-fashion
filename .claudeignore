@@ -1,0 +1,37 @@
+# Task completion documents: load only when explicitly requested.
+.claude/completions/**
+
+# Session files: load only when explicitly requested.
+.claude/sessions/**
+
+# Archived docs: historical reference only.
+docs/archive/**
+
+# Dependencies and build outputs.
+node_modules/**
+backend/node_modules/**
+frontend/node_modules/**
+backend/dist/**
+frontend/dist/**
+build/**
+.pnpm-store/**
+
+# Code Review Graph generated local data.
+.code-review-graph/**
+.crg/**
+code-review-graph.html
+
+# Git, IDE, OS, logs.
+.git/**
+.vscode/**
+.idea/**
+.DS_Store
+*.log
+logs/**
+
+# Secrets.
+.env
+.env.*
+backend/.env
+frontend/.env
+!.env.example

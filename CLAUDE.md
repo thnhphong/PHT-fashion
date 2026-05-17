@@ -1,96 +1,120 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Token-efficient guide for Claude Code and compatible agents working in PHT-Fashion.
+
+## Session Start Protocol
+
+Load these first, then stop and wait for the task:
+
+1. `.claude/COMMON_MISTAKES.md`
+2. `.claude/QUICK_START.md`
+3. `.claude/ARCHITECTURE_MAP.md`
+4. `docs/INDEX.md` only when choosing task-specific docs
+
+Do not auto-load `.claude/completions/**`, `.claude/sessions/**`, `docs/archive/**`, build outputs, or generated Code Review Graph data. `.claudeignore` documents the intended context boundary.
 
 ## Project Overview
 
-PHT-Fashion is a monorepo MERN stack e-commerce application using pnpm workspaces (`backend/` and `frontend/`).
+PHT-Fashion is a pnpm workspace MERN e-commerce app.
 
-- **Backend**: Express 5 + TypeScript + MongoDB (Mongoose) + Redis, running on port 5000
-- **Frontend**: React 19 + Vite 7 + TypeScript + TailwindCSS v4, running on port 5173
-- **Package manager**: pnpm (v10.28.1) with workspace protocol
+- Backend: Express 5, TypeScript, MongoDB/Mongoose, Redis, Socket.IO, port 5000.
+- Frontend: React 19, Vite 7, TypeScript, TailwindCSS v4, React Router v7, port 5173.
+- Package manager: pnpm workspaces with `backend/` and `frontend/`.
 
-## Development Commands
+## Essential Commands
 
 ```bash
-# Run both backend and frontend concurrently
 pnpm dev
-
-# Run individually
-pnpm --filter backend run dev     # ts-node-dev with --respawn
-pnpm --filter frontend run dev    # Vite dev server
-
-# Build
-pnpm --filter frontend run build  # tsc -b && vite build
-pnpm --filter backend run build   # tsc → outputs to backend/dist/
-
-# Lint (frontend only)
-pnpm --filter frontend run lint   # ESLint with typescript-eslint + react-hooks + react-refresh
+pnpm --filter backend run dev
+pnpm --filter frontend run dev
+pnpm --filter backend run build
+pnpm --filter frontend run build
+pnpm --filter frontend run lint
 ```
 
-No test runner is configured. Validation is done via Zod schemas on the backend.
+No test runner is configured. Validate changes with focused builds/lint and manual checks where needed.
 
-## Architecture
+## Architecture Quick Reference
 
-### Backend: Route → Middleware → Controller → Service → Model
+Backend path: `backend/src/`
 
-- Routes mount at `/api/*` in `backend/src/index.ts`. Admin routes share the same controllers but are also mounted at `/api/admin/*`.
-- Controllers handle HTTP concerns (req/res, status codes). Services contain business logic and DB calls.
-- Validation uses Zod schemas in `backend/src/validations/`, applied via `validateRequest(schema)` middleware.
-- Custom `ApiError` class in `backend/src/utils/api-error.ts` for typed error responses.
-- All Mongoose models disable version key (`{ versionKey: false }`) and use `IModelName extends Document` interfaces.
+- Request flow: route -> middleware -> controller -> service -> model.
+- Validation: Zod schemas in `validations/`, applied through `validateRequest`.
+- Auth: JWT access + refresh tokens, `auth.middleware.ts`, `role.middleware.ts`.
+- Chat: REST routes plus Socket.IO under `socket/`.
 
-### Backend Auth
+Frontend path: `frontend/src/`
 
-- JWT with access token (15min) + refresh token (7 days). Token payload: `{ sub: userId, role: 'customer'|'admin' }`.
-- `auth.middleware.ts` verifies tokens and attaches `req.user`. `role.middleware.ts` handles role-based access via `authorize()`.
-- Refresh tokens stored in MongoDB (`RefreshToken` model) and rotated on use.
+- Pages live in `pages/`.
+- Shared UI lives in `components/`.
+- Global state lives in `context/`.
+- API helpers live in `utils/`.
+- `@/` maps to `frontend/src/`.
 
-### Backend Integrations
+For details, load `.claude/ARCHITECTURE_MAP.md` or task-specific files from `docs/learnings/`.
 
-- **Cloudinary** for image uploads (via multer + cloudinary SDK)
-- **Nodemailer** for emails (password reset, notifications)
-- **PayPal + VNPay** for payment processing
-- **Redis** for caching
-- **Socket.IO** for real-time chat (`backend/src/socket/`)
+## Token-Efficient Workflow
 
-### Frontend Structure
-
-- **Routing**: React Router v7 (`BrowserRouter`). Public routes use a shared `Layout` component (with `CartPopup`, `ChatPopup`, `FloatingChatButton`). Admin routes are protected by `AdminRoute` guard at `/admin/*`.
-- **State management**: React Context API — `CartContext`, `FavoriteContext`, `ChatContext`. Auth state is token-based via `localStorage` (`utils/auth.ts`).
-- **API calls**: `apiUrl(path)` from `utils/api.ts` builds URLs from `VITE_API_URL` env var. Access tokens sent as `Authorization: Bearer` headers. Token refresh handled in `utils/auth.ts`.
-- **UI**: TailwindCSS v4 + shadcn/ui (new-york style, `@/components/ui/`). Icons via lucide-react. Animations via framer-motion.
-- **Path alias**: `@/` maps to `frontend/src/` (configured in both tsconfig and vite.config.ts).
-- **Types**: Shared type definitions in `frontend/src/types/types.ts`.
-- **Styling tokens**: Design colors in `styles/colors.ts`, fonts in `styles/fonts.ts`.
-
-### Vite Dev Proxy
-
-The frontend proxies `/api` requests to `http://localhost:5000` with path rewriting (strips `/api` prefix), so the backend sees requests at root.
-
-## Adding a New API Endpoint
-
-1. Define Zod validation schema in `backend/src/validations/{feature}.validation.ts`
-2. Create service methods in `backend/src/services/{feature}.service.ts`
-3. Create controller in `backend/src/controllers/{feature}.controller.ts`
-4. Create route file in `backend/src/routes/{feature}.route.ts` with `validateRequest(schema)` middleware
-5. Mount route in `backend/src/index.ts`
-
-## Environment Variables
-
-**Backend** (`.env`, see `.env.example`): `MONGO_URI`, `JWT_SECRET` (required); `PORT`, `CLOUDINARY_*`, `EMAIL_*`, `FRONTEND_URL` (optional).
-
-**Frontend** (`.env` in `frontend/src/`): `VITE_API_URL` (defaults to `http://localhost:5001` if unset).
-
-## Deployment
-
-Frontend deployed on Vercel (SPA mode with `vercel.json` rewrites). Backend deployed separately.
+- Prefer `rg`, symbol search, and Code Review Graph before reading large files.
+- For code review or impact analysis, use Code Review Graph first when installed:
+  - `/code-review-graph:build-graph`
+  - `/code-review-graph:review-delta`
+  - `/code-review-graph:review-pr`
+- Read only the files returned by graph/context queries, then expand if evidence requires it.
+- Summarize long terminal output instead of pasting it back.
 
 ## Caveman Workflow
 
-This project uses **Caveman Mode** for token-efficient communication.
+Use Caveman Mode when asked for low-token replies.
 
-- **Toggle**: Use `/caveman [lite|full|ultra]` or say "talk like caveman".
-- **Style**: Terse prose, no fluff, technical accuracy preserved.
-- **Rules**: Drop articles/filler. Fragments OK. Code/Technical terms exact.
-- **Auto-Clarity**: Reverts to normal prose for security warnings or complex instructions.
+- Toggle: `/caveman [lite|full|ultra]` or "talk like caveman".
+- Style: terse, no filler, technical accuracy preserved.
+- Auto-clarity: normal prose for security warnings, destructive actions, and ambiguous instructions.
+
+## Documentation Navigation
+
+- `.claude/QUICK_START.md`: commands and setup.
+- `.claude/ARCHITECTURE_MAP.md`: where code lives.
+- `.claude/COMMON_MISTAKES.md`: high-cost mistakes to avoid.
+- `.claude/CODE_REVIEW_GRAPH.md`: local setup for Claude, Cursor, Antigravity.
+- `docs/INDEX.md`: task-to-doc routing with token estimates.
+- `docs/TOKENS.md`: caveman/token policy.
+
+<!-- code-review-graph MCP tools -->
+## MCP Tools: code-review-graph
+
+**IMPORTANT: This project has a knowledge graph. ALWAYS use the
+code-review-graph MCP tools BEFORE using Grep/Glob/Read to explore
+the codebase.** The graph is faster, cheaper (fewer tokens), and gives
+you structural context (callers, dependents, test coverage) that file
+scanning cannot.
+
+### When to use graph tools FIRST
+
+- **Exploring code**: `semantic_search_nodes` or `query_graph` instead of Grep
+- **Understanding impact**: `get_impact_radius` instead of manually tracing imports
+- **Code review**: `detect_changes` + `get_review_context` instead of reading entire files
+- **Finding relationships**: `query_graph` with callers_of/callees_of/imports_of/tests_for
+- **Architecture questions**: `get_architecture_overview` + `list_communities`
+
+Fall back to Grep/Glob/Read **only** when the graph doesn't cover what you need.
+
+### Key Tools
+
+| Tool | Use when |
+| ------ | ---------- |
+| `detect_changes` | Reviewing code changes — gives risk-scored analysis |
+| `get_review_context` | Need source snippets for review — token-efficient |
+| `get_impact_radius` | Understanding blast radius of a change |
+| `get_affected_flows` | Finding which execution paths are impacted |
+| `query_graph` | Tracing callers, callees, imports, tests, dependencies |
+| `semantic_search_nodes` | Finding functions/classes by name or keyword |
+| `get_architecture_overview` | Understanding high-level codebase structure |
+| `refactor_tool` | Planning renames, finding dead code |
+
+### Workflow
+
+1. The graph auto-updates on file changes (via hooks).
+2. Use `detect_changes` for code review.
+3. Use `get_affected_flows` to understand impact.
+4. Use `query_graph` pattern="tests_for" to check coverage.

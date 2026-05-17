@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "concurrently \"pnpm --filter backend run dev\" \"pnpm --filter frontend run dev\""
+    "dev": "concurrently \"pnpm --filter backend run dev\" \"pnpm --filter frontend run dev\"",
+    "ai:setup": "bash scripts/setup-ai-coding.sh",
+    "ai:graph": "code-review-graph build && code-review-graph status"
   },
   "keywords": [],
   "author": "",
